@@ -156,49 +156,49 @@ class TesterApp extends React.Component {
     if( this.state.tState===TesterAppState_Idle ) {
       eInner = (
         <div>
-          <Typography variant="h2" gutterBottom>Welcome to the TesterUI.</Typography>
-          <Typography variant="subtitle1">Please wait until the application is initialized.</Typography>
+          <Typography align="center" variant="h2" gutterBottom>Welcome to the TesterUI.</Typography>
+          <Typography align="center" variant="subtitle1">Please wait until the application is initialized.</Typography>
         </div>
       );
     } else if( this.state.tState===TesterAppState_Connecting ) {
       eInner = (
         <div>
-          <Typography variant="h2" gutterBottom>Connecting...</Typography>
+          <Typography align="center" variant="h2" gutterBottom>Connecting...</Typography>
           <CircularProgress variant="indeterminate" />
         </div>
       );
     } else if( this.state.tState===TesterAppState_Connected ) {
       eInner = (
-        <Typography variant="h2" gutterBottom>Yay! Websocket is connected.</Typography>
+        <Typography align="center" variant="h2" gutterBottom>Yay! Websocket is connected.</Typography>
       );
     } else if( this.state.tState===TesterAppState_ConnectionClosed ) {
       eInner = (
-        <Typography variant="h2" gutterBottom>The connection was closed.</Typography>
+        <Typography align="center" variant="h2" gutterBottom>The connection was closed.</Typography>
       );
     } else if( this.state.tState===TesterAppState_ErrorWebsocketNotSupported ) {
       eInner = (
         <div>
-          <Typography variant="h2" gutterBottom>Websocket is not supported by your browser!</Typography>
-          <Typography variant="subtitle1">Install the latest <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>.</Typography>
+          <Typography align="center" variant="h2" gutterBottom>Websocket is not supported by your browser!</Typography>
+          <Typography align="center" variant="subtitle1">Install the latest <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>.</Typography>
         </div>
       );
     } else if( this.state.tState===TesterAppState_ErrorFailedToCreateWebsocket ) {
       eInner = (
         <div>
-          <Typography variant="h2" gutterBottom>Failed to create the websocket!</Typography>
+          <Typography align="center" variant="h2" gutterBottom>Failed to create the websocket!</Typography>
         </div>
       );
     } else if( this.state.tState===TesterAppState_ErrorFailedToConnect ) {
       eInner = (
         <div>
-          <Typography variant="h2" gutterBottom>Failed to connect!</Typography>
+          <Typography align="center" variant="h2" gutterBottom>Failed to connect!</Typography>
         </div>
       );
     } else {
       eInner = (
         <div>
-          <Typography variant="h2" gutterBottom>Invalid state!</Typography>
-          <Typography variant="subtitle1">{this.state.tState}</Typography>
+          <Typography align="center" variant="h2" gutterBottom>Invalid state!</Typography>
+          <Typography align="center" variant="subtitle1">{this.state.tState}</Typography>
         </div>
       );
     }
