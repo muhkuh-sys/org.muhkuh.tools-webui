@@ -206,6 +206,7 @@ class TesterApp extends React.Component {
     return (
       <MuiThemeProvider theme={themeSolarizedDark}>
         <CssBaseline>
+          <TesterUIHeader strTitle="title" strSubtitle="subtitle" fHasSerial="true" uiFirstSerial="2" uiLastSerial="4" />
           {eInner}
         </CssBaseline>
       </MuiThemeProvider>
