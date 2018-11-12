@@ -21,18 +21,11 @@ class TesterUIHeader extends React.Component {
         _uiLastSerial = null;
       }
     }
-    this.state = {
-      strTitle: props.strTitle,
-      strSubtitle: props.strSubtitle,
-      fHasSerial: (props.fHasSerial==='true' || props.fHasSerial===true),
-      uiFirstSerial: _uiFirstSerial,
-      uiLastSerial: _uiLastSerial
-    };
   }
 
   render() {
     let strColor = 'default';
-    let strText = this.state.strTitle;
+    let strText = this.props.strTitle;
     if( strText===null ) {
       strColor = 'error';
       strText = 'No title';
@@ -41,18 +34,18 @@ class TesterUIHeader extends React.Component {
       <Typography align="center" color={strColor} variant="h4" gutterBottom>{strText}</Typography>
     );
 
-    var tSubtitle = '';
-    strText = this.state.strSubtitle;
+    var tSubtitle = null;
+    strText = this.props.strSubtitle;
     if( strText!==null ) {
       tSubtitle = (
         <Typography align="center" variant="subtitle1" gutterBottom>{strText}</Typography>
       );
     }
 
-    var tSerial = '';
-    if( this.state.fHasSerial===true ) {
-      var uiFirstSerial = this.state.uiFirstSerial;
-      var uiLastSerial = this.state.uiLastSerial;
+    var tSerial = null;
+    if( this.props.fHasSerial===true ) {
+      var uiFirstSerial = this.props.uiFirstSerial;
+      var uiLastSerial = this.props.uiLastSerial;
       if( uiFirstSerial!==null && uiLastSerial!==null )
       {
         tSerial = (

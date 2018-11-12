@@ -9,71 +9,16 @@ import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import MuiThemeProvider from '@material-ui/core/styles/MuiThemeProvider';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
 
 import AccessAlarmIcon from '@material-ui/icons/AccessAlarm';
 
 
 import TesterUIHeader from './testerui_header';
-
-/* See here for details: https://ethanschoonover.com/solarized/ */
-const aColorsSolarized = {
-  base03: '#002b36',
-  base02: '#073642',
-  base01: '#586e75',
-  base00: '#657b83',
-  base0:  '#839496',
-  base1:  '#93a1a1',
-  base2:  '#eee8d5',
-  base3:  '#fdf6e3',
-  yellow: '#b58900',
-  orange: '#cb4b16',
-  red:    '#dc322f',
-  magenta:'#d33682',
-  violet: '#6c71c4',
-  blue:   '#268bd2',
-  cyan:   '#2aa198',
-  green:  '#859900'
-}
-const themeSolarizedDark = createMuiTheme({
-  typography: {
-    useNextVariants: true,
-  },
-  palette: {
-    common: {
-      black: "#000000",
-      white: "#ffffff"
-    },
-    background: {
-      paper: aColorsSolarized['base02'],
-      default: aColorsSolarized['base03']
-    },
-    primary: {
-      light: aColorsSolarized['base0'],
-      main: aColorsSolarized['base00'],
-      dark: aColorsSolarized['base01'],
-      contrastText: aColorsSolarized['green']
-    },
-    secondary: {
-      light: aColorsSolarized['cyan'],
-      main: aColorsSolarized['blue'],
-      dark: aColorsSolarized['violet'],
-      contrastText: aColorsSolarized['yellow']
-    },
-    error: {
-      light: aColorsSolarized['orange'],
-      main: aColorsSolarized['red'],
-      dark: aColorsSolarized['violet'],
-      contrastText: aColorsSolarized['magenta']
-    },
-    text: {
-      primary: aColorsSolarized['base1'],
-      secondary: aColorsSolarized['base01'],
-      disabled: aColorsSolarized['base00'],
-      hint: aColorsSolarized['base1']
-    }
-  }
-});
+import TesterUISummary from './testerui_summary';
+import TesterUITheme from './testerui_theme';
 
 
 const TesterAppState_Idle = 0;
@@ -84,6 +29,10 @@ const TesterAppState_ErrorWebsocketNotSupported = 4;
 const TesterAppState_ErrorFailedToCreateWebsocket = 5;
 const TesterAppState_ErrorFailedToConnect = 6;
 
+const TesterAppTab_Interaction = 0;
+const TesterAppTab_TestLog = 1;
+const TesterAppTab_SystemLog = 2;
+
 class TesterApp extends React.Component {
   constructor(props) {
     super(props);
@@ -92,7 +41,14 @@ class TesterApp extends React.Component {
       _tState = TesterAppState_ErrorWebsocketNotSupported;
     }
     this.state = {
-      tState: _tState
+      tState: _tState,
+      uiActiveTab: TesterAppTab_Interaction,
+
+      tHeader_Title: 'title',
+      tHeader_Subtitle: 'subtitle',
+      tHeader_fHasSerial: false,
+      tHeader_uiFirstSerial: 0,
+      tHeader_uiLastSerial: 1
     };
     this.tSocket = null;
   }
@@ -114,9 +70,30 @@ class TesterApp extends React.Component {
 
   socketOpen(tEvent) {
     console.log("WebSocket is open now.");
-    this.tSocket.send('hi')
+    this.tSocket.send('ReqInit')
     this.setState({ tState: TesterAppState_Connected });
   }
+
+  socketMessage(tEvent) {
+    console.debug("WebSocket message received:", tEvent.data);
+
+    let tJson = JSON.parse(tEvent.data);
+    let strId = tJson.id;
+    if( strId=='SetTitle' ) {
+      this.setState({
+        tHeader_Title: tJson.title,
+        tHeader_Subtitle: tJson.subtitle,
+        tHeader_fHasSerial: tJson.hasSerial,
+        tHeader_uiFirstSerial: tJson.firstSerial,
+        tHeader_uiLastSerial: tJson.lastSerial
+      });
+    }
+  }
+
+  handleTabChange = (tEvent, uiValue) => {
+    this.setState({ uiActiveTab: uiValue });
+  };
+
 
   componentDidMount() {
     /* Create the websocket if it does not exist yet. */
@@ -130,9 +107,7 @@ class TesterApp extends React.Component {
         var _this = this;
         _socket.onclose = function(event) { _this.socketClosed(event) };
         _socket.onerror = function(event) { _this.socketError(event) };
-        _socket.onmessage = function(event) {
-          console.debug("WebSocket message received:", event.data);
-        };
+        _socket.onmessage = function(event) { _this.socketMessage(event) };
         _socket.onopen = function(event) { _this.socketOpen(event) };
 
         this.tSocket = _socket;
@@ -152,62 +127,82 @@ class TesterApp extends React.Component {
   }
 
   render() {
-    var eInner = ''
-    if( this.state.tState===TesterAppState_Idle ) {
-      eInner = (
-        <div>
-          <Typography align="center" variant="h2" gutterBottom>Welcome to the TesterUI.</Typography>
-          <Typography align="center" variant="subtitle1">Please wait until the application is initialized.</Typography>
-        </div>
+    let tTabContents = '';
+    if( this.state.uiActiveTab===TesterAppTab_Interaction ) {
+      if( this.state.tState===TesterAppState_Idle ) {
+        tTabContents = (
+          <div>
+            <Typography align="center" variant="h2" gutterBottom>Welcome to the TesterUI.</Typography>
+            <Typography align="center" variant="subtitle1">Please wait until the application is initialized.</Typography>
+          </div>
+        );
+      } else if( this.state.tState===TesterAppState_Connecting ) {
+        tTabContents = (
+          <div>
+            <Typography align="center" variant="h2" gutterBottom>Connecting...</Typography>
+            <CircularProgress variant="indeterminate" />
+          </div>
+        );
+      } else if( this.state.tState===TesterAppState_Connected ) {
+        tTabContents = (
+          <Typography align="center" variant="h2" gutterBottom>Yay! Websocket is connected.</Typography>
+        );
+      } else if( this.state.tState===TesterAppState_ConnectionClosed ) {
+        tTabContents = (
+          <Typography align="center" variant="h2" gutterBottom>The connection was closed.</Typography>
+        );
+      } else if( this.state.tState===TesterAppState_ErrorWebsocketNotSupported ) {
+        tTabContents = (
+          <div>
+            <Typography align="center" variant="h2" gutterBottom>Websocket is not supported by your browser!</Typography>
+            <Typography align="center" variant="subtitle1">Install the latest <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>.</Typography>
+          </div>
+        );
+      } else if( this.state.tState===TesterAppState_ErrorFailedToCreateWebsocket ) {
+        tTabContents = (
+          <div>
+            <Typography align="center" variant="h2" gutterBottom>Failed to create the websocket!</Typography>
+          </div>
+        );
+      } else if( this.state.tState===TesterAppState_ErrorFailedToConnect ) {
+        tTabContents = (
+          <div>
+            <Typography align="center" variant="h2" gutterBottom>Failed to connect!</Typography>
+          </div>
+        );
+      } else {
+        tTabContents = (
+          <div>
+            <Typography align="center" variant="h2" gutterBottom>Invalid state!</Typography>
+            <Typography align="center" variant="subtitle1">{this.state.tState}</Typography>
+          </div>
+        );
+      }
+    } else if( this.state.uiActiveTab===TesterAppTab_TestLog ) {
+      tTabContents = (
+        <Typography align="center" variant="h2" gutterBottom>Test log</Typography>
       );
-    } else if( this.state.tState===TesterAppState_Connecting ) {
-      eInner = (
-        <div>
-          <Typography align="center" variant="h2" gutterBottom>Connecting...</Typography>
-          <CircularProgress variant="indeterminate" />
-        </div>
-      );
-    } else if( this.state.tState===TesterAppState_Connected ) {
-      eInner = (
-        <Typography align="center" variant="h2" gutterBottom>Yay! Websocket is connected.</Typography>
-      );
-    } else if( this.state.tState===TesterAppState_ConnectionClosed ) {
-      eInner = (
-        <Typography align="center" variant="h2" gutterBottom>The connection was closed.</Typography>
-      );
-    } else if( this.state.tState===TesterAppState_ErrorWebsocketNotSupported ) {
-      eInner = (
-        <div>
-          <Typography align="center" variant="h2" gutterBottom>Websocket is not supported by your browser!</Typography>
-          <Typography align="center" variant="subtitle1">Install the latest <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>.</Typography>
-        </div>
-      );
-    } else if( this.state.tState===TesterAppState_ErrorFailedToCreateWebsocket ) {
-      eInner = (
-        <div>
-          <Typography align="center" variant="h2" gutterBottom>Failed to create the websocket!</Typography>
-        </div>
-      );
-    } else if( this.state.tState===TesterAppState_ErrorFailedToConnect ) {
-      eInner = (
-        <div>
-          <Typography align="center" variant="h2" gutterBottom>Failed to connect!</Typography>
-        </div>
-      );
-    } else {
-      eInner = (
-        <div>
-          <Typography align="center" variant="h2" gutterBottom>Invalid state!</Typography>
-          <Typography align="center" variant="subtitle1">{this.state.tState}</Typography>
-        </div>
+    } else if( this.state.uiActiveTab===TesterAppTab_SystemLog ) {
+      tTabContents = (
+        <Typography align="center" variant="h2" gutterBottom>System log</Typography>
       );
     }
 
     return (
-      <MuiThemeProvider theme={themeSolarizedDark}>
+      <MuiThemeProvider theme={TesterUITheme}>
         <CssBaseline>
-          <TesterUIHeader strTitle="title" strSubtitle="subtitle" fHasSerial="true" uiFirstSerial="2" uiLastSerial="4" />
-          {eInner}
+          <div class='TesterApp'>
+            <TesterUIHeader strTitle={this.state.tHeader_Title} strSubtitle={this.state.tHeader_Subtitle} fHasSerial={this.state.tHeader_fHasSerial} uiFirstSerial={this.state.tHeader_uiFirstSerial} uiLastSerial={this.state.tHeader_uiLastSerial} />
+            <TesterUISummary theme={TesterUITheme} />
+            <div class='TesterUITabs'>
+              <Tabs value={this.state.uiActiveTab} onChange={this.handleTabChange}>
+                <Tab label="Interaction" />
+                <Tab label="Test Log" />
+                <Tab label="System Log" />
+              </Tabs>
+              {tTabContents}
+            </div>
+          </div>
         </CssBaseline>
       </MuiThemeProvider>
     );
