@@ -126,6 +126,11 @@ class TesterApp extends React.Component {
     }
   }
 
+  handleCowClick = (uiIndex) => {
+    console.log("haha");
+    console.log(uiIndex);
+  }
+
   render() {
     let tTabContents = '';
     if( this.state.uiActiveTab===TesterAppTab_Interaction ) {
@@ -193,7 +198,7 @@ class TesterApp extends React.Component {
         <CssBaseline>
           <div class='TesterApp'>
             <TesterUIHeader strTitle={this.state.tHeader_Title} strSubtitle={this.state.tHeader_Subtitle} fHasSerial={this.state.tHeader_fHasSerial} uiFirstSerial={this.state.tHeader_uiFirstSerial} uiLastSerial={this.state.tHeader_uiLastSerial} />
-            <TesterUISummary theme={TesterUITheme} />
+            <TesterUISummary theme={TesterUITheme} handleCowClick={this.handleCowClick} />
             <div class='TesterUITabs'>
               <Tabs value={this.state.uiActiveTab} onChange={this.handleTabChange}>
                 <Tab label="Interaction" />

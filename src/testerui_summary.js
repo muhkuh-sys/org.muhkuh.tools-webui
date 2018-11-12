@@ -34,6 +34,10 @@ class TesterUISummary extends React.Component {
     this.astrImages = astrImages;
   }
 
+  handleCowClick = (uiIndex) => {
+    this.props.handleCowClick(uiIndex);
+  }
+
   render() {
     let atCows = []
     this.state.astrTestNames.forEach(function(strName, uiIndex) {
@@ -42,7 +46,7 @@ class TesterUISummary extends React.Component {
       atCows.push(
         <div key={uiIndex} class="TesterUISummary_Cow" id="cow_{uiIndex}">
           <Tooltip title={strName} placement="bottom">
-            <IconButton>
+            <IconButton onClick={() => this.handleCowClick(uiIndex)}>
               <img src={strImg} />
             </IconButton>
           </Tooltip>
