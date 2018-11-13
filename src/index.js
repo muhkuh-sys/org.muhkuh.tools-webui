@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 
 import './style.scss';
 import 'typeface-roboto';
+import 'typeface-roboto-mono';
 
 import { createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
