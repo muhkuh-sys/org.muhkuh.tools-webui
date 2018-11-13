@@ -1,5 +1,8 @@
-.TesterApp {
-  margin: 1em;
+#TesterApp {
+}
+#TesterHeader {
+  /* Set a padding of 1em to top, left and right. Set no padding to the bottom. */
+  padding: 1em 1em 0 1em;
 }
 .TesterUISummary_CowBar {
   padding: 1em;
@@ -9,6 +12,13 @@
 .TesterUISummary_Cow {
   display: inline-block;
 }
-.TesterUITabs {
+#TesterTabs {
   margin-top: 1em;
+}
+#TesterTabContents {
+  /* Set a padding of 1em to left, right and bottom. Set no padding to the top. */
+  padding: 0 1em 1em 1em;
+
+  /* Show a scroll-bar if the content has too many lines. */
+  overflow-y: scroll;
 }

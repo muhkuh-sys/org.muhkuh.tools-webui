@@ -17,6 +17,7 @@ import AccessAlarmIcon from '@material-ui/icons/AccessAlarm';
 
 
 import TesterUIHeader from './testerui_header';
+import TesterUILog from './testerui_log';
 import TesterUISummary from './testerui_summary';
 import TesterUITheme from './testerui_theme';
 
@@ -44,11 +45,13 @@ class TesterApp extends React.Component {
       tState: _tState,
       uiActiveTab: TesterAppTab_Interaction,
 
-      tHeader_Title: 'title',
-      tHeader_Subtitle: 'subtitle',
-      tHeader_fHasSerial: false,
-      tHeader_uiFirstSerial: 0,
-      tHeader_uiLastSerial: 1
+      tTest_Title: null,
+      tTest_Subtitle: null,
+      tTest_fHasSerial: false,
+      tTest_uiFirstSerial: 0,
+      tTest_uiLastSerial: 0,
+
+      tRunningTest_uiCurrentSerial: null
     };
     this.tSocket = null;
   }
@@ -81,11 +84,11 @@ class TesterApp extends React.Component {
     let strId = tJson.id;
     if( strId=='SetTitle' ) {
       this.setState({
-        tHeader_Title: tJson.title,
-        tHeader_Subtitle: tJson.subtitle,
-        tHeader_fHasSerial: tJson.hasSerial,
-        tHeader_uiFirstSerial: tJson.firstSerial,
-        tHeader_uiLastSerial: tJson.lastSerial
+        tTest_Title: tJson.title,
+        tTest_Subtitle: tJson.subtitle,
+        tTest_fHasSerial: tJson.hasSerial,
+        tTest_uiFirstSerial: tJson.firstSerial,
+        tTest_uiLastSerial: tJson.lastSerial
       });
     }
   }
@@ -185,7 +188,7 @@ class TesterApp extends React.Component {
       }
     } else if( this.state.uiActiveTab===TesterAppTab_TestLog ) {
       tTabContents = (
-        <Typography align="center" variant="h2" gutterBottom>Test log</Typography>
+        <TesterUILog />
       );
     } else if( this.state.uiActiveTab===TesterAppTab_SystemLog ) {
       tTabContents = (
@@ -196,15 +199,19 @@ class TesterApp extends React.Component {
     return (
       <MuiThemeProvider theme={TesterUITheme}>
         <CssBaseline>
-          <div class='TesterApp'>
-            <TesterUIHeader strTitle={this.state.tHeader_Title} strSubtitle={this.state.tHeader_Subtitle} fHasSerial={this.state.tHeader_fHasSerial} uiFirstSerial={this.state.tHeader_uiFirstSerial} uiLastSerial={this.state.tHeader_uiLastSerial} />
-            <TesterUISummary theme={TesterUITheme} handleCowClick={this.handleCowClick} />
-            <div class='TesterUITabs'>
-              <Tabs value={this.state.uiActiveTab} onChange={this.handleTabChange}>
-                <Tab label="Interaction" />
-                <Tab label="Test Log" />
-                <Tab label="System Log" />
-              </Tabs>
+          <div id='TesterApp'>
+            <div id='TesterHeader'>
+              <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiFirstSerial={this.state.tTest_uiFirstSerial} uiLastSerial={this.state.tTest_uiLastSerial} />
+              <TesterUISummary fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
+              <div id='TesterTabs'>
+                <Tabs value={this.state.uiActiveTab} onChange={this.handleTabChange}>
+                  <Tab label="Interaction" />
+                  <Tab label="Test Log" />
+                  <Tab label="System Log" />
+                </Tabs>
+              </div>
+            </div>
+            <div id='TesterTabContents'>
               {tTabContents}
             </div>
           </div>

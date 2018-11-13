@@ -19,8 +19,6 @@ class TesterUISummary extends React.Component {
     this.TESTRESULT_Idle = 2;
 
     this.state = {
-      fHasSerial: false,
-      uiCurrentSerial: 20000,
       astrTestNames: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
       atTestStati: [0, 1, 2, 0, 1, 2, 0, 1],
       uiIconSize: 32
@@ -44,7 +42,7 @@ class TesterUISummary extends React.Component {
       const tResult = this.state.atTestStati[uiIndex];
       let strImg = this.astrImages[tResult];
       atCows.push(
-        <div key={uiIndex} class="TesterUISummary_Cow" id="cow_{uiIndex}">
+        <div key={uiIndex} className="TesterUISummary_Cow" id="cow_{uiIndex}">
           <Tooltip title={strName} placement="bottom">
             <IconButton onClick={() => this.handleCowClick(uiIndex)}>
               <img src={strImg} />
@@ -53,10 +51,21 @@ class TesterUISummary extends React.Component {
         </div>
       );
     }, this);
+
+    let strSerial = 'No current serial.';
+    if( this.props.fHasSerial==true ) {
+      let uiSerial = this.props.uiCurrentSerial;
+      if( Number.isInteger(uiSerial)===true ) {
+        strSerial = 'Current serial: ' + String(uiSerial);
+      } else {
+        strSerial = 'Current serial: none';
+      }
+    }
+
     return (
       <div>
-        <Typography variant="h4" gutterBottom>Current serial: {this.state.uiCurrentSerial}</Typography>
-        <div class='TesterUISummary_CowBar' style={{backgroundColor: this.props.theme.palette.background.paper}}>
+        <Typography variant="h4" gutterBottom>{strSerial}</Typography>
+        <div className='TesterUISummary_CowBar' style={{backgroundColor: this.props.theme.palette.background.paper}}>
           {atCows}
         </div>
       </div>
