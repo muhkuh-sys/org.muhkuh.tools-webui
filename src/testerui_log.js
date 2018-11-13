@@ -9,7 +9,7 @@ class TesterUILog extends React.Component {
 
   render() {
     return (
-      <div style={{fontFamily: 'mono', backgroundColor: 'black', overflowY: 'scoll'}}>
+      <div style={{fontFamily: 'mono', backgroundColor: 'black'}}>
         <div style={{color: 'red'}}>line 1</div>
         <div>line 2</div>
         <div>line 3</div>
