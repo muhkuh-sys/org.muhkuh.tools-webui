@@ -24,45 +24,35 @@ class TesterUIHeader extends React.Component {
   }
 
   render() {
-    let strColor = 'default';
-    let strText = this.props.strTitle;
-    if( strText===null ) {
-      strColor = 'error';
-      strText = 'No title';
-    }
-    var tTitle = (
-      <Typography align="center" color={strColor} variant="h4" gutterBottom>{strText}</Typography>
-    );
-
-    var tSubtitle = null;
-    strText = this.props.strSubtitle;
-    if( strText!==null ) {
-      tSubtitle = (
-        <Typography align="center" variant="subtitle1" gutterBottom>{strText}</Typography>
-      );
+    let strTitleColor = 'default';
+    let strTitleText = this.props.strTitle;
+    if( strTitleText===null ) {
+      strTitleColor = 'error';
+      strTitleText = 'No title';
     }
 
-    var tSerial = null;
+    let strSubtitleText = this.props.strSubtitle;
+    if( strSubtitleText===null ) {
+      strSubtitleText = '-';
+    }
+
+    let strSerial = 'This test uses no serial numbers.';
     if( this.props.fHasSerial===true ) {
-      var uiFirstSerial = this.props.uiFirstSerial;
-      var uiLastSerial = this.props.uiLastSerial;
+      let uiFirstSerial = this.props.uiFirstSerial;
+      let uiLastSerial = this.props.uiLastSerial;
       if( uiFirstSerial!==null && uiLastSerial!==null )
       {
-        tSerial = (
-          <Typography variant="body1" gutterBottom>First serial: {uiFirstSerial}, last serial: {uiLastSerial}</Typography>
-        );
+        strSerial = 'First serial: ' + String(uiFirstSerial) + ', last serial: ' + String(uiLastSerial);
       } else {
-        tSerial = (
-          <Typography variant="body1" gutterBottom>Serial numbers are not set yet.</Typography>
-        );
+        strSerial = 'Serial numbers are not set yet.';
       }
     }
 
     return (
       <div>
-        {tTitle}
-        {tSubtitle}
-        {tSerial}
+        <Typography align="center" color={strTitleColor} variant="h4" gutterBottom>{strTitleText}</Typography>
+        <Typography align="center" variant="subtitle1" gutterBottom>{strSubtitleText}</Typography>
+        <Typography variant="body1" gutterBottom>{strSerial}</Typography>
       </div>
     );
   }
