@@ -1,8 +1,19 @@
 #TesterApp {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  align-content: flex-start;
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 100vh;
 }
 #TesterHeader {
-  /* Set a padding of 1em to top, left and right. Set no padding to the bottom. */
-  padding: 1em 1em 0 1em;
+  /* Set a margin of 1em to top, left and right. Set no margin to the bottom. */
+  margin: 1em 1em 0 1em;
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 .TesterUISummary_CowBar {
   padding: 1em;
@@ -16,8 +27,11 @@
   margin-top: 1em;
 }
 #TesterTabContents {
-  /* Set a padding of 1em to left, right and bottom. Set no padding to the top. */
-  padding: 0 1em 1em 1em;
+  /* Set a margin of 1em to left, right and bottom. Set no margin to the top. */
+  margin: 0 1em 1em 1em;
+
+  flex-grow: 1;
+  flex-shrink: 1;
 
   /* Show a scroll-bar if the content has too many lines. */
   overflow-y: scroll;
