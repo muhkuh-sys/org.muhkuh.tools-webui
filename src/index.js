@@ -203,7 +203,7 @@ class TesterApp extends React.Component {
           <div id='TesterApp'>
             <div id='TesterHeader'>
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiFirstSerial={this.state.tTest_uiFirstSerial} uiLastSerial={this.state.tTest_uiLastSerial} />
-              <TesterUISummary fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
+              <TesterUISummary fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} strIconSize='4em' theme={TesterUITheme} handleCowClick={this.handleCowClick} />
               <div id='TesterTabs'>
                 <Tabs value={this.state.uiActiveTab} onChange={this.handleTabChange}>
                   <Tab label="Interaction" />

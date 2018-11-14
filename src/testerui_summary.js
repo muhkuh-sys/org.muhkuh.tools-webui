@@ -5,9 +5,9 @@ import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 
-import img_cow_ok from './images/cow_ok.png';
-import img_cow_err from './images/cow_err.png';
-import img_cow_idle from './images/cow_idle.png';
+import ImgCowOk from './images/muhkuh_test_ok.svg';
+import ImgCowErr from './images/muhkuh_test_failed.svg';
+import ImgCowIdle from './images/muhkuh_untested.svg';
 
 
 class TesterUISummary extends React.Component {
@@ -20,14 +20,13 @@ class TesterUISummary extends React.Component {
 
     this.state = {
       astrTestNames: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
-      atTestStati: [0, 1, 2, 0, 1, 2, 0, 1],
-      uiIconSize: 32
+      atTestStati: [0, 1, 2, 0, 1, 2, 0, 1]
     };
 
     let astrImages = {
-      0: img_cow_ok,
-      1: img_cow_err,
-      2: img_cow_idle
+      0: ImgCowOk,
+      1: ImgCowErr,
+      2: ImgCowIdle
     };
     this.astrImages = astrImages;
   }
@@ -45,7 +44,7 @@ class TesterUISummary extends React.Component {
         <div key={uiIndex} className="TesterUISummary_Cow" id="cow_{uiIndex}">
           <Tooltip title={strName} placement="bottom">
             <IconButton onClick={() => this.handleCowClick(uiIndex)}>
-              <img src={strImg} />
+              <img src={strImg} style={{height: this.props.strIconSize, width: this.props.strIconSize}}/>
             </IconButton>
           </Tooltip>
         </div>
