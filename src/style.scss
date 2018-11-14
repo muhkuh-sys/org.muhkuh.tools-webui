@@ -19,9 +19,17 @@
   padding: 0.5em;
   margin-left: 1em;
   margin-right: 1em;
+
+  /* Scroll the icons horizontally. */
+  display: flex;
+  overflow-x: scroll;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
 }
 .TesterUISummary_Cow {
-  display: inline-block;
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 #TesterTabs {
   margin-top: 1em;
