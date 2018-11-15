@@ -29,6 +29,7 @@
     "webpack-cli": "^3.1.2"
   },
   "dependencies": {
+    "babel-standalone": "^6.26.0",
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
     "typeface-roboto": "0.0.54",

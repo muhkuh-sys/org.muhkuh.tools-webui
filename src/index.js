@@ -5,6 +5,7 @@ import './style.scss';
 import 'typeface-roboto';
 import 'typeface-roboto-mono';
 
+import { transform } from 'babel-standalone';
 import { createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -54,7 +55,8 @@ class TesterApp extends React.Component {
 
       tRunningTest_uiCurrentSerial: null,
 
-      tUI_CowIconSize: '3em'
+      tUI_CowIconSize: '3em',
+      tUI_fnInteraction: null
     };
     this.tSocket = null;
   }
@@ -92,6 +94,22 @@ class TesterApp extends React.Component {
         tTest_fHasSerial: tJson.hasSerial,
         tTest_uiFirstSerial: tJson.firstSerial,
         tTest_uiLastSerial: tJson.lastSerial
+      });
+    } else if( strId=='SetInteraction' ) {
+      /* Translate the received code with babel. */
+      let tBabel = transform(
+        tJson.jsx,
+        {
+          filename: 'dynamic_loaded.jsx',
+          presets: ['es2015', 'stage-2' , 'react']
+        }
+      );
+      let tCode = tBabel.code + "\nreturn Interaction;\n";
+      let tFn = new Function('React', tCode);
+
+      this.setState({
+        uiActiveTab: TesterAppTab_Interaction,
+        tUI_fnInteraction: tFn
       });
     }
   }
@@ -155,9 +173,14 @@ class TesterApp extends React.Component {
           </div>
         );
       } else if( this.state.tState===TesterAppState_Connected ) {
-        tTabContents = (
-          <Typography align="center" variant="h2" gutterBottom>Yay! Websocket is connected.</Typography>
-        );
+        if( this.state.tUI_fnInteraction===null ) {
+          tTabContents = (
+            <Typography align="center" variant="h4" gutterBottom>No interaction...</Typography>
+          );
+        } else {
+          tTabContents = React.createElement(this.state.tUI_fnInteraction(React));
+          console.debug(tTabContents);
+        }
       } else if( this.state.tState===TesterAppState_ConnectionClosed ) {
         tTabContents = (
           <Typography align="center" variant="h2" gutterBottom>The connection was closed.</Typography>
