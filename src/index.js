@@ -12,6 +12,9 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Divider from '@material-ui/core/Divider';
 import Drawer from '@material-ui/core/Drawer';
+import ExpansionPanel from '@material-ui/core/ExpansionPanel';
+import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
+import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import FilledInput from '@material-ui/core/FilledInput';
 import FormControl from '@material-ui/core/FormControl';
 import FormHelperText from '@material-ui/core/FormHelperText';
@@ -25,10 +28,12 @@ import ListItemText from '@material-ui/core/ListItemText';
 import MenuItem from '@material-ui/core/MenuItem';
 import MuiThemeProvider from '@material-ui/core/styles/MuiThemeProvider';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
+import Paper from '@material-ui/core/Paper';
 import Select from '@material-ui/core/Select';
 import SvgIcon from '@material-ui/core/SvgIcon';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
+import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 
 import CancelIcon from '@material-ui/icons/Cancel';
@@ -100,6 +105,9 @@ class TesterApp extends React.Component {
       'ReactDOM': ReactDOM,
       'Button': Button,
       'CircularProgress': CircularProgress,
+      'ExpansionPanel': ExpansionPanel,
+      'ExpansionPanelSummary': ExpansionPanelSummary,
+      'ExpansionPanelDetails': ExpansionPanelDetails,
       'FilledInput': FilledInput,
       'FormControl': FormControl,
       'FormHelperText': FormHelperText,
@@ -112,10 +120,12 @@ class TesterApp extends React.Component {
       'ListItemText': ListItemText,
       'MenuItem': MenuItem,
       'OutlinedInput': OutlinedInput,
+      'Paper': Paper,
       'Select': Select,
       'SvgIcon': SvgIcon,
       'Tabs': Tabs,
       'Tab': Tab,
+      'TextField': TextField,
       'Typography': Typography
     }
     this.atComponents = atComponents;
