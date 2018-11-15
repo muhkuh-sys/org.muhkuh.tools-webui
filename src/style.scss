@@ -9,6 +9,11 @@
   max-height: 100vh;
   min-height: 100vh;
 }
+#TesterUIHoverButtons {
+  position: absolute;
+  z-index: 1;
+  right: 1em;
+}
 #TesterHeader {
   /* Set a margin of 1em to top, left and right. Set no margin to the bottom. */
   margin: 1em 1em 0 1em;

@@ -10,13 +10,22 @@ import { createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import CssBaseline from '@material-ui/core/CssBaseline';
+import Divider from '@material-ui/core/Divider';
+import Drawer from '@material-ui/core/Drawer';
+import IconButton from '@material-ui/core/IconButton';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
 import MuiThemeProvider from '@material-ui/core/styles/MuiThemeProvider';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
 
-import AccessAlarmIcon from '@material-ui/icons/AccessAlarm';
-
+import CancelIcon from '@material-ui/icons/Cancel';
+import MenuIcon from '@material-ui/icons/Menu';
+import PowerIcon from '@material-ui/icons/Power';
+import PowerOffIcon from '@material-ui/icons/PowerOff';
 
 import TesterUIHeader from './testerui_header';
 import TesterUILog from './testerui_log';
@@ -28,9 +37,8 @@ const TesterAppState_Idle = 0;
 const TesterAppState_Connecting = 1;
 const TesterAppState_Connected = 2;
 const TesterAppState_ConnectionClosed = 3;
-const TesterAppState_ErrorWebsocketNotSupported = 4;
-const TesterAppState_ErrorFailedToCreateWebsocket = 5;
-const TesterAppState_ErrorFailedToConnect = 6;
+const TesterAppState_FatalError = 4;
+const TesterAppState_SoftError = 5;
 
 const TesterAppTab_Interaction = 0;
 const TesterAppTab_TestLog = 1;
@@ -39,13 +47,25 @@ const TesterAppTab_SystemLog = 2;
 class TesterApp extends React.Component {
   constructor(props) {
     super(props);
-    var _tState = TesterAppState_Idle;
+    let _tState = TesterAppState_Idle;
+    let _tErrorMessage = null;
     if( 'WebSocket' in window === false ) {
-      _tState = TesterAppState_ErrorWebsocketNotSupported;
+      _tState = TesterAppState_FatalError;
+      _tErrorMessage = (
+        <div>
+          <Typography align="center" variant="h2" gutterBottom>Websocket is not supported by your browser!</Typography>
+          <Typography align="center" variant="subtitle1">Install the latest <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>.</Typography>
+        </div>
+      );
     }
     this.state = {
       tState: _tState,
+      tErrorMessage: _tErrorMessage,
       uiActiveTab: TesterAppTab_Interaction,
+      fMenuIsOpen: false,
+
+      strServerURL: 'ws://127.0.0.1:12345',
+      strServerProtocol: 'echo',
 
       tTest_Title: null,
       tTest_Subtitle: null,
@@ -69,7 +89,15 @@ class TesterApp extends React.Component {
     }
     else
     {
-      this.setState({ tState: TesterAppState_ErrorFailedToConnect });
+      const tMsg = (
+        <div>
+          <Typography align="center" variant="h2" gutterBottom>Failed to connect!</Typography>
+        </div>
+      );
+      this.setState({
+        tState: TesterAppState_SoftError,
+        tErrorMessage: tMsg
+      });
     }
   }
 
@@ -122,24 +150,9 @@ class TesterApp extends React.Component {
 
   componentDidMount() {
     /* Create the websocket if it does not exist yet. */
-    if( this.state.tState===TesterAppState_Idle && this.tSocket===null )
+    if( this.state.tState===TesterAppState_Idle )
     {
-      var _socket = new WebSocket('ws://127.0.0.1:12345', 'echo');
-      if( _socket===null ) {
-        this.setState({ tState: TesterAppState_ErrorFailedToCreateWebsocket });
-      } else {
-        /* Pass this class to the callback functions as a closure. */
-        var _this = this;
-        _socket.onclose = function(event) { _this.socketClosed(event) };
-        _socket.onerror = function(event) { _this.socketError(event) };
-        _socket.onmessage = function(event) { _this.socketMessage(event) };
-        _socket.onopen = function(event) { _this.socketOpen(event) };
-
-        this.tSocket = _socket;
-
-        /* The socket is now connecting. */
-        this.setState({ tState: TesterAppState_Connecting });
-      }
+      this.doConnect();
     }
   }
 
@@ -158,6 +171,52 @@ class TesterApp extends React.Component {
     this.setState({
       tRunningTest_uiRunningTest: uiIndex
     });
+  }
+
+  handleOpenAppMenu = () => {
+    this.setState({
+      fMenuIsOpen: true
+    });
+  }
+
+  handleCloseAppMenu = () => {
+    this.setState({
+      fMenuIsOpen: false
+    });
+  }
+
+  doConnect = () => {
+    var _socket = new WebSocket(this.state.strServerURL, this.state.strServerProtocol);
+    if( _socket===null ) {
+      const tMsg = (
+        <div>
+          <Typography align="center" variant="h2" gutterBottom>Failed to create the websocket!</Typography>
+        </div>
+      );
+      this.setState({
+        tState: TesterAppState_FatalError,
+        tErrorMessage: tMsg
+      });
+    } else {
+      /* Pass this class to the callback functions as a closure. */
+      var _this = this;
+      _socket.onclose = function(event) { _this.socketClosed(event) };
+      _socket.onerror = function(event) { _this.socketError(event) };
+      _socket.onmessage = function(event) { _this.socketMessage(event) };
+      _socket.onopen = function(event) { _this.socketOpen(event) };
+
+      this.tSocket = _socket;
+
+      /* The socket is now connecting. */
+      this.setState({ tState: TesterAppState_Connecting });
+    }
+  }
+
+  doDisconnect = () => {
+    if( this.tSocket!==null )
+    {
+      this.tSocket.close();
+    }
   }
 
   render() {
@@ -190,25 +249,8 @@ class TesterApp extends React.Component {
         tTabContents = (
           <Typography align="center" variant="h2" gutterBottom>The connection was closed.</Typography>
         );
-      } else if( this.state.tState===TesterAppState_ErrorWebsocketNotSupported ) {
-        tTabContents = (
-          <div>
-            <Typography align="center" variant="h2" gutterBottom>Websocket is not supported by your browser!</Typography>
-            <Typography align="center" variant="subtitle1">Install the latest <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>.</Typography>
-          </div>
-        );
-      } else if( this.state.tState===TesterAppState_ErrorFailedToCreateWebsocket ) {
-        tTabContents = (
-          <div>
-            <Typography align="center" variant="h2" gutterBottom>Failed to create the websocket!</Typography>
-          </div>
-        );
-      } else if( this.state.tState===TesterAppState_ErrorFailedToConnect ) {
-        tTabContents = (
-          <div>
-            <Typography align="center" variant="h2" gutterBottom>Failed to connect!</Typography>
-          </div>
-        );
+      } else if( this.state.tState===TesterAppState_FatalError || this.state.tState===TesterAppState_SoftError ) {
+        tTabContents = this.state.tErrorMessage;
       } else {
         tTabContents = (
           <div>
@@ -227,11 +269,44 @@ class TesterApp extends React.Component {
       );
     }
 
+    /* Create the application menu. */
+    let tAppMenu = (
+      <List>
+        <ListItem button key='Cancel test' disabled={this.state.tRunningTest_uiRunningTest===null}>
+          <ListItemIcon><CancelIcon/></ListItemIcon>
+          <ListItemText primary='Cancel test'/>
+        </ListItem>
+        <Divider/>
+        <ListItem button key='Connect' disabled={this.state.tState===TesterAppState_Connected || this.state.tState===TesterAppState_FatalError} onClick={this.doConnect}>
+          <ListItemIcon><PowerIcon/></ListItemIcon>
+          <ListItemText primary='Connect'/>
+        </ListItem>
+        <ListItem button key='Disconnect' disabled={this.state.tState!==TesterAppState_Connected} onClick={this.doDisconnect}>
+          <ListItemIcon><PowerOffIcon/></ListItemIcon>
+          <ListItemText primary='Disconnect'/>
+        </ListItem>
+      </List>
+    );
+
     return (
       <MuiThemeProvider theme={TesterUITheme}>
         <CssBaseline>
           <div id='TesterApp'>
             <div id='TesterHeader'>
+              <div id='TesterUIHoverButtons'>
+                <Button variant="extendedFab" aria-label="Cancel test" disabled={this.state.tRunningTest_uiRunningTest===null}>
+                  <CancelIcon/>
+                  Cancel test
+                </Button>
+                <IconButton aria-label="Menu" aria-owns={this.state.fMenuIsOpen ? 'TesterUIAppMenu' : undefined} aria-haspopup="true" onClick={this.handleOpenAppMenu}>
+                  <MenuIcon/>
+                </IconButton>
+              </div>
+              <Drawer anchor="right" id='TesterUIAppMenu' open={this.state.fMenuIsOpen} onClose={this.handleCloseAppMenu}>
+                <div tabIndex={0} role="button" onClick={this.handleCloseAppMenu} onKeyDown={this.handleCloseAppMenu}>
+                  {tAppMenu}
+                </div>
+              </Drawer>
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiFirstSerial={this.state.tTest_uiFirstSerial} uiLastSerial={this.state.tTest_uiLastSerial} />
               <TesterUISummary fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
               <div id='TesterTabs'>
