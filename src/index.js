@@ -54,6 +54,7 @@ class TesterApp extends React.Component {
       tTest_uiLastSerial: 0,
 
       tRunningTest_uiCurrentSerial: null,
+      tRunningTest_uiRunningTest: null,
 
       tUI_CowIconSize: '3em',
       tUI_fnInteraction: null
@@ -153,6 +154,10 @@ class TesterApp extends React.Component {
   handleCowClick = (uiIndex) => {
     console.log("haha");
     console.log(uiIndex);
+
+    this.setState({
+      tRunningTest_uiRunningTest: uiIndex
+    });
   }
 
   render() {
@@ -228,7 +233,7 @@ class TesterApp extends React.Component {
           <div id='TesterApp'>
             <div id='TesterHeader'>
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiFirstSerial={this.state.tTest_uiFirstSerial} uiLastSerial={this.state.tTest_uiLastSerial} />
-              <TesterUISummary fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
+              <TesterUISummary fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
               <div id='TesterTabs'>
                 <Tabs value={this.state.uiActiveTab} onChange={this.handleTabChange}>
                   <Tab label="Interaction" />

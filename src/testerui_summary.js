@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
+import CircularProgress from '@material-ui/core/CircularProgress';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
@@ -37,14 +38,25 @@ class TesterUISummary extends React.Component {
 
   render() {
     let atCows = []
+    const uiRunningTest = this.props.uiRunningTest;
     this.state.astrTestNames.forEach(function(strName, uiIndex) {
       const tResult = this.state.atTestStati[uiIndex];
-      let strImg = this.astrImages[tResult];
+      const strImg = this.astrImages[tResult];
+
+      let tProgress = null;
+      /* Is this the running test? */
+      if( uiIndex==uiRunningTest ) {
+        tProgress = (
+          <CircularProgress size={this.props.strIconSize} className='TesterUISummary_Progress' />
+        );
+      }
+
       atCows.push(
         <div key={uiIndex} className="TesterUISummary_Cow" id="cow_{uiIndex}">
           <Tooltip title={strName} placement="bottom">
-            <IconButton onClick={() => this.handleCowClick(uiIndex)}>
+            <IconButton onClick={() => this.handleCowClick(uiIndex)} style={{position: 'relative'}}>
               <img src={strImg} style={{height: this.props.strIconSize, width: this.props.strIconSize}}/>
+              {tProgress}
             </IconButton>
           </Tooltip>
         </div>

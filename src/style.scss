@@ -30,6 +30,12 @@
   flex-grow: 0;
   flex-shrink: 0;
 }
+.TesterUISummary_Progress {
+  position: absolute;
+
+  /* Display this element above the others. */
+  z-index: 1;
+}
 #TesterTabs {
   margin-top: 1em;
 }
