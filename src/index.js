@@ -12,12 +12,21 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Divider from '@material-ui/core/Divider';
 import Drawer from '@material-ui/core/Drawer';
+import FilledInput from '@material-ui/core/FilledInput';
+import FormControl from '@material-ui/core/FormControl';
+import FormHelperText from '@material-ui/core/FormHelperText';
 import IconButton from '@material-ui/core/IconButton';
+import Input from '@material-ui/core/Input';
+import InputLabel from '@material-ui/core/InputLabel';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
+import MenuItem from '@material-ui/core/MenuItem';
 import MuiThemeProvider from '@material-ui/core/styles/MuiThemeProvider';
+import OutlinedInput from '@material-ui/core/OutlinedInput';
+import Select from '@material-ui/core/Select';
+import SvgIcon from '@material-ui/core/SvgIcon';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
@@ -77,9 +86,45 @@ class TesterApp extends React.Component {
       tRunningTest_uiRunningTest: null,
 
       tUI_CowIconSize: '3em',
-      tUI_fnInteraction: null
+      tUI_tInteraction: null
     };
+
+    /* No socket created yet. */
     this.tSocket = null;
+
+    /* Provide all necessary components to parse JSX.
+     * TODO: But what is necessary?
+     */
+    const atComponents = {
+      'React': React,
+      'ReactDOM': ReactDOM,
+      'Button': Button,
+      'CircularProgress': CircularProgress,
+      'FilledInput': FilledInput,
+      'FormControl': FormControl,
+      'FormHelperText': FormHelperText,
+      'IconButton': IconButton,
+      'Input': Input,
+      'InputLabel': InputLabel,
+      'List': List,
+      'ListItem': ListItem,
+      'ListItemIcon': ListItemIcon,
+      'ListItemText': ListItemText,
+      'MenuItem': MenuItem,
+      'OutlinedInput': OutlinedInput,
+      'Select': Select,
+      'SvgIcon': SvgIcon,
+      'Tabs': Tabs,
+      'Tab': Tab,
+      'Typography': Typography
+    }
+    this.atComponents = atComponents;
+    /* Generate the code to assign the components. */
+    let astrCode = [];
+    for(const strName in atComponents) {
+      astrCode.push('const ' + strName + ' = atComponents.' + strName + ';');
+    }
+    this.strJsxHeaderCode = astrCode.join('\n') + '\n';
   }
 
   socketClosed(tEvent) {
@@ -114,32 +159,70 @@ class TesterApp extends React.Component {
   socketMessage(tEvent) {
     console.debug("WebSocket message received:", tEvent.data);
 
-    let tJson = JSON.parse(tEvent.data);
-    let strId = tJson.id;
-    if( strId=='SetTitle' ) {
-      this.setState({
-        tTest_Title: tJson.title,
-        tTest_Subtitle: tJson.subtitle,
-        tTest_fHasSerial: tJson.hasSerial,
-        tTest_uiFirstSerial: tJson.firstSerial,
-        tTest_uiLastSerial: tJson.lastSerial
-      });
-    } else if( strId=='SetInteraction' ) {
-      /* Translate the received code with babel. */
-      let tBabel = transform(
-        tJson.jsx,
+    try {
+      let tJson = JSON.parse(tEvent.data);
+      let strId = tJson.id;
+      switch(strId) {
+      case 'SetTitle':
+        this.onMessage_SetTitle(tJson);
+        break;
+
+      case 'SetInteraction':
+        this.onMessage_SetInteraction(tJson);
+        break;
+
+      default:
+        console.error('Received unknown message id:', strId);
+      }
+    } catch(error) {
+      console.error("Received malformed JSON:", error, tEvent.data);
+    }
+  }
+
+  onMessage_SetTitle(tJson) {
+    this.setState({
+      tTest_Title: tJson.title,
+      tTest_Subtitle: tJson.subtitle,
+      tTest_fHasSerial: tJson.hasSerial,
+      tTest_uiFirstSerial: tJson.firstSerial,
+      tTest_uiLastSerial: tJson.lastSerial
+    });
+  }
+
+  onMessage_SetInteraction(tJson) {
+    /* Translate the received code with babel. */
+    const strJSX = tJson.jsx;
+    let tBabel = null;
+    try {
+      tBabel = transform(
+        strJSX,
         {
           filename: 'dynamic_loaded.jsx',
           presets: ['es2015', 'stage-2' , 'react']
         }
       );
-      let tCode = tBabel.code + "\nreturn Interaction;\n";
-      let tFn = new Function('React', tCode);
+    } catch(error) {
+      console.error('Failed to translate JSX code:', error, strJSX);
+    }
 
-      this.setState({
-        uiActiveTab: TesterAppTab_Interaction,
-        tUI_fnInteraction: tFn
-      });
+    /* NOTE: this will go into a callback once babel-standalone is updated to @babel/standalone. */
+    if( tBabel!==null ) {
+      let tCode = this.strJsxHeaderCode + tBabel.code + "\nreturn Interaction;\n";
+      try {
+        const tFn = new Function('atComponents', tCode);
+
+        try {
+          const tElement = tFn(this.atComponents);
+          this.setState({
+            uiActiveTab: TesterAppTab_Interaction,
+            tUI_tInteraction: tElement
+          });
+        } catch(error) {
+          console.error('Failed to create the interaction element:', error, tCode);
+        }
+      } catch(error) {
+        console.error('Failed to parse the received code:', error, tCode);
+      }
     }
   }
 
@@ -237,13 +320,20 @@ class TesterApp extends React.Component {
           </div>
         );
       } else if( this.state.tState===TesterAppState_Connected ) {
-        if( this.state.tUI_fnInteraction===null ) {
+        const tElement = this.state.tUI_tInteraction;
+        if( tElement===null ) {
           tTabContents = (
             <Typography align="center" variant="h4" gutterBottom>No interaction...</Typography>
           );
         } else {
-          tTabContents = React.createElement(this.state.tUI_fnInteraction(React));
-          console.debug(tTabContents);
+          try {
+            tTabContents = React.createElement(tElement);
+          } catch(error) {
+            console.error('Failed to instanciate the interaction element:', error);
+            tTabContents = (
+              <Typography align="center" color="error" variant="h4" gutterBottom>Failed to create the interaction element.</Typography>
+            );
+          }
         }
       } else if( this.state.tState===TesterAppState_ConnectionClosed ) {
         tTabContents = (
