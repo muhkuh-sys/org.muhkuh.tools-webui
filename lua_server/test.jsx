@@ -71,6 +71,18 @@ class Interaction extends React.Component {
 
   handleStartButton = () => {
     console.log('Start testing.');
+
+    let atActiveTests = [];
+    for(const c of this.state.strChecked) {
+      atActiveTests.push((c==='1') ? true : false);
+    }
+
+    const tMsg = {
+      serialFirst: this.state.serial_first,
+      numberOfBoards: this.state.number_of_boards,
+      activeTests: atActiveTests
+    };
+    fnSend(tMsg);
   };
 
   render() {
