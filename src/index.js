@@ -8,6 +8,7 @@ import 'typeface-roboto-mono';
 import { transform } from 'babel-standalone';
 import { createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
+import Checkbox from '@material-ui/core/Checkbox';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Divider from '@material-ui/core/Divider';
@@ -104,6 +105,7 @@ class TesterApp extends React.Component {
       'React': React,
       'ReactDOM': ReactDOM,
       'Button': Button,
+      'Checkbox': Checkbox,
       'CircularProgress': CircularProgress,
       'ExpansionPanel': ExpansionPanel,
       'ExpansionPanelSummary': ExpansionPanelSummary,
