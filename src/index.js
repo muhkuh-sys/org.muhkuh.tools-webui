@@ -102,6 +102,7 @@ class TesterApp extends React.Component {
      * TODO: But what is necessary?
      */
     const atComponents = {
+      'fnSend': this.sendInteractionMessage,
       'React': React,
       'ReactDOM': ReactDOM,
       'Button': Button,
@@ -164,7 +165,8 @@ class TesterApp extends React.Component {
 
   socketOpen(tEvent) {
     console.log("WebSocket is open now.");
-    this.tSocket.send('ReqInit')
+    const strJson = JSON.stringify({id: 'ReqInit'});
+    this.tSocket.send(strJson);
     this.setState({ tState: TesterAppState_Connected });
   }
 
@@ -237,6 +239,19 @@ class TesterApp extends React.Component {
       }
     }
   }
+
+  sendInteractionMessage = (atObject) => {
+    /* TODO: The argument must be an object. */
+
+    /* Add the ID to the object. */
+    atObject.id = 'RspInteraction';
+
+    const tSocket = this.tSocket;
+    if( tSocket!==null ) {
+      const strJson = JSON.stringify(atObject);
+      tSocket.send(strJson);
+    }
+  };
 
   handleTabChange = (tEvent, uiValue) => {
     this.setState({ uiActiveTab: uiValue });
