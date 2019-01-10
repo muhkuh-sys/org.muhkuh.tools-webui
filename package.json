@@ -1,7 +1,7 @@
 {
-  "name": "webpack_test",
+  "name": "muhkuh_webui",
   "version": "1.0.0",
-  "description": "try to create a rect app",
+  "description": "A Muhkuh user interface for the browser.",
   "main": "index.js",
   "scripts": {
     "debug": "webpack --mode development && cp src/demo_config/cfg.js dist/",
