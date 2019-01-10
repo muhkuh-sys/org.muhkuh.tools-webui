@@ -4,8 +4,8 @@
   "description": "try to create a rect app",
   "main": "index.js",
   "scripts": {
-    "debug": "webpack --mode development",
-    "release": "webpack --mode production"
+    "debug": "webpack --mode development && cp src/demo_config/cfg.js dist/",
+    "release": "webpack --mode production && cp src/demo_config/cfg.js dist/"
   },
   "author": "",
   "license": "ISC",

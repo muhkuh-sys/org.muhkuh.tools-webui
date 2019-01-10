@@ -59,6 +59,7 @@ const TesterAppTab_Interaction = 0;
 const TesterAppTab_TestLog = 1;
 const TesterAppTab_SystemLog = 2;
 
+
 class TesterApp extends React.Component {
   constructor(props) {
     super(props);
@@ -73,13 +74,20 @@ class TesterApp extends React.Component {
         </div>
       );
     }
+
+    /* Initialize the server URL with NULL if it does not exist. */
+    let _strServerURL = null;
+    if( typeof g_CFG_strServerURL === 'string' ) {
+      _strServerURL = g_CFG_strServerURL;
+    }
+
     this.state = {
       tState: _tState,
       tErrorMessage: _tErrorMessage,
       uiActiveTab: TesterAppTab_Interaction,
       fMenuIsOpen: false,
 
-      strServerURL: 'ws://127.0.0.1:12345',
+      strServerURL: _strServerURL,
       strServerProtocol: 'echo',
 
       tTest_Title: null,
@@ -296,11 +304,10 @@ class TesterApp extends React.Component {
   }
 
   doConnect = () => {
-    var _socket = new WebSocket(this.state.strServerURL, this.state.strServerProtocol);
-    if( _socket===null ) {
+    if( this.state.strServerURL===null ) {
       const tMsg = (
         <div>
-          <Typography align="center" variant="h2" gutterBottom>Failed to create the websocket!</Typography>
+          <Typography align="center" variant="h2" gutterBottom>Failed to locate the server!</Typography>
         </div>
       );
       this.setState({
@@ -308,17 +315,30 @@ class TesterApp extends React.Component {
         tErrorMessage: tMsg
       });
     } else {
-      /* Pass this class to the callback functions as a closure. */
-      var _this = this;
-      _socket.onclose = function(event) { _this.socketClosed(event) };
-      _socket.onerror = function(event) { _this.socketError(event) };
-      _socket.onmessage = function(event) { _this.socketMessage(event) };
-      _socket.onopen = function(event) { _this.socketOpen(event) };
+      var _socket = new WebSocket(this.state.strServerURL, this.state.strServerProtocol);
+      if( _socket===null ) {
+        const tMsg = (
+          <div>
+            <Typography align="center" variant="h2" gutterBottom>Failed to create the websocket!</Typography>
+          </div>
+        );
+        this.setState({
+          tState: TesterAppState_FatalError,
+          tErrorMessage: tMsg
+        });
+      } else {
+        /* Pass this class to the callback functions as a closure. */
+        var _this = this;
+        _socket.onclose = function(event) { _this.socketClosed(event) };
+        _socket.onerror = function(event) { _this.socketError(event) };
+        _socket.onmessage = function(event) { _this.socketMessage(event) };
+        _socket.onopen = function(event) { _this.socketOpen(event) };
 
-      this.tSocket = _socket;
+        this.tSocket = _socket;
 
-      /* The socket is now connecting. */
-      this.setState({ tState: TesterAppState_Connecting });
+        /* The socket is now connecting. */
+        this.setState({ tState: TesterAppState_Connecting });
+      }
     }
   }
 
