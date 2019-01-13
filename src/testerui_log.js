@@ -13,6 +13,7 @@ class TesterUILog extends React.Component {
     }
 
     this.tList = React.createRef();
+    this.tMeasure = React.createRef();
 
     this.state = {
       astrLines: _astrLines
@@ -24,14 +25,17 @@ class TesterUILog extends React.Component {
 
     /* See here for details: https://javascript.info/size-and-scroll */
     const tList = this.tList.current;
-    if( tList!==null ) {
+    const tMeasure = this.tMeasure.current;
+    if( tList!==null && tMeasure!==null ) {
       console.log(iScrollTop, iClientTop, iClientHeight, iOffsetHeight, iScrollHeight);
+      console.log(tMeasure.clientHeight);
     }
   }
 
   render() {
     return (
       <div className='TesterLog' ref={this.tList} style={{height: '10000px'}}>
+        <div style={{visibility: 'hidden', position: 'absolute', top: '0px'}} ref={this.tMeasure}>M</div>
         <div>dummy</div>
       </div>
     );
