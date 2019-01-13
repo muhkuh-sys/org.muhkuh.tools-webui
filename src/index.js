@@ -146,6 +146,9 @@ class TesterApp extends React.Component {
       astrCode.push('const ' + strName + ' = atComponents.' + strName + ';');
     }
     this.strJsxHeaderCode = astrCode.join('\n') + '\n';
+
+    /* This is the current visible child in the tab view. */
+    this.tTabChild = React.createRef();
   }
 
   socketClosed(tEvent) {
@@ -349,6 +352,16 @@ class TesterApp extends React.Component {
     }
   }
 
+  handleScroll = (tEvent) => {
+    const tDiv = tEvent.target;
+    if( tDiv!==null ) {
+      const tChild = this.tTabChild.current;
+      if( tChild!==null ) {
+        tChild.handleScroll(tDiv.scrollTop, tDiv.clientTop, tDiv.clientHeight, tDiv.offsetHeight, tDiv.scrollHeight);
+      }
+    }
+  }
+
   render() {
     let tTabContents = '';
     if( this.state.uiActiveTab===TesterAppTab_Interaction ) {
@@ -398,7 +411,7 @@ class TesterApp extends React.Component {
       }
     } else if( this.state.uiActiveTab===TesterAppTab_TestLog ) {
       tTabContents = (
-        <TesterUILog />
+        <TesterUILog ref={this.tTabChild} />
       );
     } else if( this.state.uiActiveTab===TesterAppTab_SystemLog ) {
       tTabContents = (
@@ -454,7 +467,7 @@ class TesterApp extends React.Component {
                 </Tabs>
               </div>
             </div>
-            <div id='TesterTabContents'>
+            <div id='TesterTabContents' onScroll={this.handleScroll} >
               {tTabContents}
             </div>
           </div>
