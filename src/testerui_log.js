@@ -8,35 +8,132 @@ class TesterUILog extends React.Component {
 
     let _astrLines = [];
     /* Create a bunch of demo messages. */
-    for(let iCnt=1; iCnt<10000; ++iCnt) {
+    for(let iCnt=0; iCnt<10000; ++iCnt) {
       _astrLines.push('Line ' + String(iCnt));
     }
 
     this.tList = React.createRef();
-    this.tMeasure = React.createRef();
+    this.tListInner = React.createRef();
+
+    /* Get the inner height of the window as a hint how many rows should be bufferd. */
+    this.iWindowHeight = window.innerHeight;
+
+    /* The buffer border is the part of the buffer lines which are not visible. */
+    this.uiBufferBorder = 2;
+    /* TODO: The number of buffer lines should be derived from the window size. For a quick test it is fixed. */
+    this.uiBufferLines = 16;
+
+/*
+    this.uiBufferLines = Math.ceil(this.iWindowHeight / _iLineSize);
+    this.uiBufferBottom = this.uiBufferLines;
+*/
+
+    this.astrColors = [
+      'ff0000',
+      '00ff00',
+      '0000ff',
+      'ffff00'
+    ];
+
+    this.uiBufferOldTopLine = null;
+    this.uiBufferOldBottomLine = null;
 
     this.state = {
-      astrLines: _astrLines
+      astrLines: _astrLines,
+      uiNumberOfLogLines: _astrLines.length
     };
   }
 
-  handleScroll(iScrollTop, iClientTop, iClientHeight, iOffsetHeight, iScrollHeight) {
-    console.log('scroll');
 
-    /* See here for details: https://javascript.info/size-and-scroll */
+  handleScroll(iScrollTop, iClientTop, iClientHeight, iOffsetHeight, iScrollHeight) {
+    console.log('--- scroll ---');
+
     const tList = this.tList.current;
-    const tMeasure = this.tMeasure.current;
-    if( tList!==null && tMeasure!==null ) {
+    const tListInner = this.tListInner.current;
+    if( tList!==null && tListInner!==null ) {
+      /* See here for details: https://javascript.info/size-and-scroll */
       console.log(iScrollTop, iClientTop, iClientHeight, iOffsetHeight, iScrollHeight);
-      console.log(tMeasure.clientHeight);
+
+      /* Get the number of log lines. */
+      const uiNumberOfLogLines = this.state.uiNumberOfLogLines;
+
+      /* Get the height of one log line. */
+      const uiLineHeightPx = Math.ceil(iScrollHeight / uiNumberOfLogLines);
+
+      /* Get the top and bottom visible lines. */
+      const visible_top = Math.floor((iScrollTop + iClientTop) / uiLineHeightPx);
+      const visible_bottom = Math.floor((iScrollTop + iClientTop + iClientHeight - 1) / uiLineHeightPx);
+      console.log(iScrollHeight, uiNumberOfLogLines, uiLineHeightPx, visible_top, visible_bottom);
+
+      let uiBufferNewTopLine = null;
+      let uiBufferNewBottomLine = null;
+
+      /* Is the visible area at the start of the log? */
+      if( visible_bottom < (this.uiBufferLines-this.uiBufferBorder) ) {
+        console.log("a");
+        uiBufferNewTopLine = 0;
+        uiBufferNewBottomLine = Math.min(this.uiBufferLines, uiNumberOfLogLines);
+      }
+      else if( visible_top > (uiNumberOfLogLines-this.uiBufferLines+this.uiBufferBorder) ) {
+        console.log("b");
+        uiBufferNewBottomLine = uiNumberOfLogLines - 1;
+        uiBufferNewTopLine = Math.max(uiNumberOfLogLines-this.uiBufferLines, 0);
+      }
+      else if( this.uiBufferOldTopLine!==null && this.uiBufferOldBottomLine!==null && visible_top>=(this.uiBufferOldTopLine+this.uiBufferBorder) && visible_bottom<=(this.uiBufferOldBottomLine-this.uiBufferBorder)) {
+        console.log("c");
+        uiBufferNewTopLine = this.uiBufferOldTopLine;
+        uiBufferNewBottomLine = this.uiBufferOldBottomLine;
+      }
+      else {
+        console.log("d");
+        let d = Math.floor((this.uiBufferLines - (visible_bottom - visible_top)) / 2);
+        uiBufferNewTopLine = Math.max(visible_top-d, 0);
+        uiBufferNewBottomLine = Math.min(uiBufferNewTopLine+this.uiBufferLines, uiNumberOfLogLines);
+      }
+
+      console.log(uiBufferNewTopLine, uiBufferNewBottomLine);
+
+      /* Did something change? */
+      if( (uiBufferNewTopLine!==this.uiBufferOldTopLine) || (uiBufferNewBottomLine!==this.uiBufferOldBottomLine) ) {
+        let aSvg = ["url(\"data:image/svg+xml;utf8,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='"+String(window.innerWidth)+"'%20height='"+String(this.uiBufferLines*uiLineHeightPx)+"'>"];
+        const strFixed = "<rect%20x='0'%20width='"+String(window.innerWidth)+"'%20height='"+String(uiLineHeightPx)+"'%20";
+        for(let uiCnt=uiBufferNewTopLine; uiCnt<=uiBufferNewBottomLine; ++uiCnt) {
+          /* TODO: this is just a demo. Take this from an array. */
+          const strColor = this.astrColors[uiCnt&3];
+          /* TODO: Set the width to 100%? */
+          aSvg.push(strFixed + "y='"+String((uiCnt-uiBufferNewTopLine)*uiLineHeightPx)+"'%20style='fill:%23"+strColor+"'/>");
+        }
+        aSvg.push("</svg>\")");
+
+        const strSvg = aSvg.join('');
+        const strPosY = String(uiBufferNewTopLine*uiLineHeightPx)+'px';
+
+        tListInner.style.backgroundImage = strSvg;
+        tListInner.style.backgroundPositionY = strPosY;
+      }
+
+      this.uiBufferOldTopLine = uiBufferNewTopLine;
+      this.uiBufferOldBottomLine = uiBufferNewBottomLine;
     }
   }
 
+
   render() {
+//    const iTotalSize = this.state.astrLines.length * this.iLineSize;
+//    const strTotalSize = String(iTotalSize) + 'px';
+//  style={{height: strTotalSize}}
+
+    // Get the position of the background image.
+    const strPos = '0 0px';
+
+    // Construct the image.
+//    "<rect x='0' y='2em' width='300' height='1em' style='fill:rgb(255,0,0)' />"
+
+    const strSvg = "url(\"data:image/svg+xml;utf8,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='400'%20height='3em'><rect%20x='0'%20y='0'%20%20width='300'%20height='1em'%20style='fill:rgb(0,0,255)'%20/><rect%20x='0'%20y='1em'%20width='300'%20height='1em'%20style='fill:rgb(0,255,0)'%20/><rect%20x='0'%20y='2em'%20width='300'%20height='1em'%20style='fill:rgb(255,0,0)'%20/></svg>\")";
+
     return (
-      <div className='TesterLog' ref={this.tList} style={{height: '10000px'}}>
-        <div style={{visibility: 'hidden', position: 'absolute', top: '0px'}} ref={this.tMeasure}>M</div>
-        <div>dummy</div>
+      <div className='TesterLog' ref={this.tList}>
+        <div className='TesterLogIn' ref={this.tListInner} style={{backgroundPosition: strPos, backgroundImage: strSvg}}>{this.state.astrLines.join('\n')}</div>
       </div>
     );
   }

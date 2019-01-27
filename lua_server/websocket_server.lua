@@ -10,6 +10,8 @@ local sprot = "echo"
 
 local tActiveConnection = nil
 
+local Server = require 'testerui_server'
+local tServer = Server('Logger')
 
 
 local function sendTitle(tConnection)

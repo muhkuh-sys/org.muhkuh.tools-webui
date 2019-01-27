@@ -55,7 +55,14 @@
   overflow-y: scroll;
 }
 .TesterLog {
-  font-family: "Roboto Mono", monospace;
   background-color: black;
-  color: white;
+}
+.TesterLogIn {
+  font-family: "Roboto Mono", monospace;
+  font-size: medium;
+  background-color: white;
+  background-repeat: no-repeat;
+  background-clip: text;
+  color: rgba(0,0,0,0);
+  white-space: pre;
 }
