@@ -357,7 +357,7 @@ class TesterApp extends React.Component {
     if( tDiv!==null ) {
       const tChild = this.tTabChild.current;
       if( tChild!==null ) {
-        tChild.handleScroll(tDiv.scrollTop, tDiv.clientTop, tDiv.clientHeight, tDiv.offsetHeight, tDiv.scrollHeight);
+        tChild.handleScroll();
       }
     }
   }
