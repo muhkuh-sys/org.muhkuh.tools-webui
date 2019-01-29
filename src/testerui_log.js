@@ -15,13 +15,8 @@ class TesterUILog extends React.Component {
     this.tList = React.createRef();
     this.tListInner = React.createRef();
 
-    /* Get the inner height of the window as a hint how many rows should be bufferd. */
-    this.iWindowHeight = window.innerHeight;
-
     /* The buffer border is the part of the buffer lines which are not visible. */
     this.uiBufferBorder = 2;
-    /* TODO: The number of buffer lines should be derived from the window size. For a quick test it is fixed. */
-    this.uiBufferLines = 16;
 
 /*
     this.uiBufferLines = Math.ceil(this.iWindowHeight / _iLineSize);
@@ -67,6 +62,14 @@ class TesterUILog extends React.Component {
       /* Get the height of one log line. */
       const uiLineHeightPx = Math.ceil(iScrollHeight / uiNumberOfLogLines);
 
+      /* Get the number of buffer lines.
+       * This depends on the window size.
+       */
+      const uiBufferLines = Math.floor(window.innerHeight / uiLineHeightPx);
+
+      /* Get the number of invisible buffer lines. */
+      const uiBufferBorder = this.uiBufferBorder;
+
       /* Get the top and bottom visible lines. */
       const visible_top = Math.floor((iScrollTop + iClientTop) / uiLineHeightPx);
       const visible_bottom = Math.floor((iScrollTop + iClientTop + iClientHeight - 1) / uiLineHeightPx);
@@ -76,33 +79,33 @@ class TesterUILog extends React.Component {
       let uiBufferNewBottomLine = null;
 
       /* Is the visible area at the start of the log? */
-      if( visible_bottom < (this.uiBufferLines-this.uiBufferBorder) ) {
+      if( visible_bottom < (uiBufferLines-uiBufferBorder) ) {
 //        console.log("a");
         uiBufferNewTopLine = 0;
-        uiBufferNewBottomLine = Math.min(this.uiBufferLines, uiNumberOfLogLines);
+        uiBufferNewBottomLine = Math.min(uiBufferLines, uiNumberOfLogLines);
       }
-      else if( visible_top > (uiNumberOfLogLines-this.uiBufferLines+this.uiBufferBorder) ) {
+      else if( visible_top > (uiNumberOfLogLines-uiBufferLines+uiBufferBorder) ) {
 //        console.log("b");
         uiBufferNewBottomLine = uiNumberOfLogLines - 1;
-        uiBufferNewTopLine = Math.max(uiNumberOfLogLines-this.uiBufferLines, 0);
+        uiBufferNewTopLine = Math.max(uiNumberOfLogLines-uiBufferLines, 0);
       }
-      else if( this.uiBufferOldTopLine!==null && this.uiBufferOldBottomLine!==null && visible_top>=(this.uiBufferOldTopLine+this.uiBufferBorder) && visible_bottom<=(this.uiBufferOldBottomLine-this.uiBufferBorder)) {
+      else if( this.uiBufferOldTopLine!==null && this.uiBufferOldBottomLine!==null && visible_top>=(this.uiBufferOldTopLine+uiBufferBorder) && visible_bottom<=(this.uiBufferOldBottomLine-uiBufferBorder)) {
 //        console.log("c");
         uiBufferNewTopLine = this.uiBufferOldTopLine;
         uiBufferNewBottomLine = this.uiBufferOldBottomLine;
       }
       else {
 //        console.log("d");
-        let d = Math.floor((this.uiBufferLines - (visible_bottom - visible_top)) / 2);
+        let d = Math.floor((uiBufferLines - (visible_bottom - visible_top)) / 2);
         uiBufferNewTopLine = Math.max(visible_top-d, 0);
-        uiBufferNewBottomLine = Math.min(uiBufferNewTopLine+this.uiBufferLines, uiNumberOfLogLines);
+        uiBufferNewBottomLine = Math.min(uiBufferNewTopLine+uiBufferLines, uiNumberOfLogLines);
       }
 
 //      console.log(uiBufferNewTopLine, uiBufferNewBottomLine);
 
       /* Did something change? */
       if( (uiBufferNewTopLine!==this.uiBufferOldTopLine) || (uiBufferNewBottomLine!==this.uiBufferOldBottomLine) ) {
-        let aSvg = ["url(\"data:image/svg+xml;utf8,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='"+String(window.innerWidth)+"'%20height='"+String(this.uiBufferLines*uiLineHeightPx)+"'>"];
+        let aSvg = ["url(\"data:image/svg+xml;utf8,<svg%20xmlns='http://www.w3.org/2000/svg'%20width='"+String(window.innerWidth)+"'%20height='"+String(uiBufferLines*uiLineHeightPx)+"'>"];
         const strFixed = "<rect%20x='0'%20width='"+String(window.innerWidth)+"'%20height='"+String(uiLineHeightPx)+"'%20";
         for(let uiCnt=uiBufferNewTopLine; uiCnt<=uiBufferNewBottomLine; ++uiCnt) {
           /* TODO: this is just a demo. Take this from an array. */
