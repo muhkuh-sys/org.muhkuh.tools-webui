@@ -128,6 +128,22 @@ class TesterUILog extends React.Component {
   }
 
 
+  handleScrollThis = () => {
+    this.handleScroll();
+  }
+
+
+  componentDidMount() {
+    window.addEventListener("resize", this.handleScrollThis);
+    this.handleScroll();
+  }
+
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.handleScrollThis);
+  }
+
+
   render() {
     return (
       <div className='TesterLog' ref={this.tList}>
