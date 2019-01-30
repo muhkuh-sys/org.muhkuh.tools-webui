@@ -81,6 +81,13 @@ class TesterApp extends React.Component {
       _strServerURL = g_CFG_strServerURL;
     }
 
+    let _astrColors = [
+      'ff0000',
+      '00ff00',
+      '0000ff',
+      'ffff00'
+    ];
+
     this.state = {
       tState: _tState,
       tErrorMessage: _tErrorMessage,
@@ -100,7 +107,11 @@ class TesterApp extends React.Component {
       tRunningTest_uiRunningTest: null,
 
       tUI_CowIconSize: '3em',
-      tUI_tInteraction: null
+      tUI_tInteraction: null,
+
+      strLogLines: '',
+      auiLogColors: [],
+      astrLogColors: _astrColors
     };
 
     /* No socket created yet. */
@@ -285,9 +296,29 @@ class TesterApp extends React.Component {
     }
   }
 
+  appendDemoLogLine() {
+    console.log('tick');
+    let strLogLines = this.state.strLogLines;
+    let auiLogColors = this.state.auiLogColors;
+
+    strLogLines += 'Line ' + String(this.demo_counter) + '\n';
+    auiLogColors.push(this.demo_counter & 3);
+
+    this.demo_counter += 1;
+
+    this.setState(state => ({
+      strLogLines: strLogLines,
+      auiLogColors: auiLogColors
+    }));
+  }
+
   handleCowClick = (uiIndex) => {
     console.log("haha");
     console.log(uiIndex);
+
+    /* Start a demo timer for new log lines. */
+    this.demo_counter = 0;
+    this.interval = setInterval(() => this.appendDemoLogLine(), 100);
 
     this.setState({
       tRunningTest_uiRunningTest: uiIndex
@@ -352,6 +383,18 @@ class TesterApp extends React.Component {
     }
   }
 
+
+  doCancelTest = () => {
+    console.log('Cancel test');
+
+    clearInterval(this.interval);
+
+    this.setState({
+      tRunningTest_uiRunningTest: null
+    });
+  }
+
+
   handleScroll = (tEvent) => {
     const tDiv = tEvent.target;
     if( tDiv!==null ) {
@@ -411,7 +454,7 @@ class TesterApp extends React.Component {
       }
     } else if( this.state.uiActiveTab===TesterAppTab_TestLog ) {
       tTabContents = (
-        <TesterUILog ref={this.tTabChild} />
+        <TesterUILog ref={this.tTabChild} strLogLines={this.state.strLogLines} auiLogColors={this.state.auiLogColors} astrLogColors={this.state.astrLogColors} uiLogScrollPosition={this.uiLogScrollPosition}/>
       );
     } else if( this.state.uiActiveTab===TesterAppTab_SystemLog ) {
       tTabContents = (
@@ -422,7 +465,7 @@ class TesterApp extends React.Component {
     /* Create the application menu. */
     let tAppMenu = (
       <List>
-        <ListItem button key='Cancel test' disabled={this.state.tRunningTest_uiRunningTest===null}>
+        <ListItem button key='Cancel test' disabled={this.state.tRunningTest_uiRunningTest===null} onClick={this.doCancelTest}>
           <ListItemIcon><CancelIcon/></ListItemIcon>
           <ListItemText primary='Cancel test'/>
         </ListItem>
@@ -444,7 +487,7 @@ class TesterApp extends React.Component {
           <div id='TesterApp'>
             <div id='TesterHeader'>
               <div id='TesterUIHoverButtons'>
-                <Button variant="extendedFab" aria-label="Cancel test" disabled={this.state.tRunningTest_uiRunningTest===null}>
+                <Button variant="extendedFab" aria-label="Cancel test" disabled={this.state.tRunningTest_uiRunningTest===null} onClick={this.doCancelTest}>
                   <CancelIcon/>
                   Cancel test
                 </Button>
