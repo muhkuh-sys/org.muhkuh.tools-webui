@@ -33,7 +33,7 @@ class TesterUILog extends React.Component {
       const iScrollTop = tTabContents.scrollTop;
       const iClientTop = tTabContents.clientTop
       const iClientHeight = tTabContents.clientHeight;
-      const iScrollHeight = tTabContents.scrollHeight;
+      const iScrollHeight = tListInner.clientHeight;
 //      console.log(iScrollTop, iClientTop, iClientHeight, iScrollHeight);
 
       /* Get the number of log lines. */
@@ -44,6 +44,7 @@ class TesterUILog extends React.Component {
       } else {
         /* Get the height of one log line. */
         const uiLineHeightPx = Math.ceil(iScrollHeight / uiNumberOfLogLines);
+
 //        const uiLineHeightPx = this.uiLineHeightPx;
 
         /* Get the number of buffer lines.
