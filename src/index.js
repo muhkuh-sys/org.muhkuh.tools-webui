@@ -81,13 +81,6 @@ class TesterApp extends React.Component {
       _strServerURL = g_CFG_strServerURL;
     }
 
-    let _astrColors = [
-      'ff0000',
-      '00ff00',
-      '0000ff',
-      'ffff00'
-    ];
-
     this.state = {
       tState: _tState,
       tErrorMessage: _tErrorMessage,
@@ -107,12 +100,11 @@ class TesterApp extends React.Component {
       tRunningTest_uiRunningTest: null,
 
       tUI_CowIconSize: '3em',
-      tUI_tInteraction: null,
-
-      strLogLines: '',
-      auiLogColors: [],
-      astrLogColors: _astrColors
+      tUI_tInteraction: null
     };
+
+    /* All log lines combined in one string. */
+    this.strLogLines = '';
 
     /* No socket created yet. */
     this.tSocket = null;
@@ -149,7 +141,7 @@ class TesterApp extends React.Component {
       'Tab': Tab,
       'TextField': TextField,
       'Typography': Typography
-    }
+    };
     this.atComponents = atComponents;
     /* Generate the code to assign the components. */
     let astrCode = [];
@@ -158,8 +150,14 @@ class TesterApp extends React.Component {
     }
     this.strJsxHeaderCode = astrCode.join('\n') + '\n';
 
-    /* This is the current visible child in the tab view. */
-    this.tTabChild = React.createRef();
+    /* This is a reference to the log. */
+    this.tTesterLog = React.createRef();
+
+    /* This is the scroll position for all tester tabs. */
+    this.auiScrollPosition = [0, 0, 0];
+
+    /* TODO: remove this. */
+    this.demo_counter = 0;
   }
 
   socketClosed(tEvent) {
@@ -297,27 +295,22 @@ class TesterApp extends React.Component {
   }
 
   appendDemoLogLine() {
-    console.log('tick');
-    let strLogLines = this.state.strLogLines;
-    let auiLogColors = this.state.auiLogColors;
-
-    strLogLines += 'Line ' + String(this.demo_counter) + '\n';
-    auiLogColors.push(this.demo_counter & 3);
-
+    /* Create a new demo line. */
+    const strNewLines = 'Line ' + String(this.demo_counter) + '\n';
     this.demo_counter += 1;
 
-    this.setState(state => ({
-      strLogLines: strLogLines,
-      auiLogColors: auiLogColors
-    }));
+    /* Append the new line to the log. */
+    this.strLogLines += strNewLines;
+
+    /* Append the new line to the display if it is visible. */
+    const tTesterLog = this.tTesterLog.current;
+    if( tTesterLog!==null ) {
+      tTesterLog.append(strNewLines);
+    }
   }
 
   handleCowClick = (uiIndex) => {
-    console.log("haha");
-    console.log(uiIndex);
-
-    /* Start a demo timer for new log lines. */
-    this.demo_counter = 0;
+//    this.appendDemoLogLine();
     this.interval = setInterval(() => this.appendDemoLogLine(), 100);
 
     this.setState({
@@ -397,17 +390,17 @@ class TesterApp extends React.Component {
 
   handleScroll = (tEvent) => {
     const tDiv = tEvent.target;
+    const uiActiveTab = this.state.uiActiveTab;
     if( tDiv!==null ) {
-      const tChild = this.tTabChild.current;
-      if( tChild!==null ) {
-        tChild.handleScroll();
-      }
+      this.auiScrollPosition[uiActiveTab] = tDiv.scrollTop;
     }
   }
 
+
   render() {
     let tTabContents = '';
-    if( this.state.uiActiveTab===TesterAppTab_Interaction ) {
+    const uiActiveTab = this.state.uiActiveTab;
+    if( uiActiveTab===TesterAppTab_Interaction ) {
       if( this.state.tState===TesterAppState_Idle ) {
         tTabContents = (
           <div>
@@ -452,11 +445,11 @@ class TesterApp extends React.Component {
           </div>
         );
       }
-    } else if( this.state.uiActiveTab===TesterAppTab_TestLog ) {
+    } else if( uiActiveTab===TesterAppTab_TestLog ) {
       tTabContents = (
-        <TesterUILog ref={this.tTabChild} strLogLines={this.state.strLogLines} auiLogColors={this.state.auiLogColors} astrLogColors={this.state.astrLogColors} uiLogScrollPosition={this.uiLogScrollPosition}/>
+        <TesterUILog ref={this.tTesterLog} strLogLines={this.strLogLines} uiInitialScrollPosition={this.auiScrollPosition[TesterAppTab_TestLog]}/>
       );
-    } else if( this.state.uiActiveTab===TesterAppTab_SystemLog ) {
+    } else if( uiActiveTab===TesterAppTab_SystemLog ) {
       tTabContents = (
         <Typography align="center" variant="h2" gutterBottom>System log</Typography>
       );
@@ -503,7 +496,7 @@ class TesterApp extends React.Component {
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiFirstSerial={this.state.tTest_uiFirstSerial} uiLastSerial={this.state.tTest_uiLastSerial} />
               <TesterUISummary fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
               <div id='TesterTabs'>
-                <Tabs value={this.state.uiActiveTab} onChange={this.handleTabChange}>
+                <Tabs value={uiActiveTab} onChange={this.handleTabChange}>
                   <Tab label="Interaction" />
                   <Tab label="Test Log" />
                   <Tab label="System Log" />
