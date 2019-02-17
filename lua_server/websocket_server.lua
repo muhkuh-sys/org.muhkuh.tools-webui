@@ -98,6 +98,22 @@ end
 
 
 
+-- Set the logger level from the command line options.
+local strLogLevel = 'debug'
+local cLogWriter = require 'log.writer.filter'.new(
+  strLogLevel,
+  require 'log.writer.console'.new()
+)
+local cLogWriterSystem = require 'log.writer.prefix'.new('[System] ', cLogWriter)
+local cLog = require "log".new(
+  -- maximum log level
+  "trace",
+  cLogWriterSystem,
+  -- Formatter
+  require "log.formatter.format".new()
+)
+cLog.info('Start')
+
 local server = ws.new()
 server:bind(wsurl, sprot, function(self, err)
   if err then
@@ -117,5 +133,174 @@ server:bind(wsurl, sprot, function(self, err)
     cli:handshake(connectionHandshake)
   end)
 end)
+
+------------------------------------------------------------------------------
+--
+-- Process test
+--
+local class = require 'pl.class'
+local Process = class()
+
+function Process:_init(strCommand, astrArguments)
+  self.strCommand = strCommand
+  self.astrArguments = astrArguments
+
+  self.pl = require'pl.import_into'()
+  self.uv = require 'lluv'
+
+  self.STATE_Idle = 0
+  self.STATE_Running = 1
+  self.STATE_RequestedShutdown = 2
+  self.STATE_Killing = 3
+  self.STATE_Terminated = 4
+
+  self.tState = self.STATE_Idle
+  self.tProc = nil
+  self.tPipeStdOut = nil
+  self.tPipeStdErr = nil
+  self.fRequestedShutdown = false
+  self.tShutdownTimer = nil
+end
+
+
+function Process:run()
+  local tResult
+
+  if (self.tState==self.STATE_Idle) or (self.tState==self.STATE_Terminated) then
+    local this = self
+
+    -- Create pipes for the new process.
+    local tPipeStdOut = uv.pipe(false)
+    local tPipeStdErr = uv.pipe(false)
+
+    -- Start a new process.
+    local tProc = uv.spawn(
+      {
+        file = self.strCommand,
+        args = self.astrArguments,
+        stdio = {
+          -- STDIN
+          {},
+          -- STDOUT
+          {
+            flags = uv.CREATE_PIPE + uv.WRITABLE_PIPE,
+            stream = tPipeStdOut
+          },
+          -- STDERR
+          {
+            flags = uv.CREATE_PIPE + uv.WRITABLE_PIPE,
+            stream = tPipeStdErr
+          }
+        }
+      },
+      function(tHandle, strError, tExitStatus, tTermSignal)
+        this:onClose(tHandle, strError, tExitStatus, tTermSignal)
+      end
+    )
+    tPipeStdOut:start_read(function(tHandle, strError, strData) this:onStdOut(tHandle, strError, strData) end)
+    tPipeStdErr:start_read(function(tHandle, strError, strData) this:onStdErr(tHandle, strError, strData) end)
+
+    self.tProc = tProc
+    self.tPipeStdOut = tPipeStdOut
+    self.tPipeStdErr = tPipeStdErr
+
+    self.tState = self.STATE_Running
+
+    tResult = true
+  else
+    print('Not starting as not idle or terminated.')
+  end
+
+  return tResult
+end
+
+
+
+function Process:shutdown()
+  self.fRequestedShutdown = true
+  self.tProc:kill(uv.SIGHUP)
+
+  self.tShutdownTimer = self.uv.timer():start(2000, function(tHandle)
+    tHandle:close()
+    self.tShutdownTimer = nil
+    self.tProc:kill(uv.SIGKILL)
+  end)
+end
+
+
+
+function Process:onClose(tHandle, err, exit_status, term_signal)
+  if tHandle==self.tProc then
+    tHandle:close()
+
+    -- Stop 
+    local tShutdownTimer = self.tShutdownTimer
+    if tShutdownTimer~=nil then
+      tShutdownTimer:close()
+      self.tShutdownTimer = nil
+    end
+
+    self.tState = self.STATE_Terminated
+
+    print('Process terminated:', err, exit_status, term_signal)
+
+    -- Did the process terminate on request?
+    if self.fRequestedShutdown==false then
+      -- No -> restart the process.
+      print('Restarting')
+      self:run()
+    end
+  else
+    print('Unknown process handle')
+  end
+end
+
+
+
+function Process:onStdOut(tHandle, strError, strData)
+  if tHandle==self.tPipeStdOut then
+    if strError==nil then
+      print('STDOUT:', strData)
+    else
+      print('Closing STDOUT:', strError)
+      tHandle:close()
+      self.tPipeStdOut = nil
+    end
+  else
+    print('Invalid handle for STDOUT.')
+  end
+end
+
+
+
+function Process:onStdErr(tHandle, strError, strData)
+  if tHandle==self.tPipeStdErr then
+    if strError==nil then
+      print('STDERR:', strData)
+    else
+      print('Closing STDERR:', strError)
+      tHandle:close()
+      self.tPipeStdErr = nil
+    end
+  else
+    print('Invalid handle for STDERR.')
+  end
+end
+
+
+
+-- Create a new process.
+local strLuaInterpreter = uv.exepath()
+cLog.debug('LUA interpreter: %s', strLuaInterpreter)
+local tTestProc = Process(strLuaInterpreter, {'server.lua'})
+tTestProc:run()
+
+
+local function OnCancelAll()
+  print('Cancel pressed!')
+  tTestProc:shutdown()
+end
+uv.signal():start(uv.SIGINT, OnCancelAll)
+
 
 uv.run(debug.traceback)
