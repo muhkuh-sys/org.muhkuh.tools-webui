@@ -2,9 +2,8 @@ local class = require 'pl.class'
 local Process = class()
 
 
-function Process:_init(strCommand, astrArguments)
-  self.strCommand = strCommand
-  self.astrArguments = astrArguments
+function Process:_init(tLog)
+  self.tLog = tLog
 
   self.pl = require'pl.import_into'()
   self.uv = require 'lluv'
@@ -25,7 +24,7 @@ end
 
 
 
-function Process:run()
+function Process:run(strCommand, astrArguments)
   local tResult
 
   if (self.tState==self.STATE_Idle) or (self.tState==self.STATE_Terminated) then
@@ -39,8 +38,8 @@ function Process:run()
     -- Start a new process.
     local tProc = uv.spawn(
       {
-        file = self.strCommand,
-        args = self.astrArguments,
+        file = strCommand,
+        args = astrArguments,
         stdio = {
           -- STDIN
           {},
