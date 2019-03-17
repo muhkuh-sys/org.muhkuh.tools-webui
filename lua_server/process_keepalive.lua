@@ -8,15 +8,13 @@ end
 
 
 
-function ProcessKeepalive:onCrash(strError, iExitStatus, uiTermSignal)
-  -- Restart the process.
-  print('Restarting')
-  self:run()
-end
-
-
-
 function ProcessKeepalive:onClose(strError, iExitStatus, uiTermSignal)
+  -- Was a shutdown requested?
+  if self.fRequestedShutdown==false then
+    -- No -> restart the process.
+    print('Restarting')
+    self:run()
+  end
 end
 
 

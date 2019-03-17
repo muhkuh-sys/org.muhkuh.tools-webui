@@ -106,22 +106,10 @@ function Process:_onTerminate(tHandle, err, exit_status, term_signal)
 
     print('Process terminated:', err, exit_status, term_signal)
 
-    -- Did the process terminate on request?
-    if self.fRequestedShutdown==false then
-      -- No, the process crashed.
-      self:onCrash(err, exit_status, term_signal)
-    else
-      self:onClose(err, exit_status, term_signal)
-    end
+    self:onClose(err, exit_status, term_signal)
   else
     print('Unknown process handle')
   end
-end
-
-
-
-function Process:onCrash(strError, iExitStatus, uiTermSignal)
-  -- Do nothing by default.
 end
 
 
