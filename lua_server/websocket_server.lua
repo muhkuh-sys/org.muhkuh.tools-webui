@@ -4,9 +4,17 @@ local json = require 'dkjson'
 local pl = require'pl.import_into'()
 local uv  = require"lluv"
 local ws  = require"lluv.websocket"
+uv.poll_zmq = require "lluv.poll_zmq"
 
-local wsurl = "ws://127.0.0.1:12345"
-local sprot = "echo"
+-- This is the port for the websocket.
+local usWebsocketPort = 12345
+
+-- Build the websocket URL. The protocol is "ws", so no encryption is used. The host is "*", so any interface works.
+local strWebsocketURL = string.format('ws://*:%d', usWebsocketPort);
+local strWebsocketProtocol = "muhkuh"
+
+-- This number is used as the serial number in the SSDP responses.
+local ulSystemSerial = 4321
 
 local tActiveConnection = nil
 
@@ -105,17 +113,17 @@ local cLogWriter = require 'log.writer.filter'.new(
   require 'log.writer.console'.new()
 )
 local cLogWriterSystem = require 'log.writer.prefix'.new('[System] ', cLogWriter)
-local cLog = require "log".new(
+local tLog = require "log".new(
   -- maximum log level
   "trace",
   cLogWriterSystem,
   -- Formatter
   require "log.formatter.format".new()
 )
-cLog.info('Start')
+tLog.info('Start')
 
 local server = ws.new()
-server:bind(wsurl, sprot, function(self, err)
+server:bind(strWebsocketURL, strWebsocketProtocol, function(self, err)
   if err then
     print("Server error:", err)
     tActiveConnection = nil
@@ -136,17 +144,23 @@ end)
 
 
 local ProcessKeepalive = require 'process_keepalive'
+local ProcessZmq = require 'process_zmq'
 
+local strLuaInterpreter = uv.exepath()
 
 -- Create a new process.
-local strLuaInterpreter = uv.exepath()
-cLog.debug('LUA interpreter: %s', strLuaInterpreter)
-local tTestProc = ProcessKeepalive(strLuaInterpreter, {'server.lua'})
-tTestProc:run()
+tLog.debug('LUA interpreter: %s', strLuaInterpreter)
+local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, {'server.lua', tostring(usWebsocketPort), tostring(ulSystemSerial)}, 3)
+tServerProc:run()
 
+
+-- Create a new ZMQ process.
+local tTestProc = ProcessZmq(tLog, strLuaInterpreter, {'dummy_test.lua', '${ZMQPORT}'})
+tTestProc:run()
 
 local function OnCancelAll()
   print('Cancel pressed!')
+  tServerProc:shutdown()
   tTestProc:shutdown()
 end
 uv.signal():start(uv.SIGINT, OnCancelAll)

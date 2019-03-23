@@ -24,7 +24,7 @@ end
 
 
 
-function Process:run(strCommand, astrArguments)
+function Process:run_process(strCommand, astrArguments)
   local tResult
 
   if (self.tState==self.STATE_Idle) or (self.tState==self.STATE_Terminated) then
@@ -70,7 +70,7 @@ function Process:run(strCommand, astrArguments)
 
     tResult = true
   else
-    print('Not starting as not idle or terminated.')
+    self.tLog.error('Not starting as not idle or terminated.')
   end
 
   return tResult
@@ -104,11 +104,11 @@ function Process:_onTerminate(tHandle, err, exit_status, term_signal)
 
     self.tState = self.STATE_Terminated
 
-    print('Process terminated:', err, exit_status, term_signal)
+    self.tLog.notice('Process terminated: %s / %s / %s', tostring(err), tostring(exit_status), tostring(term_signal))
 
     self:onClose(err, exit_status, term_signal)
   else
-    print('Unknown process handle')
+    self.tLog.error('Unknown process handle')
   end
 end
 
@@ -125,12 +125,12 @@ function Process:_onStdOut(tHandle, strError, strData)
     if strError==nil then
       self:onStdOut(strData)
     else
-      print('Closing STDOUT:', strError)
+      self.tLog.debug('Closing STDOUT: %s', tostring(strError))
       tHandle:close()
       self.tPipeStdOut = nil
     end
   else
-    print('Invalid handle for STDOUT.')
+    self.tLog.error('Invalid handle for STDOUT.')
   end
 end
 
@@ -141,12 +141,12 @@ function Process:_onStdErr(tHandle, strError, strData)
     if strError==nil then
       self:onStdErr(strData)
     else
-      print('Closing STDERR:', strError)
+      self.tLog.debug('Closing STDERR: %s', tostring(strError))
       tHandle:close()
       self.tPipeStdErr = nil
     end
   else
-    print('Invalid handle for STDERR.')
+    self.tLog.error('Invalid handle for STDERR.')
   end
 end
 
