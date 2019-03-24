@@ -104,6 +104,8 @@ class TesterApp extends React.Component {
     };
 
     /* All log lines combined in one string. */
+    this.uiLogFilterLevel = 8;
+    this.astrLevelLogLines = [];
     this.strLogLines = '';
 
     /* No socket created yet. */
@@ -205,6 +207,10 @@ class TesterApp extends React.Component {
         this.onMessage_SetInteraction(tJson);
         break;
 
+      case 'Log':
+        this.onMessage_Log(tJson);
+        break;
+
       default:
         console.error('Received unknown message id:', strId);
       }
@@ -258,6 +264,29 @@ class TesterApp extends React.Component {
         console.error('Failed to parse the received code:', error, tCode);
       }
     }
+  }
+
+  onMessage_Log(tJson) {
+    const uiLogFilterLevel = this.uiLogFilterLevel;
+    let astrLevelLogLines = this.astrLevelLogLines;
+    const tTesterLog = this.tTesterLog.current;
+
+    /* Loop over all new lines. */
+    tJson.lines.forEach(function(strLine, uiIndex) {
+      /* Append the new line to the log. */
+      astrLevelLogLines.push(strLine)
+
+      let a = strLine.split(',', 2)
+      let n = parseInt(a[0])
+      if( n<=uiLogFilterLevel ) {
+        this.strLogLines += a[1];
+
+        /* Append the new line to the display if it is visible. */
+        if( tTesterLog!==null ) {
+          tTesterLog.append(strNewLines);
+        }
+      }
+    }, this);
   }
 
   sendInteractionMessage = (atObject) => {

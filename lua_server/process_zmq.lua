@@ -2,8 +2,9 @@ local class = require 'pl.class'
 local Process = require 'process'
 local ProcessZmq = class(Process)
 
-function ProcessZmq:_init(tLog, strCommand, astrArguments)
+function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments)
   self:super(tLog)
+  self.tLogTest = tLogTest
 
   self.strCommand = strCommand
   self.astrArguments = astrArguments
@@ -48,10 +49,23 @@ end
 
 function ProcessZmq:__onZmqReceive(tHandle, strErr, tSocket)
   if strErr then
-    return handle:close()
-  end
+    return tHandle:close()
+  else
+    local strMessage = tSocket:recv()
 
-  print('**** ZMQ recv:', tSocket:recv())
+    -- The first 3 chars are the message type.
+    local strLogLevel, strLogMessage = string.match(strMessage, '^LOG(%d+),(.*)')
+    if strLogLevel~=nil and strLogMessage~=nil then
+      local uiLogLevel = tonumber(strLogLevel)
+      if uiLogLevel==nil then
+        print(string.format('Invalid LOG message received: "%s".', strMessage))
+      else
+        self.tLogTest.log(uiLogLevel, strLogMessage)
+      end
+    else
+      print('**** ZMQ received unknown message:', strMessage)
+    end
+  end
 end
 
 
@@ -102,13 +116,13 @@ end
 
 
 function ProcessZmq:onStdOut(strData)
-  print('ZMQ STDOUT:', strData)
+  self.tLogTest.info(strData)
 end
 
 
 
 function ProcessZmq:onStdErr(strData)
-  print('ZMQ STDERR:', strData)
+  self.tLogTest.error(strData)
 end
 
 
