@@ -56,6 +56,10 @@ function ProcessZmq:__onZmqReceive(tHandle, strErr, tSocket)
     -- The first 3 chars are the message type.
     local strLogLevel, strLogMessage = string.match(strMessage, '^LOG(%d+),(.*)')
     if strLogLevel~=nil and strLogMessage~=nil then
+      -- Add a newline if it is not already there.
+      if string.sub(strLogMessage, -1)~='\n' then
+        strLogMessage = strLogMessage .. '\n'
+      end
       local uiLogLevel = tonumber(strLogLevel)
       if uiLogLevel==nil then
         print(string.format('Invalid LOG message received: "%s".', strMessage))
