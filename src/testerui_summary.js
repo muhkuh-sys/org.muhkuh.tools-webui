@@ -9,6 +9,7 @@ import Typography from '@material-ui/core/Typography';
 import ImgCowOk from './images/muhkuh_test_ok.svg';
 import ImgCowErr from './images/muhkuh_test_failed.svg';
 import ImgCowIdle from './images/muhkuh_untested.svg';
+import ImgCowDisabled from './images/muhkuh_disabled.svg';
 
 
 class TesterUISummary extends React.Component {
@@ -18,16 +19,15 @@ class TesterUISummary extends React.Component {
     this.TESTRESULT_Ok = 0;
     this.TESTRESULT_Error = 1;
     this.TESTRESULT_Idle = 2;
+    this.TESTRESULT_Disabled = 3;
 
-    this.state = {
-      astrTestNames: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
-      atTestStati: [0, 1, 2, 0, 1, 2, 0, 1]
-    };
+    this.state = {};
 
     let astrImages = {
       0: ImgCowOk,
       1: ImgCowErr,
-      2: ImgCowIdle
+      2: ImgCowIdle,
+      3: ImgCowDisabled
     };
     this.astrImages = astrImages;
   }
@@ -39,8 +39,8 @@ class TesterUISummary extends React.Component {
   render() {
     let atCows = []
     const uiRunningTest = this.props.uiRunningTest;
-    this.state.astrTestNames.forEach(function(strName, uiIndex) {
-      const tResult = this.state.atTestStati[uiIndex];
+    this.props.astrTestNames.forEach(function(strName, uiIndex) {
+      const tResult = this.props.atTestStati[uiIndex];
       const strImg = this.astrImages[tResult];
 
       let tProgress = null;

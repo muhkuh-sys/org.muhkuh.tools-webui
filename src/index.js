@@ -95,6 +95,8 @@ class TesterApp extends React.Component {
       tTest_fHasSerial: false,
       tTest_uiFirstSerial: 0,
       tTest_uiLastSerial: 0,
+      tTest_astrTestNames: [],
+      tTest_atTestStati: [],
 
       tRunningTest_uiCurrentSerial: null,
       tRunningTest_uiRunningTest: null,
@@ -203,6 +205,10 @@ class TesterApp extends React.Component {
         this.onMessage_SetTitle(tJson);
         break;
 
+      case 'SetTestNames':
+        this.onMessage_setTestNames(tJson);
+        break;
+
       case 'SetInteraction':
         this.onMessage_SetInteraction(tJson);
         break;
@@ -227,6 +233,29 @@ class TesterApp extends React.Component {
       tTest_uiFirstSerial: tJson.firstSerial,
       tTest_uiLastSerial: tJson.lastSerial
     });
+  }
+
+  onMessage_setTestNames(tJson) {
+    /* Check the JSON. The test names must be an array. */
+    if('testNames' in tJson) {
+      const astrNames = tJson.testNames;
+      if( Array.isArray(astrNames)==true ) {
+        /* Copy all names and set the state to "idle". */
+        let astrTestNames = [];
+        let atTestStati = [];
+        const tDefaultState = 2;
+
+        astrNames.forEach(function(strName, uiIndex) {
+          astrTestNames.push(strName);
+          atTestStati.push(tDefaultState);
+        }, this);
+
+        this.setState({
+          tTest_astrTestNames: astrTestNames,
+          tTest_atTestStati: atTestStati
+        });
+      }
+    }
   }
 
   onMessage_SetInteraction(tJson) {
@@ -523,7 +552,7 @@ class TesterApp extends React.Component {
                 </div>
               </Drawer>
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiFirstSerial={this.state.tTest_uiFirstSerial} uiLastSerial={this.state.tTest_uiLastSerial} />
-              <TesterUISummary fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
+              <TesterUISummary astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
               <div id='TesterTabs'>
                 <Tabs value={uiActiveTab} onChange={this.handleTabChange}>
                   <Tab label="Interaction" />

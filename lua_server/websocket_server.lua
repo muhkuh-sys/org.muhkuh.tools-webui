@@ -40,6 +40,7 @@ local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, usWebsocketPort)
 webui_buffer:setTitle('NXHX90-R1', '7730.100')
 webui_buffer:setSerials(true, 20000, 20009)
+webui_buffer:setTestNames({'SDRAM', 'SPI Flash', 'Ethernet', 'FDL'})
 webui_buffer:setInteraction(strJsx)
 local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()

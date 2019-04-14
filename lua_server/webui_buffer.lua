@@ -24,6 +24,9 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
   self.uiFirstSerial = 0
   self.uiLastSerial = 0
 
+  self.astrTestNames = {}
+  self.astrTestStati = {}
+
   self.astrLogMessages = {}
   self.uiSyncedLogIndex = 0
 
@@ -132,6 +135,30 @@ end
 
 
 
+function WebUiBuffer:setTestNames(astrTestNames)
+  local strType = type(astrTestNames)
+  if strType~='table' then
+    self.tLogWebUi.error('The argument to "setTestNames" must be an array. Here it is %s.', strType)
+  else
+    -- Copy the test names and set the state to the default.
+    local astrNames = {}
+    local astrStati = {}
+    for _,tName in ipairs(astrTestNames) do
+      table.insert(astrNames, tostring(tName))
+      table.insert(astrStati, 'idle')
+    end
+
+    -- Accept the new values.
+    self.astrTestNames = astrNames
+    self.astrTestStati = astrStati
+
+    -- Push the new values to the UI if there is a connection.
+    self:__sendTestNames()
+  end
+end
+
+
+
 function WebUiBuffer:setInteraction(strJsx)
   if strJsx==nil then
     strJsx = ''
@@ -165,6 +192,21 @@ function WebUiBuffer:__sendTitle()
       hasSerial = self.fHasSerial,
       firstSerial = self.uiFirstSerial,
       lastSerial = self.uiLastSerial
+    }
+    local strJson = self.json.encode(tMessage)
+    tConnection:write(strJson)
+  end
+end
+
+
+
+function WebUiBuffer:__sendTestNames()
+  -- Push the values to the UI if there is a connection.
+  local tConnection = self.tActiveConnection
+  if tConnection~=nil then
+    local tMessage = {
+      id = 'SetTestNames',
+      testNames = self.astrTestNames
     }
     local strJson = self.json.encode(tMessage)
     tConnection:write(strJson)
@@ -208,6 +250,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
       else
         if strId=='ReqInit' then
           self:__sendTitle()
+          self:__sendTestNames()
           self:__sendInteraction()
 
         elseif strId=='RspInteraction' then
