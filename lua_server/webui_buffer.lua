@@ -132,6 +132,28 @@ end
 
 
 
+function WebUiBuffer:setInteraction(strJsx)
+  if strJsx==nil then
+    strJsx = ''
+  else
+    strJsx = tostring(strJsx)
+  end
+
+  -- Did the interaction change?
+  local fChanged = (self.strInteractionJsx~=strJsx)
+  if fChanged==true then
+    -- Yes, it changed.
+
+    -- Accept the new code.
+    self.strInteractionJsx = strJsx
+
+    -- Push the code to the UI if there is a connection.
+    self:__sendInteraction()
+  end
+end
+
+
+
 function WebUiBuffer:__sendTitle()
   -- Push the values to the UI if there is a connection.
   local tConnection = self.tActiveConnection
@@ -151,13 +173,16 @@ end
 
 
 
-function WebUiBuffer:__sendInteraction(tConnection)
-  local tMessage = {
-    id = 'SetInteraction',
-    jsx = self.strInteractionJsx
-  }
-  local strJson = self.json.encode(tMessage)
-  tConnection:write(strJson)
+function WebUiBuffer:__sendInteraction()
+  local tConnection = self.tActiveConnection
+  if tConnection~=nil then
+    local tMessage = {
+      id = 'SetInteraction',
+      jsx = self.strInteractionJsx
+    }
+    local strJson = self.json.encode(tMessage)
+    tConnection:write(strJson)
+  end
 end
 
 
@@ -183,7 +208,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
       else
         if strId=='ReqInit' then
           self:__sendTitle()
---          self:__sendInteraction(tConnection)
+          self:__sendInteraction()
 
         elseif strId=='RspInteraction' then
           print('Interaction response received:')

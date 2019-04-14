@@ -27,10 +27,20 @@ local tLog = require "log".new(
 )
 tLog.info('Start')
 
+
+-- Read the first interaction code.
+local strJsrFilename = 'jsx/select_serial_range_and_tests.jsx'
+local strJsx, strErr = pl.file.read(strJsrFilename)
+if strJsx==nil then
+  tLog.error('Failed to read JSX from "%s": %s', strJsrFilename, strErr)
+end
+
+
 local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, usWebsocketPort)
 webui_buffer:setTitle('NXHX90-R1', '7730.100')
 webui_buffer:setSerials(true, 20000, 20009)
+webui_buffer:setInteraction(strJsx)
 local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()
 
