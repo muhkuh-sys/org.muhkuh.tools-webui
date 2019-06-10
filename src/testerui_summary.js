@@ -16,11 +16,6 @@ class TesterUISummary extends React.Component {
   constructor(props) {
     super(props);
 
-    this.TESTRESULT_Ok = 0;
-    this.TESTRESULT_Error = 1;
-    this.TESTRESULT_Idle = 2;
-    this.TESTRESULT_Disabled = 3;
-
     this.state = {};
 
     let astrImages = {
