@@ -327,11 +327,12 @@ class TesterApp extends React.Component {
       let a = strLine.split(',', 2)
       let n = parseInt(a[0])
       if( n<=uiLogFilterLevel ) {
-        this.strLogLines += a[1];
+        const strNewLine = a[1];
+        this.strLogLines += strNewLine;
 
         /* Append the new line to the display if it is visible. */
         if( tTesterLog!==null ) {
-          tTesterLog.append(strNewLines);
+          tTesterLog.append(strNewLine);
         }
       }
     }, this);
