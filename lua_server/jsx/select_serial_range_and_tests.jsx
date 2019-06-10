@@ -3,22 +3,24 @@ class Interaction extends React.Component {
     super(props);
 
     let astrTests = [
-      'Test 1',
-      'Test 2',
-      'Test 3',
-      'Test 4',
-      'Test 5',
-      'Test 6'
+      'SDRAM',
+      'SPI Flash',
+      'Ethernet',
+      'FDL2'
     ];
     this.astrTests = astrTests;
-    let _strChecked = '1'.repeat(astrTests.length);
+
+    let _astrStati = [];
+    astrTests.forEach(function(strTest, uiIndex) {
+      _astrStati.push('idle');
+    });
 
     this.state = {
       serial_first: 20000,
       number_of_boards: 1,
       strTestsSummary: 'all',
       uiTestsSelected: astrTests.length,
-      strChecked: _strChecked
+      astrStati: _astrStati
     };
   }
 
@@ -40,21 +42,21 @@ class Interaction extends React.Component {
 
   handleTestClick = (uiIndex) => {
     console.log('Click', uiIndex);
-    const strChecked = this.state.strChecked;
-    let c = strChecked.charAt(uiIndex);
-    if( c=='0' ) {
-      c = '1';
+    let _astrStati = this.state.astrStati.slice();
+    let strState = _astrStati[uiIndex];
+    if( strState=='disabled' ) {
+      strState = 'idle';
     } else {
-      c = '0';
+      strState = 'disabled';
     }
-    const strChecked2 = strChecked.substr(0, uiIndex) + c + strChecked.substr(uiIndex + 1);
+    _astrStati[uiIndex] = strState;
 
     let uiActive = 0;
-    for(let c of strChecked2) {
-      if( c==='1' ) {
+    _astrStati.forEach(function(strState, uiIndex) {
+      if( strState=='idle' ) {
         uiActive += 1;
       }
-    }
+    }, this);
     const uiAll = this.astrTests.length;
     let strSummary = 'all';
     if( uiActive===0 ) {
@@ -64,7 +66,7 @@ class Interaction extends React.Component {
     }
     this.setState({
       strTestsSummary: strSummary,
-      strChecked: strChecked2,
+      astrStati: _astrStati,
       uiTestsSelected: uiActive
     });
   };
@@ -73,9 +75,9 @@ class Interaction extends React.Component {
     console.log('Start testing.');
 
     let atActiveTests = [];
-    for(const c of this.state.strChecked) {
-      atActiveTests.push((c==='1') ? true : false);
-    }
+    this.state.astrStati.forEach(function(strState, uiIndex) {
+      atActiveTests.push( (strState=='idle') );
+    }, this);
 
     const tMsg = {
       serialFirst: this.state.serial_first,
@@ -126,7 +128,7 @@ class Interaction extends React.Component {
             {this.astrTests.map(function(strTestName, uiIndex) {return (
               <ListItem key={strTestName} role={undefined} dense button onClick={() => this.handleTestClick(uiIndex)}>
                 <Checkbox
-                  checked={this.state.strChecked[uiIndex]==='1'}
+                  checked={this.state.astrStati[uiIndex]=='idle'}
                   tabIndex={-1}
                   disableRipple
                 />
