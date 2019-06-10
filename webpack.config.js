@@ -4,6 +4,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
   entry: path.join(__dirname,'src','index.js'),
 
+  output: {
+    path: path.resolve(__dirname, "lua_server", "www")
+  },
+
   module: {
     rules: [
       {
