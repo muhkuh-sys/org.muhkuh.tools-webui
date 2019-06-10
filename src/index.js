@@ -158,6 +158,9 @@ class TesterApp extends React.Component {
     }
     this.strJsxHeaderCode = astrCode.join('\n') + '\n';
 
+    /* This is a reference to the scroll container. */
+    this.tTesterTab = React.createRef();
+
     /* This is a reference to the log. */
     this.tTesterLog = React.createRef();
 
@@ -403,10 +406,28 @@ class TesterApp extends React.Component {
     });
   };
 
-  handleTabChange = (tEvent, uiValue) => {
-    this.setState({ uiActiveTab: uiValue });
+  afterTabChange = () => {
+    /* Set the new scroll position. */
+    const tTesterTab = this.tTesterTab.current;
+    if( tTesterTab!==null ) {
+      const uiActiveTab = this.state.uiActiveTab;
+      const uiNewPos = this.auiScrollPosition[uiActiveTab];
+      tTesterTab.scrollTop = uiNewPos;
+    }
   };
 
+  handleTabChange = (tEvent, uiValue) => {
+    /* Get the scroll position of the old tab. */
+    const uiActiveTab = this.state.uiActiveTab;
+    const tTesterTab = this.tTesterTab.current;
+    if( tTesterTab!==null ) {
+      const uiScrollTop = tTesterTab.scrollTop;
+      this.auiScrollPosition[uiActiveTab] = uiScrollTop;
+    }
+
+    /* Change the tab. */
+    this.setState({ uiActiveTab: uiValue }, this.afterTabChange);
+  };
 
   componentDidMount() {
     /* Create the websocket if it does not exist yet. */
@@ -518,72 +539,60 @@ class TesterApp extends React.Component {
   }
 
 
-  handleScroll = (tEvent) => {
-    const tDiv = tEvent.target;
-    const uiActiveTab = this.state.uiActiveTab;
-    if( tDiv!==null ) {
-      this.auiScrollPosition[uiActiveTab] = tDiv.scrollTop;
-    }
-  }
-
-
   render() {
-    let tTabContents = '';
-    const uiActiveTab = this.state.uiActiveTab;
-    if( uiActiveTab===TesterAppTab_Interaction ) {
-      if( this.state.tState===TesterAppState_Idle ) {
-        tTabContents = (
-          <div>
-            <Typography align="center" variant="h2" gutterBottom>Welcome to the TesterUI.</Typography>
-            <Typography align="center" variant="subtitle1">Please wait until the application is initialized.</Typography>
-          </div>
-        );
-      } else if( this.state.tState===TesterAppState_Connecting ) {
-        tTabContents = (
-          <div>
-            <Typography align="center" variant="h2" gutterBottom>Connecting...</Typography>
-            <CircularProgress variant="indeterminate" />
-          </div>
-        );
-      } else if( this.state.tState===TesterAppState_Connected ) {
-        const tElement = this.state.tUI_tInteraction;
-        if( tElement===null ) {
-          tTabContents = (
-            <Typography align="center" variant="h4" gutterBottom>No interaction...</Typography>
-          );
-        } else {
-          try {
-            tTabContents = React.createElement(tElement);
-          } catch(error) {
-            console.error('Failed to instanciate the interaction element:', error);
-            tTabContents = (
-              <Typography align="center" color="error" variant="h4" gutterBottom>Failed to create the interaction element.</Typography>
-            );
-          }
-        }
-      } else if( this.state.tState===TesterAppState_ConnectionClosed ) {
-        tTabContents = (
-          <Typography align="center" variant="h2" gutterBottom>The connection was closed.</Typography>
-        );
-      } else if( this.state.tState===TesterAppState_FatalError || this.state.tState===TesterAppState_SoftError ) {
-        tTabContents = this.state.tErrorMessage;
-      } else {
-        tTabContents = (
-          <div>
-            <Typography align="center" variant="h2" gutterBottom>Invalid state!</Typography>
-            <Typography align="center" variant="subtitle1">{this.state.tState}</Typography>
-          </div>
-        );
-      }
-    } else if( uiActiveTab===TesterAppTab_TestLog ) {
-      tTabContents = (
-        <TesterUILog ref={this.tTesterLog} strLogLines={this.strLogLines} uiInitialScrollPosition={this.auiScrollPosition[TesterAppTab_TestLog]}/>
+    let tTabContentsInteraction = null;
+    if( this.state.tState===TesterAppState_Idle ) {
+      tTabContentsInteraction = (
+        <div>
+          <Typography align="center" variant="h2" gutterBottom>Welcome to the TesterUI.</Typography>
+          <Typography align="center" variant="subtitle1">Please wait until the application is initialized.</Typography>
+        </div>
       );
-    } else if( uiActiveTab===TesterAppTab_SystemLog ) {
-      tTabContents = (
-        <Typography align="center" variant="h2" gutterBottom>System log</Typography>
+    } else if( this.state.tState===TesterAppState_Connecting ) {
+      tTabContentsInteraction = (
+        <div>
+          <Typography align="center" variant="h2" gutterBottom>Connecting...</Typography>
+          <CircularProgress variant="indeterminate" />
+        </div>
+      );
+    } else if( this.state.tState===TesterAppState_Connected ) {
+      const tElement = this.state.tUI_tInteraction;
+      if( tElement===null ) {
+        tTabContentsInteraction = (
+          <Typography align="center" variant="h4" gutterBottom>No interaction...</Typography>
+        );
+      } else {
+        try {
+          tTabContentsInteraction = React.createElement(tElement);
+        } catch(error) {
+          console.error('Failed to instanciate the interaction element:', error);
+          tTabContentsInteraction = (
+            <Typography align="center" color="error" variant="h4" gutterBottom>Failed to create the interaction element.</Typography>
+          );
+        }
+      }
+    } else if( this.state.tState===TesterAppState_ConnectionClosed ) {
+      tTabContentsInteraction = (
+        <Typography align="center" variant="h2" gutterBottom>The connection was closed.</Typography>
+      );
+    } else if( this.state.tState===TesterAppState_FatalError || this.state.tState===TesterAppState_SoftError ) {
+      tTabContentsInteraction = this.state.tErrorMessage;
+    } else {
+      tTabContentsInteraction = (
+        <div>
+          <Typography align="center" variant="h2" gutterBottom>Invalid state!</Typography>
+          <Typography align="center" variant="subtitle1">{this.state.tState}</Typography>
+        </div>
       );
     }
+
+    const tTabContentsLog = (
+      <TesterUILog ref={this.tTesterLog} strLogLines={this.strLogLines}/>
+    );
+
+    const tTabContentsSystemLog = (
+      <Typography align="center" variant="h2" gutterBottom>System log</Typography>
+    );
 
     /* Create the application menu. */
     let tAppMenu = (
@@ -604,6 +613,7 @@ class TesterApp extends React.Component {
       </List>
     );
 
+    const uiActiveTab = this.state.uiActiveTab;
     return (
       <MuiThemeProvider theme={TesterUITheme}>
         <CssBaseline>
@@ -633,8 +643,16 @@ class TesterApp extends React.Component {
                 </Tabs>
               </div>
             </div>
-            <div id='TesterTabContents' onScroll={this.handleScroll} >
-              {tTabContents}
+            <div id='TesterTabContents' ref={this.tTesterTab}>
+              <div style={{display: ((uiActiveTab==TesterAppTab_Interaction) ? 'inline' : 'none')}}>
+                {tTabContentsInteraction}
+              </div>
+              <div style={{display: ((uiActiveTab==TesterAppTab_TestLog) ? 'inline' : 'none')}}>
+                {tTabContentsLog}
+              </div>
+              <div style={{display: ((uiActiveTab==TesterAppTab_SystemLog) ? 'inline' : 'none')}}>
+                {tTabContentsSystemLog}
+              </div>
             </div>
           </div>
         </CssBaseline>

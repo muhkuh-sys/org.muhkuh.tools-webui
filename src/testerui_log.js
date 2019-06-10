@@ -13,15 +13,6 @@ class TesterUILog extends React.Component {
   }
 
 
-  componentDidMount() {
-    const tThis = this.tThisRef.current;
-    if( tThis!==null ) {
-      const tParent = tThis.parentNode;
-      tParent.scrollTop = this.props.uiInitialScrollPosition;
-    }
-  }
-
-
   append(strLines) {
     const tThis = this.tThisRef.current;
     if( tThis!==null ) {
