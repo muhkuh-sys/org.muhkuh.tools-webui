@@ -12,6 +12,13 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments)
   self.m_zmqContext = nil
   self.m_zmqSocket = nil
   self.m_zmqPort = nil
+
+  self.m_buffer = nil
+
+  self.m_zmqReceiveHandler = {
+    LOG = self.__onZmqReceiveLog,
+    INT = self.__onZmqReceiveInt
+  }
 end
 
 
@@ -47,6 +54,42 @@ end
 
 
 
+function ProcessZmq:__onZmqReceiveLog(tHandle, strMessage)
+  local strLogLevel, strLogMessage = string.match(strMessage, '^LOG(%d+),(.*)')
+  if strLogLevel~=nil and strLogMessage~=nil then
+    -- Add a newline if it is not already there.
+    if string.sub(strLogMessage, -1)~='\n' then
+      strLogMessage = strLogMessage .. '\n'
+    end
+    local uiLogLevel = tonumber(strLogLevel)
+    if uiLogLevel==nil then
+      print(string.format('Invalid LOG level received: "%s".', strMessage))
+    else
+      self.tLogTest.log(uiLogLevel, strLogMessage)
+    end
+  else
+    print(string.format('Invalid LOG message received: "%s".', strMessage))
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveInt(tHandle, strMessage)
+  local strInteraction = string.match(strMessage, '^INT,(.*)')
+  if strInteraction~=nil then
+    local tBuffer = self.m_buffer
+    if tBuffer==nil then
+      print('warning: discarding interaction as no buffer present.')
+    else
+      tBuffer:setInteraction(strInteraction)
+    end
+  else
+    print(string.format('Invalid interaction received: "%s".', strMessage))
+  end
+end
+
+
+
 function ProcessZmq:__onZmqReceive(tHandle, strErr, tSocket)
   if strErr then
     return tHandle:close()
@@ -54,20 +97,13 @@ function ProcessZmq:__onZmqReceive(tHandle, strErr, tSocket)
     local strMessage = tSocket:recv()
 
     -- The first 3 chars are the message type.
-    local strLogLevel, strLogMessage = string.match(strMessage, '^LOG(%d+),(.*)')
-    if strLogLevel~=nil and strLogMessage~=nil then
-      -- Add a newline if it is not already there.
-      if string.sub(strLogMessage, -1)~='\n' then
-        strLogMessage = strLogMessage .. '\n'
-      end
-      local uiLogLevel = tonumber(strLogLevel)
-      if uiLogLevel==nil then
-        print(string.format('Invalid LOG message received: "%s".', strMessage))
-      else
-        self.tLogTest.log(uiLogLevel, strLogMessage)
-      end
-    else
+    local strId = string.sub(strMessage, 1, 3)
+    local fnHandler = self.m_zmqReceiveHandler[strId]
+    if fnHandler==nil then
       print('**** ZMQ received unknown message:', strMessage)
+    else
+      -- Call the handler.
+      fnHandler(self, tHandle, strMessage)
     end
   end
 end
@@ -92,6 +128,12 @@ function ProcessZmq:__zmq_delete()
   self.m_zmqPort = nil
 
   self.tLog.debug('0MQ closed')
+end
+
+
+
+function ProcessZmq:setBuffer(tBuffer)
+  self.m_buffer = tBuffer
 end
 
 

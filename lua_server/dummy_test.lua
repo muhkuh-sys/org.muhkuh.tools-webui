@@ -1,4 +1,7 @@
 require 'muhkuh_cli_init'
+
+local pl = require'pl.import_into'()
+
 local zmq = require 'lzmq'
 
 -- Do not buffer stdout and stderr.
@@ -57,10 +60,19 @@ local tLogSystem = require "log".new(
 for iCnt=0,4,1 do
   print('sending something on STDOUT...')
   tLogSystem.debug('Send some log...')
-  m_zmqSocket:send(string.format('ZMQ message %d', iCnt))
   os.execute('sleep 0.1')
 end
 
+-- Now set a new interaction.
+
+-- Read the first interaction code.
+local strJsrFilename = 'jsx/select_serial_range_and_tests.jsx'
+local strJsx, strErr = pl.file.read(strJsrFilename)
+if strJsx==nil then
+  tLogSystem.error('Failed to read JSX from "%s": %s', strJsrFilename, strErr)
+else
+  m_zmqSocket:send(string.format('INT,%s', strJsx))
+end
 
 if m_zmqSocket~=nil then
   if m_zmqSocket:closed()==false then
