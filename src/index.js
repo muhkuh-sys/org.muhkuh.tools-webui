@@ -283,36 +283,42 @@ class TesterApp extends React.Component {
   onMessage_SetInteraction(tJson) {
     /* Translate the received code with babel. */
     const strJSX = tJson.jsx;
-    let tBabel = null;
-    try {
-      tBabel = transform(
-        strJSX,
-        {
-          filename: 'dynamic_loaded.jsx',
-          presets: ['es2015', 'stage-2' , 'react']
-        }
-      );
-    } catch(error) {
-      console.error('Failed to translate JSX code:', error, strJSX);
-    }
-
-    /* NOTE: this will go into a callback once babel-standalone is updated to @babel/standalone. */
-    if( tBabel!==null ) {
-      let tCode = this.strJsxHeaderCode + tBabel.code + "\nreturn Interaction;\n";
+    if( strJSX=='' ) {
+      this.setState({
+        tUI_tInteraction: null
+      });
+    } else {
+      let tBabel = null;
       try {
-        const tFn = new Function('atComponents', tCode);
-
-        try {
-          const tElement = tFn(this.atComponents);
-          this.setState({
-            uiActiveTab: TesterAppTab_Interaction,
-            tUI_tInteraction: tElement
-          });
-        } catch(error) {
-          console.error('Failed to create the interaction element:', error, tCode);
-        }
+        tBabel = transform(
+          strJSX,
+          {
+            filename: 'dynamic_loaded.jsx',
+            presets: ['es2015', 'stage-2' , 'react']
+          }
+        );
       } catch(error) {
-        console.error('Failed to parse the received code:', error, tCode);
+        console.error('Failed to translate JSX code:', error, strJSX);
+      }
+
+      /* NOTE: this will go into a callback once babel-standalone is updated to @babel/standalone. */
+      if( tBabel!==null ) {
+        let tCode = this.strJsxHeaderCode + tBabel.code + "\nreturn Interaction;\n";
+        try {
+          const tFn = new Function('atComponents', tCode);
+
+          try {
+            const tElement = tFn(this.atComponents);
+            this.setState({
+              uiActiveTab: TesterAppTab_Interaction,
+              tUI_tInteraction: tElement
+            });
+          } catch(error) {
+            console.error('Failed to create the interaction element:', error, tCode);
+          }
+        } catch(error) {
+          console.error('Failed to parse the received code:', error, tCode);
+        }
       }
     }
   }
