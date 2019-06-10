@@ -118,6 +118,10 @@ class TesterApp extends React.Component {
      */
     const atComponents = {
       'fnSend': this.sendInteractionMessage,
+      'fnGetTestNames': this.getTestNames,
+      'fnGetTestStati': this.getTestStati,
+      'fnSetTestState': this.setTestState,
+      'fnSetAllTestStati': this.setAllTestStati,
       'React': React,
       'ReactDOM': ReactDOM,
       'Button': Button,
@@ -159,6 +163,21 @@ class TesterApp extends React.Component {
 
     /* This is the scroll position for all tester tabs. */
     this.auiScrollPosition = [0, 0, 0];
+
+    const atResultNameToId = new Map([
+      ['ok', 0],
+      ['error', 1],
+      ['idle', 2],
+      ['disabled', 3]
+    ]);
+    this.atResultNameToId = atResultNameToId;
+    /* Generate a reverse mapping. */
+    let atResultIdToName = new Map();
+    atResultNameToId.forEach(function(uiIndex, strName) {
+      const uiId = atResultNameToId.get(strName);
+      atResultIdToName.set(uiId, strName);
+    }, this);
+    this.atResultIdToName = atResultIdToName;
 
     /* TODO: remove this. */
     this.demo_counter = 0;
@@ -329,6 +348,58 @@ class TesterApp extends React.Component {
       const strJson = JSON.stringify(atObject);
       tSocket.send(strJson);
     }
+  };
+
+  getTestNames = () => {
+    return this.state.tTest_astrTestNames;
+  };
+
+  getTestStati = () => {
+    let astrStati = [];
+    this.state.tTest_atTestStati.forEach(function(uiState, uiIndex) {
+      console.debug(uiState, uiIndex);
+      astrStati[uiIndex] = this.atResultIdToName.get(uiState);
+    }, this);
+    return astrStati;
+  };
+
+  setTestState = (strState) => {
+    /* Is a test running? */
+    const uiRunningTest = this.state.tRunningTest_uiRunningTest;
+    if( uiRunningTest!=null ) {
+      /* Translate the state to an ID. */
+      if( strState in this.atResultNameToId ) {
+        const uiState = this.atResultNameToId.get(strState);
+
+        /* Clone the array. Do not modify the state contents directly. */
+        let atStati = this.state.tTest_atTestStati.slice();
+
+        /* Set the state. */
+        atStati[uiRunningTest] = uiState;
+
+        this.setState({
+          tTest_atTestStati: atStati
+        });
+      }
+    }
+  };
+
+  setAllTestStati = (astrStates) => {
+    /* Clone the array. Do not modify the state contents directly. */
+    let atStati = this.state.tTest_atTestStati.slice();
+
+    /* Loop over all elements in the argument. */
+    astrStates.forEach(function(strState, uiIndex) {
+      /* Translate the state to an ID. */
+      if( strState in this.atResultNameToId ) {
+        const uiState = this.atResultNameToId.get(strState);
+        atStati[uiIndex] = uiState;
+      }
+    }, this);
+
+    this.setState({
+      tTest_atTestStati: atStati
+    });
   };
 
   handleTabChange = (tEvent, uiValue) => {
