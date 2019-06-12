@@ -1,7 +1,7 @@
 require 'muhkuh_cli_init'
 
 local pl = require'pl.import_into'()
-
+local json = require 'dkjson'
 local zmq = require 'lzmq'
 
 -- Do not buffer stdout and stderr.
@@ -54,7 +54,22 @@ local tLogSystem = require "log".new(
   -- Formatter
   require "log.formatter.format".new()
 )
+
 ------------------------------------------------------------------------------
+
+local function getInteractionResponse()
+  local strResponse
+
+  repeat
+    local strMessage = m_zmqSocket:recv()
+    strResponse = string.match(strMessage, '^RSP(.*)')
+    if strResponse==nil then
+      tLogSystem.debug('Ignoring invalid response: %s', strMessage)
+    end
+  until strResponse~=nil
+
+  return strResponse
+end
 
 
 for iCnt=0,4,1 do
@@ -71,7 +86,20 @@ local strJsx, strErr = pl.file.read(strJsrFilename)
 if strJsx==nil then
   tLogSystem.error('Failed to read JSX from "%s": %s', strJsrFilename, strErr)
 else
-  m_zmqSocket:send(string.format('INT,%s', strJsx))
+  m_zmqSocket:send(string.format('INT%s', strJsx))
+
+  -- Now wait for the response.
+  local strResponseRaw = getInteractionResponse()
+  if strResponseRaw~=nil then
+    local tJson, uiPos, strJsonErr = json.decode(strResponseRaw)
+    if tJson==nil then
+      tLogSystem.error('JSON Error: %d %s', uiPos, strJsonErr)
+    else
+      tLogSystem.debug('JSON OK!')
+      pl.pretty.dump(tJson)
+      m_zmqSocket:send('INT')
+    end
+  end
 end
 
 if m_zmqSocket~=nil then
