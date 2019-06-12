@@ -41,6 +41,7 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
   )
 
   self.tLogTimer = uv.timer()
+  self.uiLogTimerMs = 500
 end
 
 
@@ -70,6 +71,8 @@ function WebUiBuffer:__onLogTimer(tTimer)
 
       self.uiSyncedLogIndex = uiLogMessages
     end
+
+    tTimer:again(self.uiLogTimerMs)
   end
 end
 
@@ -284,7 +287,7 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
     self.tLog.info('New server connection: %s', tostring(protocol))
     self.tActiveConnection = tConnection
     local this = self
-    self.tLogTimer:start(500, function(tTimer) this:__onLogTimer(tTimer) end)
+    self.tLogTimer:start(self.uiLogTimerMs, function(tTimer) this:__onLogTimer(tTimer) end)
     tConnection:start_read(function(tConnection, err, strMessage, opcode) this:__connectionOnReceive(tConnection, err, strMessage, opcode) end)
   end
 end
