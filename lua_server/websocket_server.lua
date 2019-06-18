@@ -45,12 +45,15 @@ local strLuaInterpreter = uv.exepath()
 -- Create a new process.
 tLog.debug('LUA interpreter: %s', strLuaInterpreter)
 local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, {'server.lua', tostring(usWebsocketPort), tostring(ulSystemSerial)}, 3)
-tServerProc:run()
 
 
 -- Create a new ZMQ process.
 local tTestProc = ProcessZmq(tLog, tLogTest, strLuaInterpreter, {'dummy_test.lua', '${ZMQPORT}'})
+
 tTestProc:setBuffer(webui_buffer)
+webui_buffer:setTester(tTestProc)
+
+tServerProc:run()
 tTestProc:run()
 
 local function OnCancelAll()

@@ -30,6 +30,8 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
   self.astrLogMessages = {}
   self.uiSyncedLogIndex = 0
 
+  self.tTester = nil
+
   -- Create a new log target for the test output.
   local this = self
   self.tLogWebUi = require "log".new(
@@ -243,6 +245,8 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
     self.tLog.debug('__connectionOnReceive: %s %s', tostring(tConnection), tostring(self.tActiveConnection))
     self.tLog.debug('JSON: "%s"', strMessage)
 
+    local tTester = self.tTester
+
     local tJson, uiPos, strJsonErr = self.json.decode(strMessage)
     if tJson==nil then
       self.tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
@@ -257,9 +261,9 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
           self:__sendInteraction()
 
         elseif strId=='RspInteraction' then
-          print('Interaction response received:')
-          self.pl.pretty.dump(tJson)
-
+          if tTester~=nil then
+            tTester:setInteractionResponse(strMessage)
+          end
         else
           print('Unknown message ID received.')
           self.pl.pretty.dump(tJson)
@@ -318,6 +322,12 @@ function WebUiBuffer:__onCreate(tSomething, tError)
     local this = self
     self.tServer:listen(function(tSomething, tError) this:__onAccept(tSomething, tError) end)
   end
+end
+
+
+
+function WebUiBuffer:setTester(tTester)
+  self.tTester = tTester
 end
 
 

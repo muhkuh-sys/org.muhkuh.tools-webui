@@ -132,6 +132,13 @@ end
 
 
 
+function ProcessZmq:setInteractionResponse(strResponse)
+  local strData = string.format('RSP%s', strResponse)
+  self.m_zmqSocket:send(strData)
+end
+
+
+
 function ProcessZmq:setBuffer(tBuffer)
   self.m_buffer = tBuffer
 end
