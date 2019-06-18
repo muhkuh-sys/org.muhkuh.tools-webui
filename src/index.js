@@ -184,6 +184,9 @@ class TesterApp extends React.Component {
 
     /* TODO: remove this. */
     this.demo_counter = 0;
+
+    /* This is a regexp for matching log lines. */
+    this.regexpLogLine = new RegExp('(\\d+),');
   }
 
   socketClosed(tEvent) {
@@ -331,17 +334,21 @@ class TesterApp extends React.Component {
     /* Loop over all new lines. */
     tJson.lines.forEach(function(strLine, uiIndex) {
       /* Append the new line to the log. */
-      astrLevelLogLines.push(strLine)
+      astrLevelLogLines.push(strLine);
 
-      let a = strLine.split(',', 2)
-      let n = parseInt(a[0])
-      if( n<=uiLogFilterLevel ) {
-        const strNewLine = a[1];
-        this.strLogLines += strNewLine;
+      const astrLine = strLine.match(this.regexpLogLine);
+      if( astrLine==null ) {
+        console.error('Ignoring invalid log entry:' + strLine);
+      } else {
+        const uiLevel = parseInt(astrLine[1]);
+        if( uiLevel<=uiLogFilterLevel ) {
+          const strNewLine = strLine.substring(astrLine[0].length);
+          this.strLogLines += strNewLine;
 
-        /* Append the new line to the display if it is visible. */
-        if( tTesterLog!==null ) {
-          tTesterLog.append(strNewLine);
+          /* Append the new line to the display if it is visible. */
+          if( tTesterLog!==null ) {
+            tTesterLog.append(strNewLine);
+          }
         }
       }
     }, this);
