@@ -75,7 +75,7 @@ end
 
 
 function ProcessZmq:__onZmqReceiveInt(tHandle, strMessage)
-  local strInteraction = string.match(strMessage, '^INT,(.*)')
+  local strInteraction = string.match(strMessage, '^INT(.*)')
   if strInteraction~=nil then
     local tBuffer = self.m_buffer
     if tBuffer==nil then
