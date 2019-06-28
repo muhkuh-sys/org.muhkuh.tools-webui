@@ -3,10 +3,7 @@ class Interaction extends React.Component {
     super(props);
 
     let astrTests = [
-      'SDRAM',
-      'SPI Flash',
-      'Ethernet',
-      'FDL2'
+      @TEST_NAMES@
     ];
     this.astrTests = astrTests;
 
