@@ -185,38 +185,48 @@ end
 local function apply_parameters(atModules, tTestDescription, ulSerial)
   local tResult = true
 
+  local astrTestNames = tTestDescription:getTestNames()
+
   -- Loop over all active tests and apply the tests from the XML.
-  for uiTestCase, tModule in ipairs(atModules) do
-    -- Get the parameters for the module.
-    local atParametersModule = tModule.atParameter
+  local uiNumberOfTests = tTestDescription:getNumberOfTests()
+  for uiTestIndex = 1, uiNumberOfTests do
+    local tModule = atModules[uiTestIndex]
+    local strTestCaseName = astrTestNames[uiTestIndex]
 
-    -- Get the parameters from the XML.
-    local atParametersXml = tTestDescription:getTestCaseParameters(uiTestCase)
-    for _, tParameter in ipairs(atParametersXml) do
-      local strParameterName = tParameter.name
-      local strParameterValue = tParameter.value
-      local strParameterConnection = tParameter.connection
+    if tModule==nil then
+      tLogSystem.debug('Skipping deactivated test %02d:%s .', uiTestIndex, strTestCaseName)
+    else
+      -- Get the parameters for the module.
+      local atParametersModule = tModule.atParameter
 
-      -- Does the parameter exist?
-      tParameter = atParametersModule[strParameterName]
-      if tParameter==nil then
-        tLogSystem.fatal('The parameter "%s" does not exist in test case %d.', strParameterName, uiTestCase)
-        tResult = nil
-        break
-      else
-        if strParameterValue~=nil then
-          -- This is a direct assignment of a value.
-          tParameter:set(strParameterValue)
-        elseif strParameterConnection~=nil then
-          -- This is a connection to another value.
-          -- For now accept only the serial.
-          if strParameterConnection=='system:serial' then
-            strParameterValue = tostring(ulSerial)
+      -- Get the parameters from the XML.
+      local atParametersXml = tTestDescription:getTestCaseParameters(uiTestIndex)
+      for _, tParameter in ipairs(atParametersXml) do
+        local strParameterName = tParameter.name
+        local strParameterValue = tParameter.value
+        local strParameterConnection = tParameter.connection
+
+        -- Does the parameter exist?
+        tParameter = atParametersModule[strParameterName]
+        if tParameter==nil then
+          tLogSystem.fatal('The parameter "%s" does not exist in test case %d (%s).', strParameterName, uiTestIndex, strTestCaseName)
+          tResult = nil
+          break
+        else
+          if strParameterValue~=nil then
+            -- This is a direct assignment of a value.
             tParameter:set(strParameterValue)
-          else
-            tLogSystem.fatal('The connection target "%s" is unknown.', strParameterConnection)
-            tResult = nil
-            break
+          elseif strParameterConnection~=nil then
+            -- This is a connection to another value.
+            -- For now accept only the serial.
+            if strParameterConnection=='system:serial' then
+              strParameterValue = tostring(ulSerial)
+              tParameter:set(strParameterValue)
+            else
+              tLogSystem.fatal('The connection target "%s" is unknown.', strParameterConnection)
+              tResult = nil
+              break
+            end
           end
         end
       end
@@ -228,19 +238,25 @@ end
 
 
 
-local function check_parameters(atModules)
+local function check_parameters(atModules, tTestDescription)
   -- Check all parameters.
   local fParametersOk = true
-  for uiTestCase, tModule in ipairs(atModules) do
-    -- Get the parameters for the module.
-    local atParameters = tModule.CFG_aParameterDefinitions
 
-    for _, tParameter in ipairs(tModule.CFG_aParameterDefinitions) do
-      -- Validate the parameter.
-      local fValid, strError = tParameter:validate()
-      if fValid==false then
-        tLogSystem.fatal('The parameter %02d:%s is invalid: %s', uiTestCase, tParameter.strName, strError)
-        fParametersOk = nil
+  local astrTestNames = tTestDescription:getTestNames()
+  local uiNumberOfTests = tTestDescription:getNumberOfTests()
+  for uiTestIndex = 1, uiNumberOfTests do
+    local tModule = atModules[uiTestIndex]
+    local strTestCaseName = astrTestNames[uiTestIndex]
+    if tModule==nil then
+      tLogSystem.debug('Skipping deactivated test %02d:%s .', uiTestIndex, strTestCaseName)
+    else
+      for _, tParameter in ipairs(tModule.CFG_aParameterDefinitions) do
+        -- Validate the parameter.
+        local fValid, strError = tParameter:validate()
+        if fValid==false then
+          tLogSystem.fatal('The parameter %02d:%s is invalid: %s', uiTestCase, tParameter.strName, strError)
+          fParametersOk = nil
+        end
       end
     end
   end
@@ -250,6 +266,45 @@ local function check_parameters(atModules)
   end
 
   return fParametersOk
+end
+
+
+
+local function run_tests(atModules, tTestDescription)
+  -- Run all enabled modules with their parameter.
+  local fTestResult = true
+
+  local astrTestNames = tTestDescription:getTestNames()
+  local uiNumberOfTests = tTestDescription:getNumberOfTests()
+  for uiTestIndex = 1, uiNumberOfTests do
+    -- Get the module for the test index.
+    local tModule = atModules[uiTestIndex]
+    local strTestCaseName = astrTestNames[uiTestIndex]
+    if tModule==nil then
+      tLogSystem.info('Not running deactivated test case %02d (%s).', uiTestIndex, strTestCaseName)
+    else
+      tLogSystem.info('Running testcase %d (%s).', uiTestIndex, strTestCaseName)
+
+      -- Get the parameters for the module.
+      local atParameters = tModule.atParameter
+      if atParameters==nil then
+        atParameters = {}
+      end
+
+      -- Show all parameters for the test case.
+      tLogSystem.info("__/Parameters/________________________________________________________________")
+      if pl.tablex.size(atParameters)==0 then
+        tLogSystem.info('Testcase %d (%s) has no parameter.', uiTestIndex, strTestCaseName)
+      else
+        tLogSystem.info('Parameters for testcase %d (%s):', uiTestIndex, strTestCaseName)
+        for _, tParameter in pairs(atParameters) do
+          tLogSystem.info('  %02d:%s = %s', uiTestIndex, tParameter.strName, tParameter:get_pretty())
+        end
+      end
+      tLogSystem.info("______________________________________________________________________________")
+
+    end
+  end
 end
 
 
@@ -298,11 +353,11 @@ else
         if tResult==nil then
           tLogSystem.fatal('Failed to apply the parameters.')
         else
-          tResult = check_parameters(atModules)
+          tResult = check_parameters(atModules, tTestDescription)
           if tResult==nil then
             tLogSystem.fatal('Failed to check the parameters.')
           else
-            tLogSystem.debug('Done. Yay! :)')
+            tResult = run_tests(atModules, tTestDescription)
           end
         end
       end
