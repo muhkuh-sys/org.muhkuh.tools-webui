@@ -239,6 +239,27 @@ end
 
 
 
+function TestDescription:getTestCaseName(uiTestCase)
+  local tLog = self.tLog
+  local tResult
+
+  -- Is the test case valid?
+  local strType = type(uiTestCase)
+  if strType=='number' then
+    if uiTestCase>0 and uiTestCase<=self.uiNumberOfTests then
+      tResult = self.astrTestNames[uiTestCase]
+    else
+      tLog.error('Invalid test case index for test cases 1 to %d: %d .', self.uiNumberOfTests, uiTestCase)
+    end
+  else
+    tLog.error('The test case must be a number, here it has the type %s.', strType)
+  end
+
+  return tResult
+end
+
+
+
 function TestDescription:getTestCaseParameters(uiTestCase)
   local tLog = self.tLog
   local tResult
