@@ -182,6 +182,77 @@ end
 
 
 
+local function apply_parameters(atModules, tTestDescription, ulSerial)
+  local tResult = true
+
+  -- Loop over all active tests and apply the tests from the XML.
+  for uiTestCase, tModule in ipairs(atModules) do
+    -- Get the parameters for the module.
+    local atParametersModule = tModule.atParameter
+
+    -- Get the parameters from the XML.
+    local atParametersXml = tTestDescription:getTestCaseParameters(uiTestCase)
+    for _, tParameter in ipairs(atParametersXml) do
+      local strParameterName = tParameter.name
+      local strParameterValue = tParameter.value
+      local strParameterConnection = tParameter.connection
+
+      -- Does the parameter exist?
+      tParameter = atParametersModule[strParameterName]
+      if tParameter==nil then
+        tLogSystem.fatal('The parameter "%s" does not exist in test case %d.', strParameterName, uiTestCase)
+        tResult = nil
+        break
+      else
+        if strParameterValue~=nil then
+          -- This is a direct assignment of a value.
+          tParameter:set(strParameterValue)
+        elseif strParameterConnection~=nil then
+          -- This is a connection to another value.
+          -- For now accept only the serial.
+          if strParameterConnection=='system:serial' then
+            strParameterValue = tostring(ulSerial)
+            tParameter:set(strParameterValue)
+          else
+            tLogSystem.fatal('The connection target "%s" is unknown.', strParameterConnection)
+            tResult = nil
+            break
+          end
+        end
+      end
+    end
+  end
+
+  return tResult
+end
+
+
+
+local function check_parameters(atModules)
+  -- Check all parameters.
+  local fParametersOk = true
+  for uiTestCase, tModule in ipairs(atModules) do
+    -- Get the parameters for the module.
+    local atParameters = tModule.CFG_aParameterDefinitions
+
+    for _, tParameter in ipairs(tModule.CFG_aParameterDefinitions) do
+      -- Validate the parameter.
+      local fValid, strError = tParameter:validate()
+      if fValid==false then
+        tLogSystem.fatal('The parameter %02d:%s is invalid: %s', uiTestCase, tParameter.strName, strError)
+        fParametersOk = nil
+      end
+    end
+  end
+
+  if fParametersOk~=true then
+    tLogSystem.fatal('One or more parameters were invalid. Not running the tests!')
+  end
+
+  return fParametersOk
+end
+
+
 
 -- Read the test.xml file.
 local tTestDescription = TestDescription(tLogSystem)
@@ -197,29 +268,44 @@ else
   end
   local strTestNames = table.concat(astrQuotedTests, ', ')
 
-  for iCnt=0,4,1 do
-    print('sending something on STDOUT...')
-    tLogSystem.debug('Send some log...')
-    os.execute('sleep 0.1')
-  end
-
   -- Now set a new interaction.
 
   -- Read the first interaction code.
   tResult = setInteractionGetJson('jsx/select_serial_range_and_tests.jsx', { ['TEST_NAMES']=strTestNames })
   if tResult==nil then
-    tLogSystem.error('Failed to read interaction.')
+    tLogSystem.fatal('Failed to read interaction.')
   else
     local tJson = tResult
     pl.pretty.dump(tJson)
     clearInteraction()
 
-    tResult = collect_testcases(tTestDescription, tJson.activeTests)
-    if tResult==nil then
-      tLogSystem.error('Failed to collect all test cases.')
-    else
-      tLogSystem.debug('Done. Yay! :)')
+    -- Loop over all serials.
+    -- ulSerialFirst is the first serial to test
+    -- ulSerialLast is the last serial to test
+    local ulSerialFirst = tonumber(tJson.serialFirst)
+    local ulSerialLast = ulSerialFirst + tonumber(tJson.numberOfBoards) - 1
+    tLogSystem.info('Running over the serials [%d,%d] .', ulSerialFirst, ulSerialLast)
+    for ulSerialCurrent = ulSerialFirst, ulSerialLast do
+      tLogSystem.info('Testing serial %d .', ulSerialCurrent)
 
+      tResult = collect_testcases(tTestDescription, tJson.activeTests)
+      if tResult==nil then
+        tLogSystem.fatal('Failed to collect all test cases.')
+      else
+        local atModules = tResult
+
+        tResult = apply_parameters(atModules, tTestDescription, ulSerialCurrent)
+        if tResult==nil then
+          tLogSystem.fatal('Failed to apply the parameters.')
+        else
+          tResult = check_parameters(atModules)
+          if tResult==nil then
+            tLogSystem.fatal('Failed to check the parameters.')
+          else
+            tLogSystem.debug('Done. Yay! :)')
+          end
+        end
+      end
     end
   end
 end
