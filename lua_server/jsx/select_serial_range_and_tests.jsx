@@ -122,6 +122,7 @@ class Interaction extends React.Component {
             <Typography>Selected tests: {this.state.strTestsSummary}</Typography>
           </ExpansionPanelSummary>
           <ExpansionPanelDetails>
+            <List>
             {this.astrTests.map(function(strTestName, uiIndex) {return (
               <ListItem key={strTestName} role={undefined} dense button onClick={() => this.handleTestClick(uiIndex)}>
                 <Checkbox
@@ -132,6 +133,7 @@ class Interaction extends React.Component {
                 <ListItemText primary={this.astrTests[uiIndex]} />
               </ListItem>
             );}, this)}
+            </List>
           </ExpansionPanelDetails>
         </ExpansionPanel>
 
