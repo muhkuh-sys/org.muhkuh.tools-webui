@@ -9,6 +9,8 @@ function TestDescription:_init(tLog)
   self.lxp = require 'lxp'
 
   self.atTestCases = nil
+  self.uiNumberOfTests = nil
+  self.astrTestNames = nil
 end
 
 
@@ -185,6 +187,16 @@ function TestDescription:parse(strTestsFile)
       tResult = nil
     else
       self.atTestCases = atTestCases
+
+      -- Get the number of available test cases.
+      self.uiNumberOfTests = table.maxn(atTestCases)
+
+      -- Get a lookup table with the test names.
+      local astrTestNames = {}
+      for uiTestIndex, tTestCase in ipairs(atTestCases) do
+        table.insert(astrTestNames, tTestCase.name)
+      end
+      self.astrTestNames = astrTestNames
     end
   end
 
@@ -193,15 +205,14 @@ end
 
 
 
+function TestDescription:getNumberOfTests()
+  return self.uiNumberOfTests
+end
+
+
+
 function TestDescription:getTestNames()
-  local astrNames = {}
-
-  local atTestCases = self.atTestCases
-  for uiTestIndex, tTestCase in ipairs(atTestCases) do
-    table.insert(astrNames, tTestCase.name)
-  end
-
-  return astrNames
+  return self.astrTestNames
 end
 
 
