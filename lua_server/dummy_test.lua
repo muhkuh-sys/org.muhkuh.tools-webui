@@ -47,12 +47,16 @@ local tLogWriterFn = function(fmt, msg, lvl, now)
   m_zmqSocket:send(string.format('LOG%d,%s', lvl, msg))
 end
 
+-- This is the default log level. Note that the filtering should happen in
+-- the GUI and all messages which are already filtered with this level here
+-- will never be available in the GUI.
+local strLogLevel = 'debug'
+
 -- Create a new log target with "SYSTEM" prefix.
+local tLogWriterSystem = require 'log.writer.prefix'.new('[System] ', tLogWriterFn)
 local tLogSystem = require "log".new(
-  -- maximum log level
-  'debug',
-  tLogWriterFn,
-  -- Formatter
+  strLogLevel,
+  tLogWriterSystem,
   require "log.formatter.format".new()
 )
 
@@ -127,6 +131,58 @@ end
 
 
 
+local function load_test_module(uiTestIndex)
+  local strModuleName = string.format("test%02d", uiTestIndex)
+  tLogSystem.debug('Reading module for test %d from %s .', uiTestIndex, strModuleName)
+
+  local tClass = require(strModuleName)
+  local tModule = tClass(uiTestIndex, tLogWriterFn, strLogLevel)
+  return tModule
+end
+
+
+
+local function collect_testcases(tTestDescription, aActiveTests)
+  local tResult
+
+  -- Get the number of tests from the test description.
+  local uiNumberOfTests = tTestDescription:getNumberOfTests()
+  -- Get the number of tests specified in the GUI response.
+  local uiTestsFromGui = table.maxn(aActiveTests)
+  -- Both test counts must match or there is something wrong.
+  if uiNumberOfTests~=uiTestsFromGui then
+    tLogSystem.error('The test description specifies %d tests, but the selection covers %d tests.', uiNumberOfTests, uiTestsFromGui)
+  else
+    local aModules = {}
+    local astrTestNames = tTestDescription:getTestNames()
+    local fAllModulesOk = true
+    for uiTestIndex, fTestCaseIsActive in ipairs(aActiveTests) do
+      local strTestName = astrTestNames[uiTestIndex]
+      -- Only process test cases which are active.
+      if fTestCaseIsActive==true then
+        local fOk, tValue = pcall(load_test_module, uiTestIndex)
+        if fOk~=true then
+          tLogSystem.error('Failed to load the module for test case %d: %s', uiTestIndex, tostring(tValue))
+          fAllModulesOk = false
+        else
+          aModules[uiTestIndex] = tValue
+        end
+      else
+        tLogSystem.debug('Skipping deactivated test %02d:%s .', uiTestIndex, strTestName)
+      end
+    end
+
+    if fAllModulesOk==true then
+      tResult = aModules
+    end
+  end
+
+  return tResult
+end
+
+
+
+
 -- Read the test.xml file.
 local tTestDescription = TestDescription(tLogSystem)
 local tResult = tTestDescription:parse('tests.xml')
@@ -157,6 +213,14 @@ else
     local tJson = tResult
     pl.pretty.dump(tJson)
     clearInteraction()
+
+    tResult = collect_testcases(tTestDescription, tJson.activeTests)
+    if tResult==nil then
+      tLogSystem.error('Failed to collect all test cases.')
+    else
+      tLogSystem.debug('Done. Yay! :)')
+
+    end
   end
 end
 
