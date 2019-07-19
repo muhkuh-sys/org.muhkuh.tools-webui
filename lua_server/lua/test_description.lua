@@ -49,10 +49,19 @@ function TestDescription.__parseTests_StartElement(tParser, strName, atAttribute
       }
       aLxpAttr.tTestCase = tTestCase
       aLxpAttr.strParameterName = nil
-      aLxpAttr.strParameterData = nil
+      aLxpAttr.strParameterValue = nil
     end
 
   elseif strCurrentPath=='/MuhkuhTest/Testcase/Parameter' then
+    local strName = atAttributes['name']
+    if strName==nil or strName=='' then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
+    else
+      aLxpAttr.strParameterName = strName
+    end
+
+  elseif strCurrentPath=='/MuhkuhTest/Testcase/Connection' then
     local strName = atAttributes['name']
     if strName==nil or strName=='' then
       aLxpAttr.tResult = nil
@@ -83,11 +92,21 @@ function TestDescription.__parseTests_EndElement(tParser, strName)
     if aLxpAttr.strParameterName==nil then
       aLxpAttr.tResult = nil
       aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
-    elseif aLxpAttr.strParameterData==nil then
+    elseif aLxpAttr.strParameterValue==nil then
       aLxpAttr.tResult = nil
-      aLxpAttr.tLog.error('Error in line %d, col %d: missing data for parameter.', iPosLine, iPosColumn)
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing value for parameter.', iPosLine, iPosColumn)
     else
-      table.insert(aLxpAttr.tTestCase.parameter, {name=aLxpAttr.strParameterName, value=aLxpAttr.strParameterData})
+      table.insert(aLxpAttr.tTestCase.parameter, {name=aLxpAttr.strParameterName, value=aLxpAttr.strParameterValue})
+    end
+  elseif strCurrentPath=='/MuhkuhTest/Testcase/Connection' then
+    if aLxpAttr.strParameterName==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
+    elseif aLxpAttr.strParameterConnection==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing connection for parameter.', iPosLine, iPosColumn)
+    else
+      table.insert(aLxpAttr.tTestCase.parameter, {name=aLxpAttr.strParameterName, connection=aLxpAttr.strParameterConnection})
     end
   end
 
@@ -106,7 +125,9 @@ function TestDescription.__parseTests_CharacterData(tParser, strData)
   local aLxpAttr = tParser:getcallbacks().userdata
 
   if aLxpAttr.strCurrentPath=="/MuhkuhTest/Testcase/Parameter" then
-    aLxpAttr.strParameterData = strData
+    aLxpAttr.strParameterValue = strData
+  elseif aLxpAttr.strCurrentPath=="/MuhkuhTest/Testcase/Connection" then
+    aLxpAttr.strParameterConnection = strData
   end
 end
 
@@ -130,7 +151,8 @@ function TestDescription:__parse_tests(strTestsFile)
 
       tTestCase = nil,
       strParameterName = nil,
-      strParameterData = nil,
+      strParameterValue = nil,
+      strParameterConnection = nil,
       atTestCases = {},
 
       tResult = true,
@@ -213,6 +235,27 @@ end
 
 function TestDescription:getTestNames()
   return self.astrTestNames
+end
+
+
+
+function TestDescription:getTestCaseParameters(uiTestCase)
+  local tLog = self.tLog
+  local tResult
+
+  -- Is the test case valid?
+  local strType = type(uiTestCase)
+  if strType=='number' then
+    if uiTestCase>0 and uiTestCase<=self.uiNumberOfTests then
+      tResult = self.atTestCases[uiTestCase].parameter
+    else
+      tLog.error('Invalid test case index for test cases 1 to %d: %d .', self.uiNumberOfTests, uiTestCase)
+    end
+  else
+    tLog.error('The test case must be a number, here it has the type %s.', strType)
+  end
+
+  return tResult
 end
 
 
