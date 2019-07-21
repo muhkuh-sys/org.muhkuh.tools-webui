@@ -5,6 +5,9 @@ local json = require 'dkjson'
 local zmq = require 'lzmq'
 local TestDescription = require 'test_description'
 
+-- Register the tester as a global module.
+_G.tester = require 'tester_webgui'
+
 -- Do not buffer stdout and stderr.
 io.stdout:setvbuf('no')
 io.stderr:setvbuf('no')
@@ -303,8 +306,71 @@ local function run_tests(atModules, tTestDescription)
       end
       tLogSystem.info("______________________________________________________________________________")
 
+      -- Execute the test code. Write a stack trace to the debug logger if the test case crashes.
+      fStatus, tResult = xpcall(function() tModule:run() end, function(tErr) tLogSystem.debug(debug.traceback()) return tErr end)
+      tLogSystem.info('Testcase %d (%s) finished.', uiTestIndex, strTestCaseName)
+      if not fStatus then
+        local strError
+        if tResult~=nil then
+          strError = tostring(tResult)
+        else
+          strError = 'No error message.'
+        end
+        tLogSystem.error('Error running the test: %s', strError)
+
+        fTestResult = false
+        break
+      end
     end
   end
+
+  -- TODO: Close the connection to the netX.
+--  close_netx_connection()
+
+  -- Print the result in huge letters.
+  if fTestResult==true then
+    tLogSystem.info('***************************************')
+    tLogSystem.info('*                                     *')
+    tLogSystem.info('* ######## ########  ######  ######## *')
+    tLogSystem.info('*    ##    ##       ##    ##    ##    *')
+    tLogSystem.info('*    ##    ##       ##          ##    *')
+    tLogSystem.info('*    ##    ######    ######     ##    *')
+    tLogSystem.info('*    ##    ##             ##    ##    *')
+    tLogSystem.info('*    ##    ##       ##    ##    ##    *')
+    tLogSystem.info('*    ##    ########  ######     ##    *')
+    tLogSystem.info('*                                     *')
+    tLogSystem.info('*          #######  ##    ##          *')
+    tLogSystem.info('*         ##     ## ##   ##           *')
+    tLogSystem.info('*         ##     ## ##  ##            *')
+    tLogSystem.info('*         ##     ## #####             *')
+    tLogSystem.info('*         ##     ## ##  ##            *')
+    tLogSystem.info('*         ##     ## ##   ##           *')
+    tLogSystem.info('*          #######  ##    ##          *')
+    tLogSystem.info('*                                     *')
+    tLogSystem.info('***************************************')
+  else
+    tLogSystem.error('*******************************************************')
+    tLogSystem.error('*                                                     *')
+    tLogSystem.error('*         ######## ########  ######  ########         *')
+    tLogSystem.error('*            ##    ##       ##    ##    ##            *')
+    tLogSystem.error('*            ##    ##       ##          ##            *')
+    tLogSystem.error('*            ##    ######    ######     ##            *')
+    tLogSystem.error('*            ##    ##             ##    ##            *')
+    tLogSystem.error('*            ##    ##       ##    ##    ##            *')
+    tLogSystem.error('*            ##    ########  ######     ##            *')
+    tLogSystem.error('*                                                     *')
+    tLogSystem.error('* ########    ###    #### ##       ######## ########  *')
+    tLogSystem.error('* ##         ## ##    ##  ##       ##       ##     ## *')
+    tLogSystem.error('* ##        ##   ##   ##  ##       ##       ##     ## *')
+    tLogSystem.error('* ######   ##     ##  ##  ##       ######   ##     ## *')
+    tLogSystem.error('* ##       #########  ##  ##       ##       ##     ## *')
+    tLogSystem.error('* ##       ##     ##  ##  ##       ##       ##     ## *')
+    tLogSystem.error('* ##       ##     ## #### ######## ######## ########  *')
+    tLogSystem.error('*                                                     *')
+    tLogSystem.error('*******************************************************')
+  end
+
+  return fTestResult
 end
 
 
