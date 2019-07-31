@@ -105,7 +105,7 @@ class TesterApp extends React.Component {
       tRunningTest_uiRunningTest: null,
       tRunningTest_uiLastRunningTest: null,
 
-      tUI_CowIconSize: '3em',
+      tUI_CowIconSize: '5em',
       tUI_tInteraction: null
     };
 
