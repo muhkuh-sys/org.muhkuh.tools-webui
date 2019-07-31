@@ -39,6 +39,8 @@ function TestDescription.__parseTests_StartElement(tParser, strName, atAttribute
     local strID = atAttributes['id']
     local strFile = atAttributes['file']
     local strName = atAttributes['name']
+    local strPre = atAttributes['pre']
+    local strPost = atAttributes['post']
     if (strID==nil or strID=='') and (strFile==nil or strFile=='') then
       aLxpAttr.tResult = nil
       aLxpAttr.tLog.error('Error in line %d, col %d: one of "id" or "file" must be present, but none found.', iPosLine, iPosColumn)
@@ -53,6 +55,8 @@ function TestDescription.__parseTests_StartElement(tParser, strName, atAttribute
         id = strID,
         file = strFile,
         name = strName,
+        pre = strPre,
+        post = strPost,
         parameter = {}
       }
       aLxpAttr.tTestCase = tTestCase
@@ -303,6 +307,49 @@ function TestDescription:getTestCaseParameters(uiTestCase)
 
   return tResult
 end
+
+
+
+function TestDescription:getTestCaseActionPre(uiTestCase)
+  local tLog = self.tLog
+  local tResult
+
+  -- Is the test case valid?
+  local strType = type(uiTestCase)
+  if strType=='number' then
+    if uiTestCase>0 and uiTestCase<=self.uiNumberOfTests then
+      tResult = self.atTestCases[uiTestCase].pre
+    else
+      tLog.error('Invalid test case index for test cases 1 to %d: %d .', self.uiNumberOfTests, uiTestCase)
+    end
+  else
+    tLog.error('The test case must be a number, here it has the type %s.', strType)
+  end
+
+  return tResult
+end
+
+
+
+function TestDescription:getTestCaseActionPost(uiTestCase)
+  local tLog = self.tLog
+  local tResult
+
+  -- Is the test case valid?
+  local strType = type(uiTestCase)
+  if strType=='number' then
+    if uiTestCase>0 and uiTestCase<=self.uiNumberOfTests then
+      tResult = self.atTestCases[uiTestCase].post
+    else
+      tLog.error('Invalid test case index for test cases 1 to %d: %d .', self.uiNumberOfTests, uiTestCase)
+    end
+  else
+    tLog.error('The test case must be a number, here it has the type %s.', strType)
+  end
+
+  return tResult
+end
+
 
 
 return TestDescription

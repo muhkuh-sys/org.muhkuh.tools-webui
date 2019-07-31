@@ -289,6 +289,24 @@ end
 
 
 
+local function run_action(strAction)
+  if strAction~=nil then
+    -- If the action is a JSX file, this is a static GUI element.
+    if string.sub(strAction, -4)=='.jsx' then
+      local tResult = tester:setInteraction(strAction)
+      if tResult==nil then
+        error('Failed to load the JSX.')
+      end
+    elseif string.sub(strAction, -4)=='.lua' then
+      error('LUA actions are not yet implemented.')
+    else
+      error('Unknown action: ' .. tostring(strAction))
+    end
+  end
+end
+
+
+
 local function run_tests(atModules, tTestDescription)
   -- Run all enabled modules with their parameter.
   local fTestResult = true
@@ -298,6 +316,10 @@ local function run_tests(atModules, tTestDescription)
   for uiTestIndex = 1, uiNumberOfTests do
     repeat
       local fExitTestCase = true
+
+      -- Run a pre action if present.
+      local strAction = tTestDescription:getTestCaseActionPre(uiTestIndex)
+      run_action(strAction)
 
       -- Get the module for the test index.
       local tModule = atModules[uiTestIndex]
@@ -362,6 +384,10 @@ local function run_tests(atModules, tTestDescription)
               fTestResult = false
             end
           end
+        else
+          -- Run a post action if present.
+          local strAction = tTestDescription:getTestCaseActionPost(uiTestIndex)
+          run_action(strAction)
         end
       end
     until fExitTestCase==true
