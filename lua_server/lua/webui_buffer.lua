@@ -37,9 +37,7 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
   self.tLogWebUi = require "log".new(
     -- maximum log level
     'debug',
-    function(fmt, msg, lvl, now) this:__onLogMessage(fmt, msg, lvl, now) end,
-    -- Formatter
-    require "log.formatter.format".new()
+    function(fmt, msg, lvl, now) this:__onLogMessage(fmt, msg, lvl, now) end
   )
 
   self.tLogTimer = uv.timer()
@@ -143,7 +141,7 @@ end
 function WebUiBuffer:setTestNames(astrTestNames)
   local strType = type(astrTestNames)
   if strType~='table' then
-    self.tLogWebUi.error('The argument to "setTestNames" must be an array. Here it is %s.', strType)
+    self.tLogWebUi.error(string.format('The argument to "setTestNames" must be an array. Here it is %s.', strType))
   else
     -- Copy the test names and set the state to the default.
     local astrNames = {}
