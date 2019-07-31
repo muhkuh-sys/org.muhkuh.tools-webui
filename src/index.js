@@ -19,6 +19,7 @@ import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import FilledInput from '@material-ui/core/FilledInput';
 import FormControl from '@material-ui/core/FormControl';
 import FormHelperText from '@material-ui/core/FormHelperText';
+import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -133,6 +134,7 @@ class TesterApp extends React.Component {
       'FilledInput': FilledInput,
       'FormControl': FormControl,
       'FormHelperText': FormHelperText,
+      'Grid': Grid,
       'IconButton': IconButton,
       'Input': Input,
       'InputLabel': InputLabel,
