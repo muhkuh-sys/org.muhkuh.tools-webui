@@ -240,12 +240,28 @@ class TesterApp extends React.Component {
         this.onMessage_setTestNames(tJson);
         break;
 
+      case 'SetTestStati':
+        this.onMessage_setTestStati(tJson);
+        break;
+
       case 'SetInteraction':
         this.onMessage_SetInteraction(tJson);
         break;
 
       case 'Log':
         this.onMessage_Log(tJson);
+        break;
+
+      case 'SetCurrentSerial':
+        this.onMessage_SetCurrentSerial(tJson)
+        break;
+
+      case 'SetRunningTest':
+        this.onMessage_SetRunningTest(tJson)
+        break;
+
+      case 'SetTestState':
+        this.onMessage_SetTestState(tJson)
         break;
 
       default:
@@ -285,6 +301,16 @@ class TesterApp extends React.Component {
           tTest_astrTestNames: astrTestNames,
           tTest_atTestStati: atTestStati
         });
+      }
+    }
+  }
+
+  onMessage_setTestStati(tJson) {
+    /* Check the JSON. The test stati must be an array. */
+    if('testStati' in tJson) {
+      const astrStati = tJson.testStati;
+      if( Array.isArray(astrStati)==true ) {
+        this.setAllTestStati(astrStati)
       }
     }
   }
@@ -360,6 +386,34 @@ class TesterApp extends React.Component {
     }, this);
   }
 
+  onMessage_SetCurrentSerial(tJson) {
+    const uiCurrentSerial = tJson.currentSerial;
+    this.setState({
+      tRunningTest_uiCurrentSerial: uiCurrentSerial
+    });
+  }
+
+  onMessage_SetRunningTest(tJson) {
+    const uiRunningTest = tJson.runningTest;
+    const uiLastRunningTest = this.state.tRunningTest_uiRunningTest;
+    /* Only overwrite the last running test if currently something is running. */
+    if( uiLastRunningTest!==null ) {
+      this.setState({
+        tRunningTest_uiRunningTest: uiRunningTest,
+        tRunningTest_uiLastRunningTest: uiLastRunningTest
+      });
+    } else {
+      this.setState({
+        tRunningTest_uiRunningTest: uiRunningTest
+      });
+    }
+  }
+
+  onMessage_SetTestState(tJson) {
+    const strTestState = tJson.testState;
+    this.setTestState(strTestState);
+  }
+
   sendInteractionMessage = (atObject) => {
     /* TODO: The argument must be an object. */
 
@@ -403,7 +457,7 @@ class TesterApp extends React.Component {
     const uiRunningTest = this.state.tRunningTest_uiRunningTest;
     if( uiRunningTest!=null ) {
       /* Translate the state to an ID. */
-      if( strState in this.atResultNameToId ) {
+      if( this.atResultNameToId.has(strState) ) {
         const uiState = this.atResultNameToId.get(strState);
 
         /* Clone the array. Do not modify the state contents directly. */
@@ -426,7 +480,7 @@ class TesterApp extends React.Component {
     /* Loop over all elements in the argument. */
     astrStates.forEach(function(strState, uiIndex) {
       /* Translate the state to an ID. */
-      if( strState in this.atResultNameToId ) {
+      if( this.atResultNameToId.has(strState) ) {
         const uiState = this.atResultNameToId.get(strState);
         atStati[uiIndex] = uiState;
       }
