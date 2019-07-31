@@ -296,47 +296,78 @@ local function run_tests(atModules, tTestDescription)
   local astrTestNames = tTestDescription:getTestNames()
   local uiNumberOfTests = tTestDescription:getNumberOfTests()
   for uiTestIndex = 1, uiNumberOfTests do
-    -- Get the module for the test index.
-    local tModule = atModules[uiTestIndex]
-    local strTestCaseName = astrTestNames[uiTestIndex]
-    if tModule==nil then
-      tLogSystem.info('Not running deactivated test case %02d (%s).', uiTestIndex, strTestCaseName)
-    else
-      tLogSystem.info('Running testcase %d (%s).', uiTestIndex, strTestCaseName)
+    repeat
+      local fExitTestCase = true
 
-      -- Get the parameters for the module.
-      local atParameters = tModule.atParameter
-      if atParameters==nil then
-        atParameters = {}
-      end
-
-      -- Show all parameters for the test case.
-      tLogSystem.info("__/Parameters/________________________________________________________________")
-      if pl.tablex.size(atParameters)==0 then
-        tLogSystem.info('Testcase %d (%s) has no parameter.', uiTestIndex, strTestCaseName)
+      -- Get the module for the test index.
+      local tModule = atModules[uiTestIndex]
+      local strTestCaseName = astrTestNames[uiTestIndex]
+      if tModule==nil then
+        tLogSystem.info('Not running deactivated test case %02d (%s).', uiTestIndex, strTestCaseName)
       else
-        tLogSystem.info('Parameters for testcase %d (%s):', uiTestIndex, strTestCaseName)
-        for _, tParameter in pairs(atParameters) do
-          tLogSystem.info('  %02d:%s = %s', uiTestIndex, tParameter.strName, tParameter:get_pretty())
-        end
-      end
-      tLogSystem.info("______________________________________________________________________________")
+        tLogSystem.info('Running testcase %d (%s).', uiTestIndex, strTestCaseName)
 
-      -- Execute the test code. Write a stack trace to the debug logger if the test case crashes.
-      fStatus, tResult = xpcall(function() tModule:run() end, function(tErr) tLogSystem.debug(debug.traceback()) return tErr end)
-      tLogSystem.info('Testcase %d (%s) finished.', uiTestIndex, strTestCaseName)
-      if not fStatus then
-        local strError
-        if tResult~=nil then
-          strError = tostring(tResult)
+        -- Get the parameters for the module.
+        local atParameters = tModule.atParameter
+        if atParameters==nil then
+          atParameters = {}
+        end
+
+        -- Show all parameters for the test case.
+        tLogSystem.info("__/Parameters/________________________________________________________________")
+        if pl.tablex.size(atParameters)==0 then
+          tLogSystem.info('Testcase %d (%s) has no parameter.', uiTestIndex, strTestCaseName)
         else
-          strError = 'No error message.'
+          tLogSystem.info('Parameters for testcase %d (%s):', uiTestIndex, strTestCaseName)
+          for _, tParameter in pairs(atParameters) do
+            tLogSystem.info('  %02d:%s = %s', uiTestIndex, tParameter.strName, tParameter:get_pretty())
+          end
         end
-        tLogSystem.error('Error running the test: %s', strError)
+        tLogSystem.info("______________________________________________________________________________")
 
-        fTestResult = false
-        break
+        sendRunningTest(uiTestIndex)
+
+        -- Execute the test code. Write a stack trace to the debug logger if the test case crashes.
+        fStatus, tResult = xpcall(function() tModule:run() end, function(tErr) tLogSystem.debug(debug.traceback()) return tErr end)
+        tLogSystem.info('Testcase %d (%s) finished.', uiTestIndex, strTestCaseName)
+
+        -- Send the result to the GUI.
+        local strTestState = 'error'
+        if fStatus==true then
+          strTestState = 'ok'
+        end
+        sendTestState(strTestState)
+        sendRunningTest(nil)
+
+        if not fStatus then
+          local strError
+          if tResult~=nil then
+            strError = tostring(tResult)
+          else
+            strError = 'No error message.'
+          end
+          tLogSystem.error('Error running the test: %s', strError)
+
+          local tResult = tester:setInteractionGetJson('jsx/test_failed.jsx', {})
+          if tResult==nil then
+            tLogSystem.fatal('Failed to read interaction.')
+          else
+            local tJson = tResult
+            pl.pretty.dump(tJson)
+            tester:clearInteraction()
+
+            if tJson.button=='again' then
+              fExitTestCase = false
+            else
+              fTestResult = false
+            end
+          end
+        end
       end
+    until fExitTestCase==true
+
+    if fTestResult~=true then
+      break
     end
   end
 
@@ -364,6 +395,23 @@ local function run_tests(atModules, tTestDescription)
     tLogSystem.info('*          #######  ##    ##          *')
     tLogSystem.info('*                                     *')
     tLogSystem.info('***************************************')
+
+    local tResult = tester:setInteractionGetJson('jsx/test_ok.jsx', {})
+    if tResult==nil then
+      tLogSystem.fatal('Failed to read interaction.')
+    else
+      local tJson = tResult
+      pl.pretty.dump(tJson)
+      tester:clearInteraction()
+
+--[[      if tJson.button=='again' then
+              fExitTestCase = false
+            else
+              fTestResult = false
+            end
+          end
+--]]
+    end
   else
     tLogSystem.error('*******************************************************')
     tLogSystem.error('*                                                     *')
@@ -397,6 +445,8 @@ local tResult = tTestDescription:parse('tests.xml')
 if tResult~=true then
   tLogSystem.error('Failed to parse the test description.')
 else
+  sendTitles(tTestDescription:getTitle(), tTestDescription:getSubtitle())
+
   local astrTestNames = tTestDescription:getTestNames()
   -- Get all test names in the style of a table.
   local astrQuotedTests = {}
@@ -422,8 +472,25 @@ else
     local ulSerialFirst = tonumber(tJson.serialFirst)
     local ulSerialLast = ulSerialFirst + tonumber(tJson.numberOfBoards) - 1
     tLogSystem.info('Running over the serials [%d,%d] .', ulSerialFirst, ulSerialLast)
+
+    -- Build the initial test states.
+    local astrStati = {}
+    for _, fIsEnabled in ipairs(tJson.activeTests) do
+      local strState = 'idle'
+      if fIsEnabled==false then
+        strState = 'disabled'
+      end
+      table.insert(astrStati, strState)
+    end
+
+    -- Set the serial numbers.
+    sendSerials(ulSerialFirst, ulSerialLast)
+    sendTestNames(tTestDescription:getTestNames())
+    sendTestStati(astrStati)
+
     for ulSerialCurrent = ulSerialFirst, ulSerialLast do
       tLogSystem.info('Testing serial %d .', ulSerialCurrent)
+      sendCurrentSerial(ulSerialCurrent)
 
       tResult = collect_testcases(tTestDescription, tJson.activeTests)
       if tResult==nil then
@@ -444,6 +511,9 @@ else
         end
       end
     end
+
+    -- TODO: Show a test result (OK/FAILED) and buttons to proceed to the next board or run the test on the same board again.
+--    sendCurrentSerial(nil)
   end
 end
 
