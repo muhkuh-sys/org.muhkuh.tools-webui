@@ -30,7 +30,7 @@ tLog.info('Start')
 
 local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, usWebsocketPort)
-webui_buffer:setTitle('NXHX90-R1', '7730.100')
+webui_buffer:setTitle('No title', 'No subtitle')
 webui_buffer:setSerials(true, nil, nil)
 webui_buffer:setTestNames({})
 webui_buffer:setInteraction(nil)
