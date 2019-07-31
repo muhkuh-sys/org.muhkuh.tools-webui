@@ -1,3 +1,7 @@
+-- Do not buffer stdout and stderr.
+io.stdout:setvbuf('no')
+io.stderr:setvbuf('no')
+
 require 'muhkuh_cli_init'
 
 local pl = require'pl.import_into'()
