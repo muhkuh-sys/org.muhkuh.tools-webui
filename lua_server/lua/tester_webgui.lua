@@ -4,9 +4,25 @@ local Tester = class()
 
 function Tester:_init()
   self.pl = require'pl.import_into'()
+  self.json = require 'dkjson'
 
   self.tCommonPlugin = nil
   self.strCommonPluginName = nil
+
+  self.tLog = nil
+  self.tSocket = nil
+end
+
+
+
+function Tester:setLog(tLog)
+  self.tLog = tLog
+end
+
+
+
+function Tester:setSocket(tSocket)
+  self.tSocket = tSocket
 end
 
 
@@ -299,5 +315,78 @@ function Tester:mbin_simple_run(tPlugin, strFilename, aParameter)
   self:mbin_set_parameter(tPlugin, aAttr, aParameter)
   return self:mbin_execute(tPlugin, aAttr, aParameter)
 end
+
+
+
+function Tester:setInteraction(strFilename, atReplace)
+  local tResult
+
+  -- Read the interaction code.
+  local strJsxTemplate, strErr = self.pl.file.read(strFilename)
+  if strJsxTemplate==nil then
+    self.tLog.error('Failed to read JSX from "%s": %s', strFilename, strErr)
+  else
+    local strJsx
+
+    -- Replace something?
+    if atReplace==nil then
+      strJsx = strJsxTemplate
+    else
+      strJsx = string.gsub(strJsxTemplate, '@([%w_]+)@', atReplace)
+    end
+
+    self.tSocket:send(string.format('INT%s', strJsx))
+
+    tResult = true
+  end
+
+  return tResult
+end
+
+
+
+function Tester:getInteractionResponse()
+  local strResponse
+
+  repeat
+    local strMessage = self.tSocket:recv()
+    strResponse = string.match(strMessage, '^RSP(.*)')
+    if strResponse==nil then
+      self.tLog.debug('Ignoring invalid response: %s', strMessage)
+    end
+  until strResponse~=nil
+
+  return strResponse
+end
+
+
+
+function Tester:setInteractionGetJson(strFilename, atReplace)
+  local tLog = self.tLog
+
+  local tResult = self:setInteraction(strFilename, atReplace)
+  if tResult==true then
+    local strResponseRaw = self:getInteractionResponse()
+    if strResponseRaw~=nil then
+      local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+      if tJson==nil then
+        tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+      else
+        tLog.debug('JSON OK!')
+        tResult = tJson
+      end
+    end
+  end
+
+  return tResult
+end
+
+
+
+function Tester:clearInteraction()
+  self.tSocket:send('INT')
+end
+
+
 
 return Tester

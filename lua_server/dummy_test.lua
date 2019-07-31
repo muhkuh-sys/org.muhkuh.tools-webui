@@ -43,6 +43,7 @@ if tResult==nil then
   error('Failed to connect the socket: ' .. tostring(strError))
 end
 m_zmqSocket = tZSocket
+tester:setSocket(m_zmqSocket)
 
 print(string.format('0MQ socket connected to tcp://127.0.0.1:%d', usServerPort))
 
@@ -67,77 +68,9 @@ local tLogSystem = require "log".new(
   tLogWriterSystem,
   require "log.formatter.format".new()
 )
+tester:setLog(tLogSystem)
 
 ------------------------------------------------------------------------------
-
-local function setInteraction(strFilename, atReplace)
-  local tResult
-
-  -- Read the interaction code.
-  local strJsxTemplate, strErr = pl.file.read(strFilename)
-  if strJsxTemplate==nil then
-    tLogSystem.error('Failed to read JSX from "%s": %s', strFilename, strErr)
-  else
-    local strJsx
-
-    -- Replace something?
-    if atReplace==nil then
-      strJsx = strJsxTemplate
-    else
-      strJsx = string.gsub(strJsxTemplate, '@([%w_]+)@', atReplace)
-    end
-
-    m_zmqSocket:send(string.format('INT%s', strJsx))
-
-    tResult = true
-  end
-
-  return tResult
-end
-
-
-
-local function getInteractionResponse()
-  local strResponse
-
-  repeat
-    local strMessage = m_zmqSocket:recv()
-    strResponse = string.match(strMessage, '^RSP(.*)')
-    if strResponse==nil then
-      tLogSystem.debug('Ignoring invalid response: %s', strMessage)
-    end
-  until strResponse~=nil
-
-  return strResponse
-end
-
-
-
-local function setInteractionGetJson(strFilename, atReplace)
-  local tResult = setInteraction(strFilename, atReplace)
-  if tResult==true then
-    local strResponseRaw = getInteractionResponse()
-    if strResponseRaw~=nil then
-      local tJson, uiPos, strJsonErr = json.decode(strResponseRaw)
-      if tJson==nil then
-        tLogSystem.error('JSON Error: %d %s', uiPos, strJsonErr)
-      else
-        tLogSystem.debug('JSON OK!')
-        tResult = tJson
-      end
-    end
-  end
-
-  return tResult
-end
-
-
-
-local function clearInteraction()
-  m_zmqSocket:send('INT')
-end
-
-
 
 local function sendTitles(strTitle, strSubtitle)
   if strTitle==nil then
@@ -475,13 +408,13 @@ else
   -- Now set a new interaction.
 
   -- Read the first interaction code.
-  tResult = setInteractionGetJson('jsx/select_serial_range_and_tests.jsx', { ['TEST_NAMES']=strTestNames })
+  tResult = tester:setInteractionGetJson('jsx/select_serial_range_and_tests.jsx', { ['TEST_NAMES']=strTestNames })
   if tResult==nil then
     tLogSystem.fatal('Failed to read interaction.')
   else
     local tJson = tResult
     pl.pretty.dump(tJson)
-    clearInteraction()
+    tester:clearInteraction()
 
     -- Loop over all serials.
     -- ulSerialFirst is the first serial to test
