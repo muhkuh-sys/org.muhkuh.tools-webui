@@ -9,6 +9,8 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments)
   self.strCommand = strCommand
   self.astrArguments = astrArguments
 
+  self.json = require 'dkjson'
+
   self.m_zmqContext = nil
   self.m_zmqSocket = nil
   self.m_zmqPort = nil
@@ -275,13 +277,17 @@ end
 
 
 function ProcessZmq:onStdOut(strData)
-  self.tLogTest.info(strData)
+  if strData~=nil then
+    self.tLogTest.info(strData)
+  end
 end
 
 
 
 function ProcessZmq:onStdErr(strData)
-  self.tLogTest.error(strData)
+  if strData~=nil then
+    self.tLogTest.error(strData)
+  end
 end
 
 
