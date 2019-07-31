@@ -2,7 +2,7 @@
 io.stdout:setvbuf('no')
 io.stderr:setvbuf('no')
 
-require 'muhkuh_cli_init'
+require 'muhkuh_server_init'
 local Pegasus = require 'pegasus'
 local argparse = require 'argparse'
 local pl = require'pl.import_into'()

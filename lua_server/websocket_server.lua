@@ -1,4 +1,4 @@
-require 'muhkuh_cli_init'
+require 'muhkuh_server_init'
 
 local pl = require'pl.import_into'()
 local uv  = require"lluv"
