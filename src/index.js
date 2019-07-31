@@ -474,12 +474,11 @@ class TesterApp extends React.Component {
   }
 
   handleCowClick = (uiIndex) => {
-//    this.appendDemoLogLine();
-    this.interval = setInterval(() => this.appendDemoLogLine(), 100);
-
-    this.setState({
-      tRunningTest_uiRunningTest: uiIndex
-    });
+//    this.interval = setInterval(() => this.appendDemoLogLine(), 100);
+//
+//    this.setState({
+//      tRunningTest_uiRunningTest: uiIndex
+//    });
   }
 
   handleOpenAppMenu = () => {
