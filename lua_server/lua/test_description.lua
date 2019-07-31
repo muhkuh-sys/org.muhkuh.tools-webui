@@ -8,6 +8,8 @@ function TestDescription:_init(tLog)
   self.pl = require'pl.import_into'()
   self.lxp = require 'lxp'
 
+  self.strTitle = nil
+  self.strSubtitle = nil
   self.atTestCases = nil
   self.uiNumberOfTests = nil
   self.astrTestNames = nil
@@ -27,7 +29,13 @@ function TestDescription.__parseTests_StartElement(tParser, strName, atAttribute
   local strCurrentPath = table.concat(aLxpAttr.atCurrentPath, "/")
   aLxpAttr.strCurrentPath = strCurrentPath
 
-  if strCurrentPath=='/MuhkuhTest/Testcase' then
+  if strCurrentPath=='/MuhkuhTest' then
+    local strTitle = atAttributes['title']
+    local strSubtitle = atAttributes['subtitle']
+    aLxpAttr.strTitle = strTitle
+    aLxpAttr.strSubtitle = strSubtitle
+
+  elseif strCurrentPath=='/MuhkuhTest/Testcase' then
     local strID = atAttributes['id']
     local strFile = atAttributes['file']
     local strName = atAttributes['name']
@@ -149,6 +157,8 @@ function TestDescription:__parse_tests(strTestsFile)
       atCurrentPath = {""},
       strCurrentPath = nil,
 
+      strTitle = nil,
+      strSubtitle = nil,
       tTestCase = nil,
       strParameterName = nil,
       strParameterValue = nil,
@@ -181,7 +191,10 @@ function TestDescription:__parse_tests(strTestsFile)
     elseif aLxpAttr.tResult~=true then
       tLog.error('Failed to parse the test configuration.')
     else
-      tResult = aLxpAttr.atTestCases
+      self.strTitle = aLxpAttr.strTitle
+      self.strSubtitle = aLxpAttr.strSubtitle
+      self.atTestCases = aLxpAttr.atTestCases
+      tResult = true
     end
   end
 
@@ -203,12 +216,12 @@ function TestDescription:parse(strTestsFile)
     tResult = nil
   else
     tLog.debug('Parsing tests file "%s".', strTestsFile)
-    local atTestCases = self:__parse_tests(strTestsFile)
-    if atTestCases==nil then
+    tResult = self:__parse_tests(strTestsFile)
+    if tResult~=true then
       tLog.error('Failed to parse the test configuration file "%s".', strTestsFile)
       tResult = nil
     else
-      self.atTestCases = atTestCases
+      local atTestCases = self.atTestCases
 
       -- Get the number of available test cases.
       self.uiNumberOfTests = table.maxn(atTestCases)
@@ -223,6 +236,18 @@ function TestDescription:parse(strTestsFile)
   end
 
   return tResult
+end
+
+
+
+function TestDescription:getTitle()
+  return self.strTitle
+end
+
+
+
+function TestDescription:getSubtitle()
+  return self.strSubtitle
 end
 
 
