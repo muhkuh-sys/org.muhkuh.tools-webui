@@ -38,6 +38,8 @@ import Tab from '@material-ui/core/Tab';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 
+import ReactImageMagnify from 'react-image-magnify';
+
 import CancelIcon from '@material-ui/icons/Cancel';
 import MenuIcon from '@material-ui/icons/Menu';
 import PowerIcon from '@material-ui/icons/Power';
@@ -154,7 +156,8 @@ class TesterApp extends React.Component {
       'Tabs': Tabs,
       'Tab': Tab,
       'TextField': TextField,
-      'Typography': Typography
+      'Typography': Typography,
+      'ReactImageMagnify': ReactImageMagnify
     };
     this.atComponents = atComponents;
     /* Generate the code to assign the components. */
