@@ -17,7 +17,14 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments)
 
   self.m_zmqReceiveHandler = {
     LOG = self.__onZmqReceiveLog,
-    INT = self.__onZmqReceiveInt
+    INT = self.__onZmqReceiveInt,
+    TTL = self.__onZmqReceiveTtl,
+    SER = self.__onZmqReceiveSer,
+    NAM = self.__onZmqReceiveNam,
+    STA = self.__onZmqReceiveSta,
+    CUR = self.__onZmqReceiveCur,
+    RUN = self.__onZmqReceiveRun,
+    RES = self.__onZmqReceiveRes
   }
 end
 
@@ -85,6 +92,105 @@ function ProcessZmq:__onZmqReceiveInt(tHandle, strMessage)
     end
   else
     print(string.format('Invalid interaction received: "%s".', strMessage))
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveTtl(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^TTL(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    local strTitle = tJson.title
+    local strSubtitle = tJson.subtitle
+    self.m_buffer:setTitle(strTitle, strSubtitle)
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveSer(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^SER(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    local fHasSerial = tJson.hasSerial
+    local uiFirstSerial = tJson.firstSerial
+    local uiLastSerial = tJson.lastSerial
+    self.m_buffer:setSerials(fHasSerial, uiFirstSerial, uiLastSerial)
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveNam(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^NAM(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    self.m_buffer:setTestNames(tJson)
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveSta(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^STA(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    self.m_buffer:setTestStati(tJson)
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveCur(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^CUR(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    local uiCurrentSerial = tJson.currentSerial
+    self.m_buffer:setCurrentSerial(uiCurrentSerial)
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveRun(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^RUN(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    local uiRunningTest = tJson.runningTest
+    self.m_buffer:setRunningTest(uiRunningTest)
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveRes(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^RES(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    local strTestState = tJson.testState
+    self.m_buffer:setTestState(strTestState)
   end
 end
 

@@ -164,6 +164,24 @@ end
 
 
 
+function WebUiBuffer:setTestStati(astrTestStati)
+  local astrOldTestStati = self.astrTestStati
+  local fChanged = false
+  for uiCnt, strOldState in ipairs(astrOldTestStati) do
+    if strOldState~=astrTestStati[uiCnt] then
+      fChanged = true
+    end
+  end
+  if fChanged==true then
+    for uiCnt = 1, table.maxn(astrOldTestStati) do
+      astrOldTestStati[uiCnt] = astrTestStati[uiCnt]
+    end
+    self:__sendTestStati()
+  end
+end
+
+
+
 function WebUiBuffer:setInteraction(strJsx)
   if strJsx==nil then
     strJsx = ''
@@ -181,6 +199,55 @@ function WebUiBuffer:setInteraction(strJsx)
 
     -- Push the code to the UI if there is a connection.
     self:__sendInteraction()
+  end
+end
+
+
+
+function WebUiBuffer:setCurrentSerial(uiCurrentSerial)
+  -- The current serial number can be nil or a number.
+  if uiCurrentSerial==nil or tonumber(uiCurrentSerial)~=nil then
+    -- Did the current serial change?
+    local fChanged = (self.uiCurrentSerial~=uiCurrentSerial)
+    if fChanged==true then
+      self.uiCurrentSerial = uiCurrentSerial
+
+      self:__sendCurrentSerial()
+    end
+  end
+end
+
+
+
+function WebUiBuffer:setRunningTest(uiRunningTest)
+  -- The running test can be nil or a number.
+  if uiRunningTest==nil or tonumber(uiRunningTest)~=nil then
+    -- Did the running test change?
+    local fChanged = (self.uiRunningTest~=uiRunningTest)
+    if fChanged==true then
+      self.uiRunningTest = uiRunningTest
+
+      self:__sendRunningTest()
+    end
+  end
+end
+
+
+
+function WebUiBuffer:setTestState(strTestState)
+  -- The test state must be a string.
+  if type(strTestState)=='string' then
+    -- This works only if a test is running.
+    local uiRunningTest = self.uiRunningTest
+    if uiRunningTest~=nil then
+      local strOldState = self.astrTestStati[uiRunningTest]
+      -- Did something change?
+      local fChanged = (strOldState~=strTestState)
+      if fChanged==true then
+        self.astrTestStati[uiRunningTest] = strTestState
+        self:__sendTestState()
+      end
+    end
   end
 end
 
@@ -220,6 +287,21 @@ end
 
 
 
+function WebUiBuffer:__sendTestStati()
+  -- Push the values to the UI if there is a connection.
+  local tConnection = self.tActiveConnection
+  if tConnection~=nil then
+    local tMessage = {
+      id = 'SetTestStati',
+      testStati = self.astrTestStati
+    }
+    local strJson = self.json.encode(tMessage)
+    tConnection:write(strJson)
+  end
+end
+
+
+
 function WebUiBuffer:__sendInteraction()
   local tConnection = self.tActiveConnection
   if tConnection~=nil then
@@ -229,6 +311,56 @@ function WebUiBuffer:__sendInteraction()
     }
     local strJson = self.json.encode(tMessage)
     tConnection:write(strJson)
+  end
+end
+
+
+
+function WebUiBuffer:__sendCurrentSerial()
+  local tConnection = self.tActiveConnection
+  if tConnection~=nil then
+    local tMessage = {
+      id = 'SetCurrentSerial',
+      currentSerial = self.uiCurrentSerial
+    }
+    local strJson = self.json.encode(tMessage)
+    tConnection:write(strJson)
+  end
+end
+
+
+
+function WebUiBuffer:__sendRunningTest()
+  local tConnection = self.tActiveConnection
+  if tConnection~=nil then
+    local tRunningTest = self.uiRunningTest
+    if tRunningTest~=nil then
+      tRunningTest = tRunningTest - 1
+    end
+    local tMessage = {
+      id = 'SetRunningTest',
+      runningTest = tRunningTest
+    }
+    local strJson = self.json.encode(tMessage)
+    tConnection:write(strJson)
+  end
+end
+
+
+
+function WebUiBuffer:__sendTestState()
+  local uiRunningTest = self.uiRunningTest
+  if uiRunningTest~=nil then
+    -- Push the values to the UI if there is a connection.
+    local tConnection = self.tActiveConnection
+    if tConnection~=nil then
+      local tMessage = {
+        id = 'SetTestState',
+        testState = self.astrTestStati[uiRunningTest]
+      }
+      local strJson = self.json.encode(tMessage)
+      tConnection:write(strJson)
+    end
   end
 end
 

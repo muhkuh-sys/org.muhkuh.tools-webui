@@ -139,6 +139,84 @@ end
 
 
 
+local function sendTitles(strTitle, strSubtitle)
+  if strTitle==nil then
+    strTitle = 'No title'
+  else
+    strTitle = tostring(strTitle)
+  end
+  if strSubtitle==nil then
+    strSubtitle = 'No subtitle'
+  else
+    strSubtitle = tostring(strSubtitle)
+  end
+
+  local tData = {
+    title=strTitle,
+    subtitle=strSubtitle
+  }
+  local strJson = json.encode(tData)
+  m_zmqSocket:send('TTL'..strJson)
+end
+
+
+
+local function sendSerials(ulSerialFirst, ulSerialLast)
+  local tData = {
+    hasSerial=true,
+    firstSerial=ulSerialFirst,
+    lastSerial=ulSerialLast
+  }
+  local strJson = json.encode(tData)
+  m_zmqSocket:send('SER'..strJson)
+end
+
+
+
+local function sendTestNames(astrTestNames)
+  local strJson = json.encode(astrTestNames)
+  m_zmqSocket:send('NAM'..strJson)
+end
+
+
+
+local function sendTestStati(astrTestStati)
+  local strJson = json.encode(astrTestStati)
+  m_zmqSocket:send('STA'..strJson)
+end
+
+
+
+local function sendCurrentSerial(uiCurrentSerial)
+  local tData = {
+    currentSerial=uiCurrentSerial
+  }
+  local strJson = json.encode(tData)
+  m_zmqSocket:send('CUR'..strJson)
+end
+
+
+
+local function sendRunningTest(uiRunningTest)
+  local tData = {
+    runningTest=uiRunningTest
+  }
+  local strJson = json.encode(tData)
+  m_zmqSocket:send('RUN'..strJson)
+end
+
+
+
+local function sendTestState(strTestState)
+  local tData = {
+    testState=strTestState
+  }
+  local strJson = json.encode(tData)
+  m_zmqSocket:send('RES'..strJson)
+end
+
+
+
 local function load_test_module(uiTestIndex)
   local strModuleName = string.format("test%02d", uiTestIndex)
   tLogSystem.debug('Reading module for test %d from %s .', uiTestIndex, strModuleName)
