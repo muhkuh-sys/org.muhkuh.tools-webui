@@ -10,7 +10,8 @@ local zmq = require 'lzmq'
 local TestDescription = require 'test_description'
 
 -- Register the tester as a global module.
-_G.tester = require 'tester_webgui'
+local cTester = require 'tester_webgui'
+_G.tester = cTester()
 
 -- Do not buffer stdout and stderr.
 io.stdout:setvbuf('no')
