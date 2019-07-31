@@ -317,10 +317,6 @@ local function run_tests(atModules, tTestDescription)
     repeat
       local fExitTestCase = true
 
-      -- Run a pre action if present.
-      local strAction = tTestDescription:getTestCaseActionPre(uiTestIndex)
-      run_action(strAction)
-
       -- Get the module for the test index.
       local tModule = atModules[uiTestIndex]
       local strTestCaseName = astrTestNames[uiTestIndex]
@@ -348,6 +344,10 @@ local function run_tests(atModules, tTestDescription)
         tLogSystem.info("______________________________________________________________________________")
 
         sendRunningTest(uiTestIndex)
+
+        -- Run a pre action if present.
+        local strAction = tTestDescription:getTestCaseActionPre(uiTestIndex)
+        run_action(strAction)
 
         -- Execute the test code. Write a stack trace to the debug logger if the test case crashes.
         fStatus, tResult = xpcall(function() tModule:run() end, function(tErr) tLogSystem.debug(debug.traceback()) return tErr end)
