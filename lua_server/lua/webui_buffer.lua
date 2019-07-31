@@ -24,6 +24,9 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
   self.uiFirstSerial = 0
   self.uiLastSerial = 0
 
+  self.uiCurrentSerial = nil
+  self.uiRunningTest = nil
+
   self.astrTestNames = {}
   self.astrTestStati = {}
 
@@ -389,6 +392,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
           self:__sendTitle()
           self:__sendTestNames()
           self:__sendInteraction()
+          self:__sendCurrentSerial()
 
         elseif strId=='RspInteraction' then
           if tTester~=nil then
