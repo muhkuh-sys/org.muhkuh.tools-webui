@@ -1,9 +1,19 @@
-local Tester = {}
+local class = require 'pl.class'
+local Tester = class()
+
+
+function Tester:_init()
+  self.pl = require'pl.import_into'()
+
+  self.tCommonPlugin = nil
+  self.strCommonPluginName = nil
+end
+
 
 
 function Tester.hexdump(strData, uiBytesPerRow)
   uiBytesPerRow = uiBytesPerRow or 16
-  
+
   local aDump
   local uiByteCnt = 0
   local tLog = self.tLog
@@ -39,28 +49,106 @@ end
 
 
 
-function Tester.stdRead(tParentWindow, tPlugin, ulAddress, sizData)
+function Tester:stdRead(tPlugin, ulAddress, sizData)
   return tPlugin:read_image(ulAddress, sizData, self.callback_progress, sizData)
 end
 
 
 
-function Tester.stdWrite(tParentWindow, tPlugin, ulAddress, strData)
-	tPlugin:write_image(ulAddress, strData, self.callback_progress, string.len(strData))
+function Tester:stdWrite(tPlugin, ulAddress, strData)
+  tPlugin:write_image(ulAddress, strData, self.callback_progress, string.len(strData))
 end
 
 
 
-function Tester.stdCall(tParentWindow, tPlugin, ulAddress, ulParameter)
-	print('__/Output/____________________________________________________________________')
-	tPlugin:call(ulAddress, ulParameter, self.callback, 0)
-	print('')
-	print('______________________________________________________________________________')
+function Tester:stdCall(tPlugin, ulAddress, ulParameter)
+  print('__/Output/____________________________________________________________________')
+  tPlugin:call(ulAddress, ulParameter, self.callback, 0)
+  print('')
+  print('______________________________________________________________________________')
 end
 
 
 
-function Tester.mbin_open(strFilename, tPlugin)
+function Tester:getCommonPlugin(strInterfacePattern)
+  -- Is a common plugin present?
+  local tPlugin = self.tCommonPlugin
+  local strPluginName = self.strCommonPluginName
+  if tPlugin~=nil then
+    -- Yes -> does it match the interface?
+    local fMatches = false
+    if strInterfacePattern==nil then
+      -- An empty pattern matches all interfaces.
+      fMatches = true
+    elseif string.match(strPluginName, strInterfacePattern)~=nil then
+      fMatches = true
+    end
+    if fMatches~=true then
+      -- The current plugin does not match the pattern.
+      -- Close it and select a new one.
+      self:closeCommonPlugin()
+    end
+  end
+
+  if tPlugin==nil then
+    -- Open a new plugin.
+
+    -- Detect all interfaces.
+    local aDetectedInterfaces = {}
+    local atPlugins = _G.__MUHKUH_PLUGINS
+    if atPlugins==nil then
+      error('No plugins registered!')
+    else
+      for _, tPlugin in ipairs(atPlugins) do
+        tPlugin:DetectInterfaces(aDetectedInterfaces)
+      end
+    end
+
+    -- Search all detected interfaces for the pattern.
+    print(string.format('Searching for an interface with the pattern "%s".', strInterfacePattern))
+    for iInterfaceIdx, tInterface in ipairs(aDetectedInterfaces) do
+      local strName = tInterface:GetName()
+      if string.match(strName, strInterfacePattern)==nil then
+        print(string.format('Not connection to plugin "%s" as it does not match the interface pattern.', strName))
+      else
+        print(string.format('Connecting to plugin "%s".', strName))
+        tPlugin = aDetectedInterfaces[iInterfaceIdx]:Create()
+        strPluginName = strName
+
+        tPlugin:Connect()
+
+        break
+      end
+    end
+
+    -- Found the interface?
+    if tPlugin==nil then
+      print(string.format('No interface matched the pattern "%s".', strInterfacePattern))
+    else
+      self.tCommonPlugin = tPlugin
+      self.strCommonPluginName = strPluginName
+    end
+  end
+
+  return tPlugin
+end
+
+
+
+function Tester:closeCommonPlugin()
+  local tPlugin = self.tCommonPlugin
+  if tPlugin~=nil and tPlugin:IsConnected()==true then
+    -- Disconnect the plugin.
+    tPlugin:Disconnect()
+  end
+
+  self.tCommonPlugin = nil
+  self.strCommonPluginName = nil
+end
+
+
+
+function Tester:mbin_open(strFilename, tPlugin)
   local aAttr
 
 
@@ -122,22 +210,22 @@ function Tester.mbin_open(strFilename, tPlugin)
 end
 
 
-function Tester.mbin_debug(aAttr, tLogLevel)
-  print('file "%s":', aAttr.strFilename)
-  print('  header version: %d.%d', aAttr.ulHeaderVersionMaj, aAttr.ulHeaderVersionMin)
-  print('  load address:   0x%08x', aAttr.ulLoadAddress)
-  print('  exec address:   0x%08x', aAttr.ulExecAddress)
-  print('  parameter:      0x%08x - 0x%08x', aAttr.ulParameterStartAddress, aAttr.ulParameterEndAddress)
-  print('  binary:         %d bytes', aAttr.strBinary:len())
+function Tester:mbin_debug(aAttr, tLogLevel)
+  print(string.format('file "%s":', aAttr.strFilename))
+  print(string.format('  header version: %d.%d', aAttr.ulHeaderVersionMaj, aAttr.ulHeaderVersionMin))
+  print(string.format('  load address:   0x%08x', aAttr.ulLoadAddress))
+  print(string.format('  exec address:   0x%08x', aAttr.ulExecAddress))
+  print(string.format('  parameter:      0x%08x - 0x%08x', aAttr.ulParameterStartAddress, aAttr.ulParameterEndAddress))
+  print(string.format('  binary:         %d bytes', aAttr.strBinary:len()))
 end
 
 
-function Tester.mbin_write(tParentWindow, tPlugin, aAttr)
-  self.stdWrite(tPlugin, aAttr.ulLoadAddress, aAttr.strBinary)
+function Tester:mbin_write(tPlugin, aAttr)
+  self:stdWrite(tPlugin, aAttr.ulLoadAddress, aAttr.strBinary)
 end
 
 
-function Tester.mbin_set_parameter(tPlugin, aAttr, aParameter)
+function Tester:mbin_set_parameter(tPlugin, aAttr, aParameter)
   if not aParameter then
     aParameter = 0
   end
@@ -165,7 +253,7 @@ function Tester.mbin_set_parameter(tPlugin, aAttr, aParameter)
     end
   elseif type(aParameter)=='string' then
     tPlugin:write_data32(aAttr.ulParameterStartAddress+0x04, aAttr.ulParameterStartAddress+0x0c)  -- Address of test parameters.
-    self.stdWrite(tPlugin, aAttr.ulParameterStartAddress+0x0c, aParameter)
+    self:stdWrite(tPlugin, aAttr.ulParameterStartAddress+0x0c, aParameter)
   else
     -- One single parameter.
     tPlugin:write_data32(aAttr.ulParameterStartAddress+0x04, aParameter)
@@ -173,7 +261,14 @@ function Tester.mbin_set_parameter(tPlugin, aAttr, aParameter)
 end
 
 
-function Tester.mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallback, ulUserData)
+function Tester:mbin_execute(tPlugin, aAttr, aParameter, fnCallback, ulUserData)
+  if not fnCallback then
+    fnCallback = self.callback
+  end
+  if not ulUserData then
+    ulUserData = 0
+  end
+
   print('__/Output/____________________________________________________________________')
   tPlugin:call(aAttr.ulExecAddress, aAttr.ulParameterStartAddress, fnCallback, ulUserData)
   print('')
@@ -197,12 +292,12 @@ function Tester.mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallba
 end
 
 
-function Tester.mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
-  local aAttr = mbin_open(strFilename, tPlugin)
-  mbin_debug(aAttr)
-  mbin_write(tPlugin, aAttr)
-  mbin_set_parameter(tPlugin, aAttr, aParameter)
-  return mbin_execute(tPlugin, aAttr, aParameter)
+function Tester:mbin_simple_run(tPlugin, strFilename, aParameter)
+  local aAttr = self:mbin_open(strFilename, tPlugin)
+  self:mbin_debug(aAttr)
+  self:mbin_write(tPlugin, aAttr)
+  self:mbin_set_parameter(tPlugin, aAttr, aParameter)
+  return self:mbin_execute(tPlugin, aAttr, aParameter)
 end
 
 return Tester
