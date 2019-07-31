@@ -101,6 +101,7 @@ class TesterApp extends React.Component {
 
       tRunningTest_uiCurrentSerial: null,
       tRunningTest_uiRunningTest: null,
+      tRunningTest_uiLastRunningTest: null,
 
       tUI_CowIconSize: '3em',
       tUI_tInteraction: null
@@ -119,6 +120,9 @@ class TesterApp extends React.Component {
      */
     const atComponents = {
       'fnSend': this.sendInteractionMessage,
+      'fnGetCurrentSerial': this.getCurrentSerial,
+      'fnGetRunningTest': this.getRunningTest,
+      'fnGetLastRunningTest': this.getLastRunningTest,
       'fnGetTestNames': this.getTestNames,
       'fnGetTestStati': this.getTestStati,
       'fnSetTestState': this.setTestState,
@@ -369,6 +373,18 @@ class TesterApp extends React.Component {
     }
   };
 
+  getCurrentSerial = () => {
+    return this.state.tRunningTest_uiCurrentSerial;
+  };
+
+  getRunningTest = () => {
+    return this.state.tRunningTest_uiRunningTest;
+  };
+
+  getLastRunningTest = () => {
+    return this.state.tRunningTest_uiLastRunningTest;
+  };
+
   getTestNames = () => {
     return this.state.tTest_astrTestNames;
   };
@@ -547,9 +563,17 @@ class TesterApp extends React.Component {
 
     clearInterval(this.interval);
 
-    this.setState({
-      tRunningTest_uiRunningTest: null
-    });
+    const uiLastRunningTest = this.state.tRunningTest_uiRunningTest;
+    if( uiLastRunningTest!==null ) {
+      this.setState({
+        tRunningTest_uiRunningTest: null,
+        tRunningTest_uiLastRunningTest: uiLastRunningTest
+      });
+    } else {
+      this.setState({
+        tRunningTest_uiRunningTest: null
+      });
+    }
   }
 
 
