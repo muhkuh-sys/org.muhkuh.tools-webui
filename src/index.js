@@ -397,7 +397,10 @@ class TesterApp extends React.Component {
   }
 
   onMessage_SetRunningTest(tJson) {
-    const uiRunningTest = tJson.runningTest;
+    let uiRunningTest = null;
+    if('runningTest' in tJson) {
+      uiRunningTest = tJson.runningTest;
+    }
     const uiLastRunningTest = this.state.tRunningTest_uiRunningTest;
     /* Only overwrite the last running test if currently something is running. */
     if( uiLastRunningTest!==null ) {
