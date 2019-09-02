@@ -13,13 +13,9 @@ local TestDescription = require 'test_description'
 local cTester = require 'tester_webgui'
 _G.tester = cTester()
 
--- Do not buffer stdout and stderr.
-io.stdout:setvbuf('no')
-io.stderr:setvbuf('no')
-
 local usServerPort = tonumber(arg[1])
 
-m_zmqPort = usServerPort
+local m_zmqPort = usServerPort
 strAddress = string.format('tcp://127.0.0.1:%d', usServerPort)
 print(string.format("Connecting to %s", strAddress))
 
@@ -29,7 +25,7 @@ local tZContext, strError = zmq.context()
 if tZContext==nil then
   error('Failed to create ZMQ context: ' .. tostring(strError))
 end
-m_zmqContext = tZContext
+local m_zmqContext = tZContext
 
 -- Create the socket.
 local tZSocket, strError = tZContext:socket(zmq.PAIR)
@@ -42,10 +38,12 @@ local tResult, strError = tZSocket:connect(strAddress)
 if tResult==nil then
   error('Failed to connect the socket: ' .. tostring(strError))
 end
-m_zmqSocket = tZSocket
+local m_zmqSocket = tZSocket
 tester:setSocket(m_zmqSocket)
 
 print(string.format('0MQ socket connected to tcp://127.0.0.1:%d', usServerPort))
+
+local m_atSystemParameter = nil
 
 
 ------------------------------------------------------------------------------
@@ -233,14 +231,27 @@ local function apply_parameters(atModules, tTestDescription, ulSerial)
             tParameter:set(strParameterValue)
           elseif strParameterConnection~=nil then
             -- This is a connection to another value.
-            -- For now accept only the serial.
-            if strParameterConnection=='system:serial' then
-              strParameterValue = tostring(ulSerial)
-              tParameter:set(strParameterValue)
-            else
-              tLogSystem.fatal('The connection target "%s" is unknown.', strParameterConnection)
+            local strClass, strName = string.match(strParameterConnection, '^([^:]+):(.+)')
+            if strClass==nil then
+              tLogSystem.fatal('Parameter "%s" of test %d has an invalid connection "%s".', strParameterName, uiTestIndex, strParameterConnection)
               tResult = nil
               break
+            else
+              -- For now accept only system values.
+              if strClass~='system' then
+                tLogSystem.fatal('The connection target "%s" has an unknown class.', strParameterConnection)
+                tResult = nil
+                break
+              else
+                tValue = m_atSystemParameter[strName]
+                if tValue==nil then
+                  tLogSystem.fatal('The connection target "%s" has an unknown name.', strParameterConnection)
+                  tResult = nil
+                  break
+                else
+                  tParameter:set(tostring(tValue))
+                end
+              end
             end
           end
         end
@@ -553,6 +564,7 @@ else
   else
     local tJson = tResult
     pl.pretty.dump(tJson)
+    m_atSystemParameter = tJson
     tester:clearInteraction()
 
     -- Loop over all serials.
@@ -579,6 +591,7 @@ else
 
     for ulSerialCurrent = ulSerialFirst, ulSerialLast do
       tLogSystem.info('Testing serial %d .', ulSerialCurrent)
+      m_atSystemParameter.serial = ulSerialCurrent
       sendCurrentSerial(ulSerialCurrent)
 
       tResult = collect_testcases(tTestDescription, tJson.activeTests)
@@ -603,9 +616,6 @@ else
         end
       end
     end
-
-    -- TODO: Show a test result (OK/FAILED) and buttons to proceed to the next board or run the test on the same board again.
---    sendCurrentSerial(nil)
   end
 end
 
