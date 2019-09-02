@@ -377,8 +377,11 @@ local function run_tests(atModules, tTestDescription)
 
             if tJson.button=='again' then
               fExitTestCase = false
+            elseif tJson.button=='error' then
+              fTestResult = false
             else
               fTestResult = false
+              fTestIsNotCanceled = false
             end
           end
         else
@@ -427,13 +430,9 @@ local function run_tests(atModules, tTestDescription)
       pl.pretty.dump(tJson)
       tester:clearInteraction()
 
---[[      if tJson.button=='again' then
-              fExitTestCase = false
-            else
-              fTestResult = false
-            end
-          end
---]]
+      if tJson.button=='cancel' then
+        fTestIsNotCanceled = false
+      end
     end
   else
     tLogSystem.error('*******************************************************')
@@ -457,7 +456,7 @@ local function run_tests(atModules, tTestDescription)
     tLogSystem.error('*******************************************************')
   end
 
-  return fTestResult
+  return fTestIsNotCanceled
 end
 
 
@@ -528,6 +527,9 @@ else
             tLogSystem.fatal('Failed to check the parameters.')
           else
             tResult = run_tests(atModules, tTestDescription)
+            if tResult~=true then
+              break
+            end
           end
         end
       end
