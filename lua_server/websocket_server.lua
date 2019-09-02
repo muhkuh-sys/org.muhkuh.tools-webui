@@ -28,11 +28,21 @@ local tLog = require "log".new(
 tLog.info('Start')
 
 
+local TestDescription = require 'test_description'
+local tTestDescription = TestDescription(tLog)
+local tResult = tTestDescription:parse('tests.xml')
+if tResult~=true then
+  tLogSystem.error('Failed to parse the test description.')
+  error('Invalid test description.')
+end
+
 local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, usWebsocketPort)
-webui_buffer:setTitle('No title', 'No subtitle')
+webui_buffer:setTitle(tTestDescription:getTitle(), tTestDescription:getSubtitle())
 webui_buffer:setSerials(true, nil, nil)
 webui_buffer:setTestNames({})
+webui_buffer:setCurrentSerial(nil)
+webui_buffer:setRunningTest(nil)
 webui_buffer:setInteraction(nil)
 local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()

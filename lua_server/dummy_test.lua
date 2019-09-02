@@ -468,8 +468,6 @@ local tResult = tTestDescription:parse('tests.xml')
 if tResult~=true then
   tLogSystem.error('Failed to parse the test description.')
 else
-  sendTitles(tTestDescription:getTitle(), tTestDescription:getSubtitle())
-
   local astrTestNames = tTestDescription:getTestNames()
   -- Get all test names in the style of a table.
   local astrQuotedTests = {}
