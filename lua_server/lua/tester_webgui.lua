@@ -120,29 +120,50 @@ function Tester:getCommonPlugin(strInterfacePattern)
       end
     end
 
-    -- Search all detected interfaces for the pattern.
-    print(string.format('Searching for an interface with the pattern "%s".', strInterfacePattern))
-    for iInterfaceIdx, tInterface in ipairs(aDetectedInterfaces) do
-      local strName = tInterface:GetName()
-      if string.match(strName, strInterfacePattern)==nil then
-        print(string.format('Not connection to plugin "%s" as it does not match the interface pattern.', strName))
+    local iSelectedInterfaceIndex = nil
+    if table.maxn(aDetectedInterfaces)==0 then
+      print('No interface found.')
+    else
+      -- Search all detected interfaces for the pattern.
+      if strInterfacePattern==nil then
+        print('No interface pattern provided. Using the first interface.')
+        iSelectedInterfaceIndex = 1
       else
-        print(string.format('Connecting to plugin "%s".', strName))
-        tPlugin = aDetectedInterfaces[iInterfaceIdx]:Create()
-        strPluginName = strName
+        print(string.format('Searching for an interface with the pattern "%s".', strInterfacePattern))
+        for iInterfaceIdx, tInterface in ipairs(aDetectedInterfaces) do
+          local strName = tInterface:GetName()
+          if string.match(strName, strInterfacePattern)==nil then
+            print(string.format('Not connection to plugin "%s" as it does not match the interface pattern.', strName))
+          else
+            iSelectedInterfaceIndex = iInterfaceIdx
+            break
+          end
+        end
 
-        tPlugin:Connect()
-
-        break
+        if iSelectedInterfaceIndex==nil then
+          print(string.format('No interface matched the pattern "%s".', strInterfacePattern))
+        end
       end
     end
 
     -- Found the interface?
-    if tPlugin==nil then
-      print(string.format('No interface matched the pattern "%s".', strInterfacePattern))
-    else
-      self.tCommonPlugin = tPlugin
-      self.strCommonPluginName = strPluginName
+    if iSelectedInterfaceIndex~=nil then
+      local tInterface = aDetectedInterfaces[iSelectedInterfaceIndex]
+      if tInterface==nil then
+        print(string.format('The interface with the index %d does not exist.', iSelectedInterfaceIndex))
+      else
+        strInterfaceName = tInterface:GetName()
+        print(string.format('Connecting to interface "%s".', strInterfaceName))
+
+        tPlugin = tInterface:Create()
+        tPlugin:Connect()
+        if tPlugin==nil then
+          print(string.format('Failed to connect to the interface "%s".', strInterfaceName))
+        else
+          self.tCommonPlugin = tPlugin
+          self.strCommonPluginName = strInterfaceName
+        end
+      end
     end
   end
 
