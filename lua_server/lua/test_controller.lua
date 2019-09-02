@@ -24,8 +24,16 @@ end
 
 
 function TestController:__setStartPage()
+  local tBuffer = self.m_buffer
+
+  -- Clear all fields in the tester header.
+  tBuffer:setSerials(true, nil, nil)
+  tBuffer:setTestNames({})
+  tBuffer:setCurrentSerial(nil)
+  tBuffer:setRunningTest(nil)
+
   -- Register the test controller to get the interaction responses.
-  self.m_buffer:setTester(self)
+  tBuffer:setTester(self)
 
   -- Read the first interaction.
   local strFilename = 'jsx/test_start.jsx'
