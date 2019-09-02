@@ -123,6 +123,8 @@ class TesterApp extends React.Component {
     const atComponents = {
       'fnSend': this.sendInteractionMessage,
       'fnGetCurrentSerial': this.getCurrentSerial,
+      'fnGetFirstSerial': this.getFirstSerial,
+      'fnGetLastSerial': this.getLastSerial,
       'fnGetRunningTest': this.getRunningTest,
       'fnGetLastRunningTest': this.getLastRunningTest,
       'fnGetTestNames': this.getTestNames,
@@ -435,6 +437,14 @@ class TesterApp extends React.Component {
 
   getCurrentSerial = () => {
     return this.state.tRunningTest_uiCurrentSerial;
+  };
+
+  getFirstSerial = () => {
+    return this.state.tTest_uiFirstSerial;
+  };
+
+  getLastSerial = () => {
+    return this.state.tTest_uiLastSerial;
   };
 
   getRunningTest = () => {
