@@ -340,6 +340,7 @@ local function run_tests(atModules, tTestDescription)
         tLogSystem.info("______________________________________________________________________________")
 
         sendRunningTest(uiTestIndex)
+        sendTestState('idle')
 
         -- Run a pre action if present.
         local strAction = tTestDescription:getTestCaseActionPre(uiTestIndex)
