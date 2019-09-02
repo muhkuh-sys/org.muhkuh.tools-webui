@@ -286,174 +286,243 @@ end
 
 
 local function run_action(strAction)
-  if strAction~=nil then
+  local tActionResult = nil
+  local strMessage = nil
+
+  if strAction==nil then
+    tActionResult = true
+
+  else
+    local strExt = string.sub(strAction, -4)
+
     -- If the action is a JSX file, this is a static GUI element.
-    if string.sub(strAction, -4)=='.jsx' then
-      local tResult = tester:setInteraction(strAction)
+    if strExt=='.jsx' then
+      tResult = tester:setInteraction(strAction)
       if tResult==nil then
-        error('Failed to load the JSX.')
+        strMessage = 'Failed to load the JSX.'
+      else
+        tActionResult = true
       end
-    elseif string.sub(strAction, -4)=='.lua' then
-      error('LUA actions are not yet implemented.')
+
+    elseif strExt=='.lua' then
+      -- Read the LUA file.
+      if pl.path.exists(strAction)~=strAction then
+        strMessage = string.format('The action file "%s" does not exist.', strAction)
+      elseif pl.path.isfile(strAction)~=true then
+        strMessage = string.format('The action "%s" is not a file.', strAction)
+      else
+        local strLuaSrc, strMsg = pl.utils.readfile(strAction, false)
+        if strLuaSrc==nil then
+          strMessage = string.format('Failed to read the action file "%s": %s', strAction, strMsg)
+        else
+          -- Parse the LUA source.
+          local tChunk, strMsg = loadstring(strLuaSrc, strAction)
+          if tChunk==nil then
+            strMessage = string.format('Failed to parse the LUA action from "%s": %s', strAction, strMsg)
+          else
+            -- Run the LUA chunk.
+            local fStatus, tResult = xpcall(tChunk, function(tErr) tLogSystem.debug(debug.traceback()) return tErr end)
+            if fStatus==true then
+              tActionResult = true
+            else
+              if tResult~=nil then
+                strMessage = tostring(tResult)
+              else
+                strMessage = 'No error message.'
+              end
+            end
+          end
+        end
+      end
     else
       error('Unknown action: ' .. tostring(strAction))
     end
   end
+
+  return tActionResult, strMessage
 end
 
 
 
 local function run_tests(atModules, tTestDescription)
   -- Run all enabled modules with their parameter.
-  local fTestResult = true
+  local fTestIsNotCanceled = true
 
-  local astrTestNames = tTestDescription:getTestNames()
-  local uiNumberOfTests = tTestDescription:getNumberOfTests()
-  for uiTestIndex = 1, uiNumberOfTests do
-    repeat
-      local fExitTestCase = true
+  -- Run a pre action if present.
+  local strAction = tTestDescription:getPre()
+  local fTestResult, tResult = run_action(strAction)
+  if fTestResult~=true then
+    local strError
+    if tResult~=nil then
+      strError = tostring(tResult)
+    else
+      strError = 'No error message.'
+    end
+    tLogSystem.error('Error running the global pre action: %s', strError)
 
-      -- Get the module for the test index.
-      local tModule = atModules[uiTestIndex]
-      local strTestCaseName = astrTestNames[uiTestIndex]
-      if tModule==nil then
-        tLogSystem.info('Not running deactivated test case %02d (%s).', uiTestIndex, strTestCaseName)
-      else
-        tLogSystem.info('Running testcase %d (%s).', uiTestIndex, strTestCaseName)
+  else
+    local astrTestNames = tTestDescription:getTestNames()
+    local uiNumberOfTests = tTestDescription:getNumberOfTests()
+    for uiTestIndex = 1, uiNumberOfTests do
+      repeat
+        local fExitTestCase = true
 
-        -- Get the parameters for the module.
-        local atParameters = tModule.atParameter
-        if atParameters==nil then
-          atParameters = {}
-        end
-
-        -- Show all parameters for the test case.
-        tLogSystem.info("__/Parameters/________________________________________________________________")
-        if pl.tablex.size(atParameters)==0 then
-          tLogSystem.info('Testcase %d (%s) has no parameter.', uiTestIndex, strTestCaseName)
+        -- Get the module for the test index.
+        local tModule = atModules[uiTestIndex]
+        local strTestCaseName = astrTestNames[uiTestIndex]
+        if tModule==nil then
+          tLogSystem.info('Not running deactivated test case %02d (%s).', uiTestIndex, strTestCaseName)
         else
-          tLogSystem.info('Parameters for testcase %d (%s):', uiTestIndex, strTestCaseName)
-          for _, tParameter in pairs(atParameters) do
-            tLogSystem.info('  %02d:%s = %s', uiTestIndex, tParameter.strName, tParameter:get_pretty())
+          tLogSystem.info('Running testcase %d (%s).', uiTestIndex, strTestCaseName)
+
+          -- Get the parameters for the module.
+          local atParameters = tModule.atParameter
+          if atParameters==nil then
+            atParameters = {}
           end
-        end
-        tLogSystem.info("______________________________________________________________________________")
 
-        sendRunningTest(uiTestIndex)
-        sendTestState('idle')
-
-        -- Run a pre action if present.
-        local strAction = tTestDescription:getTestCaseActionPre(uiTestIndex)
-        run_action(strAction)
-
-        -- Execute the test code. Write a stack trace to the debug logger if the test case crashes.
-        fStatus, tResult = xpcall(function() tModule:run() end, function(tErr) tLogSystem.debug(debug.traceback()) return tErr end)
-        tLogSystem.info('Testcase %d (%s) finished.', uiTestIndex, strTestCaseName)
-
-        -- Send the result to the GUI.
-        local strTestState = 'error'
-        if fStatus==true then
-          strTestState = 'ok'
-        end
-        sendTestState(strTestState)
-        sendRunningTest(nil)
-
-        if not fStatus then
-          local strError
-          if tResult~=nil then
-            strError = tostring(tResult)
+          -- Show all parameters for the test case.
+          tLogSystem.info("__/Parameters/________________________________________________________________")
+          if pl.tablex.size(atParameters)==0 then
+            tLogSystem.info('Testcase %d (%s) has no parameter.', uiTestIndex, strTestCaseName)
           else
-            strError = 'No error message.'
-          end
-          tLogSystem.error('Error running the test: %s', strError)
-
-          local tResult = tester:setInteractionGetJson('jsx/test_failed.jsx', {})
-          if tResult==nil then
-            tLogSystem.fatal('Failed to read interaction.')
-          else
-            local tJson = tResult
-            pl.pretty.dump(tJson)
-            tester:clearInteraction()
-
-            if tJson.button=='again' then
-              fExitTestCase = false
-            elseif tJson.button=='error' then
-              fTestResult = false
-            else
-              fTestResult = false
-              fTestIsNotCanceled = false
+            tLogSystem.info('Parameters for testcase %d (%s):', uiTestIndex, strTestCaseName)
+            for _, tParameter in pairs(atParameters) do
+              tLogSystem.info('  %02d:%s = %s', uiTestIndex, tParameter.strName, tParameter:get_pretty())
             end
           end
-        else
-          -- Run a post action if present.
-          local strAction = tTestDescription:getTestCaseActionPost(uiTestIndex)
-          run_action(strAction)
+          tLogSystem.info("______________________________________________________________________________")
+
+          sendRunningTest(uiTestIndex)
+          sendTestState('idle')
+
+          -- Run a pre action if present.
+          local strAction = tTestDescription:getTestCaseActionPre(uiTestIndex)
+          fStatus, tResult = run_action(strAction)
+          if fStatus==true then
+            -- Execute the test code. Write a stack trace to the debug logger if the test case crashes.
+            fStatus, tResult = xpcall(function() tModule:run() end, function(tErr) tLogSystem.debug(debug.traceback()) return tErr end)
+            tLogSystem.info('Testcase %d (%s) finished.', uiTestIndex, strTestCaseName)
+            if fStatus==true then
+              -- Run a post action if present.
+              local strAction = tTestDescription:getTestCaseActionPost(uiTestIndex)
+              fStatus, tResult = run_action(strAction)
+            end
+          end
+
+          -- Send the result to the GUI.
+          local strTestState = 'error'
+          if fStatus==true then
+            strTestState = 'ok'
+          end
+          sendTestState(strTestState)
+          sendRunningTest(nil)
+
+          if fStatus~=true then
+            local strError
+            if tResult~=nil then
+              strError = tostring(tResult)
+            else
+              strError = 'No error message.'
+            end
+            tLogSystem.error('Error running the test: %s', strError)
+
+            local tResult = tester:setInteractionGetJson('jsx/test_failed.jsx', {})
+            if tResult==nil then
+              tLogSystem.fatal('Failed to read interaction.')
+            else
+              local tJson = tResult
+              pl.pretty.dump(tJson)
+              tester:clearInteraction()
+
+              if tJson.button=='again' then
+                fExitTestCase = false
+              elseif tJson.button=='error' then
+                fTestResult = false
+              else
+                fTestResult = false
+                fTestIsNotCanceled = false
+              end
+            end
+          end
+        end
+      until fExitTestCase==true
+
+      if fTestResult~=true then
+        break
+      end
+    end
+
+    -- Close the connection to the netX.
+    tester:closeCommonPlugin()
+
+    -- Run a post action if present.
+    local strAction = tTestDescription:getPost()
+    fStatus, tResult = run_action(strAction)
+    if fTestResult~=true then
+      local strError
+      if tResult~=nil then
+        strError = tostring(tResult)
+      else
+        strError = 'No error message.'
+      end
+      tLogSystem.error('Error running the global post action: %s', strError)
+    end
+
+    -- Print the result in huge letters.
+    if fTestResult==true then
+      tLogSystem.info('***************************************')
+      tLogSystem.info('*                                     *')
+      tLogSystem.info('* ######## ########  ######  ######## *')
+      tLogSystem.info('*    ##    ##       ##    ##    ##    *')
+      tLogSystem.info('*    ##    ##       ##          ##    *')
+      tLogSystem.info('*    ##    ######    ######     ##    *')
+      tLogSystem.info('*    ##    ##             ##    ##    *')
+      tLogSystem.info('*    ##    ##       ##    ##    ##    *')
+      tLogSystem.info('*    ##    ########  ######     ##    *')
+      tLogSystem.info('*                                     *')
+      tLogSystem.info('*          #######  ##    ##          *')
+      tLogSystem.info('*         ##     ## ##   ##           *')
+      tLogSystem.info('*         ##     ## ##  ##            *')
+      tLogSystem.info('*         ##     ## #####             *')
+      tLogSystem.info('*         ##     ## ##  ##            *')
+      tLogSystem.info('*         ##     ## ##   ##           *')
+      tLogSystem.info('*          #######  ##    ##          *')
+      tLogSystem.info('*                                     *')
+      tLogSystem.info('***************************************')
+
+      local tResult = tester:setInteractionGetJson('jsx/test_ok.jsx', {})
+      if tResult==nil then
+        tLogSystem.fatal('Failed to read interaction.')
+      else
+        local tJson = tResult
+        tester:clearInteraction()
+
+        if tJson.button=='cancel' then
+          fTestIsNotCanceled = false
         end
       end
-    until fExitTestCase==true
-
-    if fTestResult~=true then
-      break
-    end
-  end
-
-  -- Close the connection to the netX.
-  tester:closeCommonPlugin()
-
-  -- Print the result in huge letters.
-  if fTestResult==true then
-    tLogSystem.info('***************************************')
-    tLogSystem.info('*                                     *')
-    tLogSystem.info('* ######## ########  ######  ######## *')
-    tLogSystem.info('*    ##    ##       ##    ##    ##    *')
-    tLogSystem.info('*    ##    ##       ##          ##    *')
-    tLogSystem.info('*    ##    ######    ######     ##    *')
-    tLogSystem.info('*    ##    ##             ##    ##    *')
-    tLogSystem.info('*    ##    ##       ##    ##    ##    *')
-    tLogSystem.info('*    ##    ########  ######     ##    *')
-    tLogSystem.info('*                                     *')
-    tLogSystem.info('*          #######  ##    ##          *')
-    tLogSystem.info('*         ##     ## ##   ##           *')
-    tLogSystem.info('*         ##     ## ##  ##            *')
-    tLogSystem.info('*         ##     ## #####             *')
-    tLogSystem.info('*         ##     ## ##  ##            *')
-    tLogSystem.info('*         ##     ## ##   ##           *')
-    tLogSystem.info('*          #######  ##    ##          *')
-    tLogSystem.info('*                                     *')
-    tLogSystem.info('***************************************')
-
-    local tResult = tester:setInteractionGetJson('jsx/test_ok.jsx', {})
-    if tResult==nil then
-      tLogSystem.fatal('Failed to read interaction.')
     else
-      local tJson = tResult
-      pl.pretty.dump(tJson)
-      tester:clearInteraction()
-
-      if tJson.button=='cancel' then
-        fTestIsNotCanceled = false
-      end
+      tLogSystem.error('*******************************************************')
+      tLogSystem.error('*                                                     *')
+      tLogSystem.error('*         ######## ########  ######  ########         *')
+      tLogSystem.error('*            ##    ##       ##    ##    ##            *')
+      tLogSystem.error('*            ##    ##       ##          ##            *')
+      tLogSystem.error('*            ##    ######    ######     ##            *')
+      tLogSystem.error('*            ##    ##             ##    ##            *')
+      tLogSystem.error('*            ##    ##       ##    ##    ##            *')
+      tLogSystem.error('*            ##    ########  ######     ##            *')
+      tLogSystem.error('*                                                     *')
+      tLogSystem.error('* ########    ###    #### ##       ######## ########  *')
+      tLogSystem.error('* ##         ## ##    ##  ##       ##       ##     ## *')
+      tLogSystem.error('* ##        ##   ##   ##  ##       ##       ##     ## *')
+      tLogSystem.error('* ######   ##     ##  ##  ##       ######   ##     ## *')
+      tLogSystem.error('* ##       #########  ##  ##       ##       ##     ## *')
+      tLogSystem.error('* ##       ##     ##  ##  ##       ##       ##     ## *')
+      tLogSystem.error('* ##       ##     ## #### ######## ######## ########  *')
+      tLogSystem.error('*                                                     *')
+      tLogSystem.error('*******************************************************')
     end
-  else
-    tLogSystem.error('*******************************************************')
-    tLogSystem.error('*                                                     *')
-    tLogSystem.error('*         ######## ########  ######  ########         *')
-    tLogSystem.error('*            ##    ##       ##    ##    ##            *')
-    tLogSystem.error('*            ##    ##       ##          ##            *')
-    tLogSystem.error('*            ##    ######    ######     ##            *')
-    tLogSystem.error('*            ##    ##             ##    ##            *')
-    tLogSystem.error('*            ##    ##       ##    ##    ##            *')
-    tLogSystem.error('*            ##    ########  ######     ##            *')
-    tLogSystem.error('*                                                     *')
-    tLogSystem.error('* ########    ###    #### ##       ######## ########  *')
-    tLogSystem.error('* ##         ## ##    ##  ##       ##       ##     ## *')
-    tLogSystem.error('* ##        ##   ##   ##  ##       ##       ##     ## *')
-    tLogSystem.error('* ######   ##     ##  ##  ##       ######   ##     ## *')
-    tLogSystem.error('* ##       #########  ##  ##       ##       ##     ## *')
-    tLogSystem.error('* ##       ##     ##  ##  ##       ##       ##     ## *')
-    tLogSystem.error('* ##       ##     ## #### ######## ######## ########  *')
-    tLogSystem.error('*                                                     *')
-    tLogSystem.error('*******************************************************')
   end
 
   return fTestIsNotCanceled
