@@ -278,12 +278,37 @@ class TesterApp extends React.Component {
   }
 
   onMessage_SetTitle(tJson) {
+    let strTitle = null;
+    if('title' in tJson) {
+      strTitle = tJson.title;
+    }
+
+    let strSubtitle = null;
+    if('subtitle' in tJson) {
+      strSubtitle = tJson.subtitle;
+    }
+
+    let fHasSerial = false;
+    if('hasSerial' in tJson) {
+      fHasSerial = tJson.hasSerial;
+    }
+
+    let uiFirstSerial = 0;
+    if('firstSerial' in tJson) {
+      uiFirstSerial = tJson.firstSerial;
+    }
+
+    let uiLastSerial = 0;
+    if('lastSerial' in tJson) {
+      uiLastSerial = tJson.lastSerial;
+    }
+
     this.setState({
-      tTest_Title: tJson.title,
-      tTest_Subtitle: tJson.subtitle,
-      tTest_fHasSerial: tJson.hasSerial,
-      tTest_uiFirstSerial: tJson.firstSerial,
-      tTest_uiLastSerial: tJson.lastSerial
+      tTest_Title: strTitle,
+      tTest_Subtitle: strSubtitle,
+      tTest_fHasSerial: fHasSerial,
+      tTest_uiFirstSerial: uiFirstSerial,
+      tTest_uiLastSerial: uiLastSerial
     });
   }
 
