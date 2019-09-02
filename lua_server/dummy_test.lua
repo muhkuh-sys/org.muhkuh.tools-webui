@@ -73,14 +73,10 @@ tester:setLog(tLogSystem)
 ------------------------------------------------------------------------------
 
 local function sendTitles(strTitle, strSubtitle)
-  if strTitle==nil then
-    strTitle = 'No title'
-  else
+  if strTitle~=nil then
     strTitle = tostring(strTitle)
   end
-  if strSubtitle==nil then
-    strSubtitle = 'No subtitle'
-  else
+  if strSubtitle~=nil then
     strSubtitle = tostring(strSubtitle)
   end
 
