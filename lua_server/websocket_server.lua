@@ -47,14 +47,20 @@ tLog.debug('LUA interpreter: %s', strLuaInterpreter)
 local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, {'server.lua', tostring(usWebsocketPort), tostring(ulSystemSerial)}, 3)
 
 
--- Create a new ZMQ process.
-local tTestProc = ProcessZmq(tLog, tLogTest, strLuaInterpreter, {'dummy_test.lua', '${ZMQPORT}'})
+---- Create a new ZMQ process.
+--local tTestProc = ProcessZmq(tLog, tLogTest, strLuaInterpreter, {'dummy_test.lua', '${ZMQPORT}'})
+--
+--tTestProc:setBuffer(webui_buffer)
+--webui_buffer:setTester(tTestProc)
 
-tTestProc:setBuffer(webui_buffer)
-webui_buffer:setTester(tTestProc)
+-- Create a new test controller.
+local TestController = require 'test_controller'
+local tTestController = TestController(tLog, tLogTest, strLuaInterpreter)
+tTestController:setBuffer(webui_buffer)
+
 
 tServerProc:run()
-tTestProc:run()
+tTestController:run()
 
 local function OnCancelAll()
   print('Cancel pressed!')

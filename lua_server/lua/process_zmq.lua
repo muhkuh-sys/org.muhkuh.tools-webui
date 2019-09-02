@@ -17,6 +17,9 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments)
 
   self.m_buffer = nil
 
+  self.m_fnOnTerminate = nil
+  self.m_tOnTerminateParameter = nil
+
   self.m_zmqReceiveHandler = {
     LOG = self.__onZmqReceiveLog,
     INT = self.__onZmqReceiveInt,
@@ -253,7 +256,11 @@ end
 
 
 
-function ProcessZmq:run()
+function ProcessZmq:run(fnOnTerminate, tOnTerminateParameter)
+  -- Remember the callback function.
+  self.m_fnOnTerminate = fnOnTerminate
+  self.m_tOnTerminateParameter = tOnTerminateParameter
+
   self:__zmq_init()
 
   -- Filter the arguments.
@@ -272,6 +279,12 @@ end
 function ProcessZmq:onClose(strError, iExitStatus, uiTermSignal)
   print('ZMQ closed:', strError, iExitStatus, uiTermSignal)
   self:__zmq_delete()
+
+  -- Does a callback exist?
+  local fnOnTerminate = self.m_fnOnTerminate
+  if fnOnTerminate~=nil then
+    fnOnTerminate(self.m_tOnTerminateParameter)
+  end
 end
 
 
