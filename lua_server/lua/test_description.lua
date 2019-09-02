@@ -10,6 +10,8 @@ function TestDescription:_init(tLog)
 
   self.strTitle = nil
   self.strSubtitle = nil
+  self.strPre = nil
+  self.strPost = nil
   self.atTestCases = nil
   self.uiNumberOfTests = nil
   self.astrTestNames = nil
@@ -32,8 +34,12 @@ function TestDescription.__parseTests_StartElement(tParser, strName, atAttribute
   if strCurrentPath=='/MuhkuhTest' then
     local strTitle = atAttributes['title']
     local strSubtitle = atAttributes['subtitle']
+    local strPre = atAttributes['pre']
+    local strPost = atAttributes['post']
     aLxpAttr.strTitle = strTitle
     aLxpAttr.strSubtitle = strSubtitle
+    aLxpAttr.strPre = strPre
+    aLxpAttr.strPost = strPost
 
   elseif strCurrentPath=='/MuhkuhTest/Testcase' then
     local strID = atAttributes['id']
@@ -163,6 +169,8 @@ function TestDescription:__parse_tests(strTestsFile)
 
       strTitle = nil,
       strSubtitle = nil,
+      strPre = nil,
+      strPost = nil,
       tTestCase = nil,
       strParameterName = nil,
       strParameterValue = nil,
@@ -197,6 +205,8 @@ function TestDescription:__parse_tests(strTestsFile)
     else
       self.strTitle = aLxpAttr.strTitle
       self.strSubtitle = aLxpAttr.strSubtitle
+      self.strPre = aLxpAttr.strPre
+      self.strPost = aLxpAttr.strPost
       self.atTestCases = aLxpAttr.atTestCases
       tResult = true
     end
@@ -252,6 +262,18 @@ end
 
 function TestDescription:getSubtitle()
   return self.strSubtitle
+end
+
+
+
+function TestDescription:getPre()
+  return self.strPre
+end
+
+
+
+function TestDescription:getPost()
+  return self.strPost
 end
 
 
