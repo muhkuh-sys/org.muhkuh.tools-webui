@@ -14,6 +14,8 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments)
   self.m_zmqContext = nil
   self.m_zmqSocket = nil
   self.m_zmqPort = nil
+  self.m_zmqServerAddress = nil
+  self.m_zmqPoll = nil
 
   self.m_buffer = nil
 
@@ -54,14 +56,18 @@ function ProcessZmq:__zmq_init()
   if tServerPort==nil then
     error('Failed to bind the socket: ' .. tostring(strError))
   end
-  self.tLog.debug('0MQ listening on tcp://127.0.0.1:%d', tServerPort)
+  strServerAddress = string.format('tcp://127.0.0.1:%d', tServerPort)
+  self.tLog.debug('0MQ listening on %s', strServerAddress)
   self.m_zmqPort = tServerPort
+  self.m_zmqServerAddress = strServerAddress
 
   local uv = require 'lluv'
   local this = self
-  uv.poll_zmq(tZSocket):start(function(tHandle, strErr, tSocket)
+  local tPoll = uv.poll_zmq(tZSocket)
+  tPoll:start(function(tHandle, strErr, tSocket)
     this:__onZmqReceive(tHandle, strErr, tSocket)
   end)
+  self.m_zmqPoll = tPoll
 end
 
 
@@ -222,9 +228,17 @@ end
 
 
 function ProcessZmq:__zmq_delete()
+  local tPoll = self.m_zmqPoll
+  if tPoll~=nil then
+    tPoll:stop()
+    tPoll:close()
+    self.m_zmqPoll = nil
+  end
+
   local zmqSocket = self.m_zmqSocket
   if zmqSocket~=nil then
     if zmqSocket:closed()==false then
+      zmqSocket:disconnect(self.m_zmqServerAddress)
       zmqSocket:close()
     end
     self.m_zmqSocket = nil
