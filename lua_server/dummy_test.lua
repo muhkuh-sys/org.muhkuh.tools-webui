@@ -397,8 +397,8 @@ local function run_tests(atModules, tTestDescription)
     end
   end
 
-  -- TODO: Close the connection to the netX.
---  close_netx_connection()
+  -- Close the connection to the netX.
+  tester:closeCommonPlugin()
 
   -- Print the result in huge letters.
   if fTestResult==true then
