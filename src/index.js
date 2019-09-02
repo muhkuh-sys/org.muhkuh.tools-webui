@@ -293,12 +293,12 @@ class TesterApp extends React.Component {
       fHasSerial = tJson.hasSerial;
     }
 
-    let uiFirstSerial = 0;
+    let uiFirstSerial = null;
     if('firstSerial' in tJson) {
       uiFirstSerial = tJson.firstSerial;
     }
 
-    let uiLastSerial = 0;
+    let uiLastSerial = null;
     if('lastSerial' in tJson) {
       uiLastSerial = tJson.lastSerial;
     }
