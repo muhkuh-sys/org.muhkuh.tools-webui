@@ -34,49 +34,91 @@ local tLog = require "log".new(
 tLog.info('Start')
 
 
+------------------------------------------------------------------------------
+--
+-- Try to read the package file.
+--
+local strPackageInfoFile = pl.path.join('.jonchki', 'package.txt')
+local strPackageInfo, strError = pl.utils.readfile(strPackageInfoFile, false)
+-- Default to version "unknown".
+local strVersion = 'unknown'
+local strVcsVersion = 'unknown'
+if strPackageInfo~=nil then
+  strVersion = string.match(strPackageInfo, 'PACKAGE_VERSION=([0-9.]+)')
+  strVcsVersion = string.match(strPackageInfo, 'PACKAGE_VCS_ID=([a-zA-Z0-9+]+)')
+end
+
+-- TODO: Do not overwrite this once there is a package file.
+strVersion = '1.0'
+
+------------------------------------------------------------------------------
+--
+-- Select an interface to bind to.
+-- For now just take the first interface with an IP.
+--
+
+local tInterfaces = uv.interface_addresses()
+if tInterfaces==nil then
+  error('Failed to get the list of ethernet interfaces.')
+end
+local strInterfaceAddress = nil
+for uiCnt, tIf in ipairs(tInterfaces) do
+  -- Select the first interface of the type "inet" which is not internal.
+  if tIf.family=='inet' and tIf.internal==false then
+    strInterfaceAddress = tIf.address
+    tLog.info('Seleceting interface "%s" with address %s.', tIf.name, strInterfaceAddress)
+    break
+  end
+end
+if strInterfaceAddress==nil then
+  error('No suitable interface found.')
+end
+
+local strHtmlLocation = string.format('http://%s:%s/index.html', strInterfaceAddress, usWebserverPort)
+local SSDP = require 'ssdp'
+local tSsdp = SSDP(tLog, strHtmlLocation, strVersion)
+local strSSDP_UUID = tSsdp:setSystemUuid()
+tSsdp:run()
+
 local TestDescription = require 'test_description'
 local tTestDescription = TestDescription(tLog)
-local tResult = tTestDescription:parse('tests.xml')
+local tResult = tTestDescription:parse(strTestXmlFile)
 if tResult~=true then
-  tLogSystem.error('Failed to parse the test description.')
+  tLog.error('Failed to parse the test description.')
   error('Invalid test description.')
 end
 
 local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, usWebsocketPort)
 webui_buffer:setTitle(tTestDescription:getTitle(), tTestDescription:getSubtitle())
-webui_buffer:setSerials(true, nil, nil)
-webui_buffer:setTestNames({})
-webui_buffer:setCurrentSerial(nil)
-webui_buffer:setRunningTest(nil)
-webui_buffer:setInteraction(nil)
 local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()
 
-local ProcessKeepalive = require 'process_keepalive'
-local ProcessZmq = require 'process_zmq'
-
+-- Create the server process.
 local strLuaInterpreter = uv.exepath()
-
--- Create a new process.
 tLog.debug('LUA interpreter: %s', strLuaInterpreter)
-local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, {'server.lua', tostring(usWebsocketPort), tostring(ulSystemSerial)}, 3)
-
-
----- Create a new ZMQ process.
---local tTestProc = ProcessZmq(tLog, tLogTest, strLuaInterpreter, {'dummy_test.lua', '${ZMQPORT}'})
---
---tTestProc:setBuffer(webui_buffer)
---webui_buffer:setTester(tTestProc)
+local ProcessKeepalive = require 'process_keepalive'
+local astrServerArgs = {
+  'server.lua',
+  tostring(usWebsocketPort),
+  strSSDP_UUID,
+  tostring(ulSystemSerial),
+  '--webserver-address',
+  strInterfaceAddress,
+  '--webserver-port',
+  tostring(usWebserverPort)
+}
+local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, astrServerArgs, 3)
 
 -- Create a new test controller.
 local TestController = require 'test_controller'
-local tTestController = TestController(tLog, tLogTest, strLuaInterpreter)
+local tTestController = TestController(tLog, tLogTest, strLuaInterpreter, strTestPath)
 tTestController:setBuffer(webui_buffer)
 
 
 tServerProc:run()
 tTestController:run()
+
 
 local function OnCancelAll()
   print('Cancel pressed!')

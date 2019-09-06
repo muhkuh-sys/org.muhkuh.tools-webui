@@ -5,6 +5,7 @@ io.stderr:setvbuf('no')
 require 'muhkuh_server_init'
 local Pegasus = require 'pegasus'
 local argparse = require 'argparse'
+local mimetypes = require 'mimetypes'
 local pl = require'pl.import_into'()
 
 ------------------------------------------------------------------------------
@@ -52,20 +53,23 @@ tParser:argument('websocket-port', 'Announce the websocket port in cfg.js as POR
   :argname('<PORT>')
   :target('usWebsocketPort')
   :convert(convertPortNumber)
+tParser:argument('ssdp-uuid', 'Use UUID as the SSDP UUID.')
+  :argname('<UUID>')
+  :target('strUUID')
 tParser:argument('ssdp-serial', 'Use SERIAL as the SSDP serial number.')
   :argname('<SERIAL>')
   :target('strSerial')
+tParser:option('-i --webserver-address')
+  :description('Serve the HTTP documents on address ADDRESS.')
+  :argname('<ADDRESS>')
+  :default('localhost')
+  :target('strWebserverAddress')
 tParser:option('-w --webserver-port')
   :description('Serve the HTTP documents on port PORT.')
   :argname('<PORT>')
   :default(9090)
   :target('usWebserverPort')
   :convert(convertPortNumber)
-tParser:option('-u --ssdp-uuid')
-  :description('Use UUID as the SSDP UUID.')
-  :argname('<UUID>')
-  :default(nil)
-  :target('strUUID')
 
 local tArgs = tParser:parse()
 
@@ -76,25 +80,7 @@ local tArgs = tParser:parse()
 --
 local strSSDP_serial = tArgs.strSerial
 local strSSDP_UUID = tArgs.strUUID
-if strSSDP_UUID==nil then
-  print('No SSDP UUID specified on the command line. Readin the system UUID.')
-  -- Get the system UUID.
-  local strSystemUUIDFile = '/etc/machine-id'
-  local strSystemUUID, strError = pl.utils.readfile(strSystemUUIDFile, false)
-  if strSystemUUID==nil then
-    error(string.format('Failed to read the system UUID from "%s": %s', strSystemUUIDFile, strError))
-  else
-    -- fa4bcfdf-9ee9-44ea-bb15-d0e214afef82
-    local strU1, strU2, strU3, strU4, strU5 = string.match(strSystemUUID, '(%x%x%x%x%x%x%x%x)(%x%x%x%x)(%x%x%x%x)(%x%x%x%x)(%x%x%x%x%x%x%x%x%x%x%x%x)')
-    if strU1==nil then
-      error(string.format('The UUID in "%s" does not match the expected format of 32 hex digits: "%s"', strSystemUUIDFile, strSystemUUID))
-    else
-      -- Combine all elements of the UUID with dashes.
-      strSSDP_UUID = string.format('%s-%s-%s-%s-%s', strU1, strU2, strU3, strU4, strU5)
-      print(string.format('The system UUID is %s .', strSSDP_UUID))
-    end
-  end
-end
+
 
 ------------------------------------------------------------------------------
 --
@@ -102,10 +88,11 @@ end
 --
 print()
 print('Parameter:')
-print(string.format('Webserver port:  %d', tArgs.usWebserverPort))
-print(string.format('Websocket port:  %d', tArgs.usWebsocketPort))
-print(string.format('SSDP serial:    "%s"', strSSDP_serial))
-print(string.format('SSDP UUID:      "%s"', strSSDP_UUID))
+print(string.format('Webserver address: %s', tArgs.strWebserverAddress))
+print(string.format('Webserver port:    %d', tArgs.usWebserverPort))
+print(string.format('Websocket port:    %d', tArgs.usWebsocketPort))
+print(string.format('SSDP serial:      "%s"', strSSDP_serial))
+print(string.format('SSDP UUID:        "%s"', strSSDP_UUID))
 print()
 
 
@@ -114,35 +101,37 @@ print()
 -- Run Pegasus.
 --
 local server = Pegasus:new({
+  host=tArgs.strWebserverAddress,
   port=tArgs.usWebserverPort,
   location='/www/'
 })
 
-server:start(function(req, rep)
+server:start(function(req, tResponse)
   local strPath = req:path()
   local strMethod = req:method()
 
   if strPath=='/cfg.js' and strMethod=='GET' then
-    local strData = string.format("var g_CFG_strServerURL = 'ws://%s:%s';\n", req.ip, tArgs.usWebsocketPort)
+    local strData = string.format("var g_CFG_strServerURL = 'ws://%s:%s';\n", tArgs.strWebserverAddress, tArgs.usWebsocketPort)
 
-    rep:contentType('application/javascript')
-    rep:statusCode(200)
-    rep:write(strData)
+    tResponse:contentType('application/javascript')
+    tResponse:statusCode(200)
+    tResponse:write(strData)
+
   elseif strPath=='/description.xml' and strMethod=='GET' then
-    local strURL = string.format('%s:%d/index.html', req.ip, req.port)
+    local strURL = string.format('%s:%d/index.html', tArgs.strWebserverAddress, tArgs.usWebsocketPort)
     local strData = string.format([[<?xml version="1.0"?>
-<root xmlns=\"urn:schemas-upnp-org:device-1-0\">
+<root xmlns="urn:schemas-upnp-org:device-1-0">
  <specVersion>
    <major>1</major>
    <minor>0</minor>
  </specVersion>
  <device>
   <deviceType>urn:schemas-upnp-org:device:InternetGatewayDevice:1</deviceType>
-  <friendlyName>Muhkuh WebUI Gateway</friendlyName>
+  <friendlyName>Muhkuh Production Test</friendlyName>
   <manufacturer>Muhkuh Team</manufacturer>
   <manufacturerURL>https://github.com/muhkuh-sys</manufacturerURL>
-  <modelDescription>A gateway to all Muhkuh WebUI tests in the local network.</modelDescription>
-  <modelName>Muhkuh WebUI</modelName>
+  <modelDescription>A Muhkuh production test.</modelDescription>
+  <modelName>Muhkuh Production Test XYZ</modelName>
   <modelNumber>1.0.0</modelNumber>
   <modelURL>https://github.com/muhkuh-sys/org.muhkuh.tools-webui</modelURL>
   <serialNumber>%s</serialNumber>
@@ -152,8 +141,19 @@ server:start(function(req, rep)
 </root>
 ]], strSSDP_serial, strSSDP_UUID, strURL)
 
-    rep:contentType('text/xml')
-    rep:statusCode(200)
-    rep:write(strData)
+    tResponse:contentType('text/xml')
+    tResponse:statusCode(200)
+    tResponse:write(strData)
+
+  elseif string.sub(strPath, 1, 6)=='/test/' and strMethod=='GET' then
+    -- Read the file from the "test/www" folder.
+    local strRealPath = 'test/www/' .. string.sub(strPath, 7)
+    -- Try to open the file for reading.
+    local tFile = io.open(strRealPath, 'rb')
+    if tFile~=nil then
+      -- The file exists. Serve it.
+      local strMimeType = mimetypes.guess(strRealPath) or 'text/html'
+      tResponse:writeFile(tFile, strMimeType)
+    end
   end
 end)
