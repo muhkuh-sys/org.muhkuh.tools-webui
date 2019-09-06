@@ -1,11 +1,12 @@
 local class = require 'pl.class'
 local TestController = class()
 
-function TestController:_init(tLog, tLogTest, strLuaInterpreter)
+function TestController:_init(tLog, tLogTest, strLuaInterpreter, strTestPath)
   self.tLog = tLog
   self.tLogTest = tLogTest
 
   self.strLuaInterpreter = strLuaInterpreter
+  self.strTestPath = strTestPath
 
   self.json = require 'dkjson'
   self.pl = require'pl.import_into'()
@@ -74,7 +75,7 @@ function TestController:setInteractionResponse(strMessage)
       tBuffer:setInteraction()
 
       -- Create a new ZMQ process.
-      local tTestProc = self.ProcessZmq(tLog, self.tLogTest, self.strLuaInterpreter, {'dummy_test.lua', '${ZMQPORT}'})
+      local tTestProc = self.ProcessZmq(tLog, self.tLogTest, self.strLuaInterpreter, {'dummy_test.lua', '${ZMQPORT}'}, self.strTestPath)
       -- Connect the buffer to the test process.
       tTestProc:setBuffer(tBuffer)
       -- Register the test process as the new consumer of interaction responses.

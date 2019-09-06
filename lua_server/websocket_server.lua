@@ -10,6 +10,12 @@ local usWebsocketPort = 12345
 -- This number is used as the serial number in the SSDP responses.
 local ulSystemSerial = 4321
 
+-- This is the port for the web server.
+local usWebserverPort = 9090
+
+-- This is the complete path to the test folder.
+local strTestPath = pl.path.abspath('test')
+local strTestXmlFile = pl.path.join(strTestPath, 'tests.xml')
 
 -- Set the logger level from the command line options.
 local strLogLevel = 'debug'

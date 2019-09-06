@@ -24,12 +24,17 @@ end
 
 
 
-function Process:run_process(strCommand, astrArguments)
+function Process:run_process(strCommand, astrArguments, strWorkingFolder)
   local tResult
 
   if (self.tState==self.STATE_Idle) or (self.tState==self.STATE_Terminated) then
     local this = self
     local uv = self.uv
+
+    -- Run the command in the current working folder by default.
+    if strWorkingFolder==nil then
+      strWorkingFolder = uv.cwd();
+    end
 
     -- Create pipes for the new process.
     local tPipeStdOut = uv.pipe(false)
@@ -40,6 +45,7 @@ function Process:run_process(strCommand, astrArguments)
       {
         file = strCommand,
         args = astrArguments,
+        cwd = strWorkingFolder,
         stdio = {
           -- STDIN
           {},

@@ -2,12 +2,13 @@ local class = require 'pl.class'
 local Process = require 'process'
 local ProcessZmq = class(Process)
 
-function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments)
+function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingPath)
   self:super(tLog)
   self.tLogTest = tLogTest
 
   self.strCommand = strCommand
   self.astrArguments = astrArguments
+  self.strWorkingPath = strWorkingPath
 
   self.json = require 'dkjson'
 
@@ -285,7 +286,7 @@ function ProcessZmq:run(fnOnTerminate, tOnTerminateParameter)
     table.insert(astrArgs, strArgSub)
   end
 
-  self:run_process(self.strCommand, astrArgs)
+  self:run_process(self.strCommand, astrArgs, self.strWorkingPath)
 end
 
 
