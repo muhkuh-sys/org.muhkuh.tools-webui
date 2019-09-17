@@ -32,6 +32,7 @@
     "babel-standalone": "^6.26.0",
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
+    "react-image-magnify": "^2.7.4",
     "typeface-roboto": "0.0.54",
     "typeface-roboto-mono": "0.0.54"
   }
