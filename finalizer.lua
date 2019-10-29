@@ -9,17 +9,24 @@ local pl = require'pl.import_into'()
 
 -- Copy all additional files.
 local atScripts = {
-  ['targets/www']                  = '${install_base}/www/',
+  ['targets/www']                        = '${install_base}/www/',
 
-  ['lua/process_keepalive.lua']    = '${install_lua_path}/process_keepalive.lua',
-  ['lua/process.lua']              = '${install_lua_path}/process.lua',
-  ['lua/process_zmq.lua']          = '${install_lua_path}/process_zmq.lua',
-  ['lua/ssdp.lua']                 = '${install_lua_path}/ssdp.lua',
-  ['lua/test_controller.lua']      = '${install_lua_path}/test_controller.lua',
-  ['lua/test_description.lua']     = '${install_lua_path}/test_description.lua',
-  ['lua/webui_buffer.lua']         = '${install_lua_path}/webui_buffer.lua',
+  ['local/server.lua']                   = '${install_base}/',
+  ['local/websocket_server.lua']         = '${install_base}/',
 
-  ['${report_path}']               = '${install_base}/.jonchki/'
+  ['local/lua/configuration_file.lua']   = '${install_lua_path}/',
+  ['local/lua/package_file.lua']         = '${install_lua_path}/',
+  ['local/lua/process_keepalive.lua']    = '${install_lua_path}/',
+  ['local/lua/process.lua']              = '${install_lua_path}/',
+  ['local/lua/process_zmq.lua']          = '${install_lua_path}/',
+  ['local/lua/ssdp.lua']                 = '${install_lua_path}/',
+  ['local/lua/test_controller.lua']      = '${install_lua_path}/',
+  ['local/lua/test_description.lua']     = '${install_lua_path}/',
+  ['local/lua/webui_buffer.lua']         = '${install_lua_path}/',
+
+  ['local/jsx/test_start.jsx']           = '${install_base}/jsx/',
+
+  ['${report_path}']                     = '${install_base}/.jonchki/'
 }
 for strSrc, strDst in pairs(atScripts) do
   t:install(strSrc, strDst)
@@ -27,12 +34,12 @@ end
 
 
 -- Install the CLI init script.
---if strDistId=='windows' then
---  t:install('local/windows/muhkuh_cli_init.lua', '${install_base}/')
---elseif strDistId=='ubuntu' then
---  t:install('local/linux/muhkuh_cli_init.lua', '${install_base}/')
---  t:install('local/linux/Desktop/NXHX90-JTAG-0.0.1.desktop', '${install_base}/data/Desktop/${root_artifact_artifact}-${root_artifact_version}.desktop')
---end
+if strDistId=='windows' then
+  t:install('local/windows/muhkuh_server_init.lua', '${install_base}/')
+elseif strDistId=='ubuntu' then
+  t:install('local/linux/muhkuh_server_init.lua', '${install_base}/')
+  t:install('local/linux/run_server', '${install_base}/')
+end
 
 
 -- Create the package file.

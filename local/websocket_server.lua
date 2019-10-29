@@ -13,10 +13,6 @@ local ulSystemSerial = 4321
 -- This is the port for the web server.
 local usWebserverPort = 9090
 
--- This is the complete path to the test folder.
-local strTestPath = pl.path.abspath('test')
-local strTestXmlFile = pl.path.join(strTestPath, 'tests.xml')
-
 -- Set the logger level from the command line options.
 local strLogLevel = 'debug'
 local cLogWriter = require 'log.writer.filter'.new(
@@ -38,18 +34,17 @@ tLog.info('Start')
 --
 -- Try to read the package file.
 --
-local strPackageInfoFile = pl.path.join('.jonchki', 'package.txt')
-local strPackageInfo, strError = pl.utils.readfile(strPackageInfoFile, false)
--- Default to version "unknown".
-local strVersion = 'unknown'
-local strVcsVersion = 'unknown'
-if strPackageInfo~=nil then
-  strVersion = string.match(strPackageInfo, 'PACKAGE_VERSION=([0-9.]+)')
-  strVcsVersion = string.match(strPackageInfo, 'PACKAGE_VCS_ID=([a-zA-Z0-9+]+)')
-end
+local cPackageFile = require 'package_file'
+local strVersion, strVcsVersion = cPackageFile.read(tLog)
 
--- TODO: Do not overwrite this once there is a package file.
-strVersion = '1.0'
+
+------------------------------------------------------------------------------
+--
+--  Try to read the configuration file.
+--
+local cConfigurationFile = require 'configuration_file'
+local tConfiguration = cConfigurationFile.read(tLog)
+
 
 ------------------------------------------------------------------------------
 --
@@ -74,11 +69,22 @@ if strInterfaceAddress==nil then
   error('No suitable interface found.')
 end
 
-local strHtmlLocation = string.format('http://%s:%s/index.html', strInterfaceAddress, usWebserverPort)
+
+------------------------------------------------------------------------------
+--
+-- Start the SSDP server.
+--
+local strDescriptionLocation = string.format('http://%s:%s/description.xml', strInterfaceAddress, usWebserverPort)
 local SSDP = require 'ssdp'
-local tSsdp = SSDP(tLog, strHtmlLocation, strVersion)
+local tSsdp = SSDP(tLog, strDescriptionLocation, strVersion)
 local strSSDP_UUID = tSsdp:setSystemUuid()
 tSsdp:run()
+
+
+-- Read a test description.
+-- TODO: For now there is only one test.
+local strTestXmlFile = pl.path.join(tConfiguration.tests_folder, 'tests.xml')
+
 
 local TestDescription = require 'test_description'
 local tTestDescription = TestDescription(tLog)
@@ -112,7 +118,7 @@ local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, astrServerArgs, 3)
 
 -- Create a new test controller.
 local TestController = require 'test_controller'
-local tTestController = TestController(tLog, tLogTest, strLuaInterpreter, strTestPath)
+local tTestController = TestController(tLog, tLogTest, strLuaInterpreter, tConfiguration.tests_folder)
 tTestController:setBuffer(webui_buffer)
 
 

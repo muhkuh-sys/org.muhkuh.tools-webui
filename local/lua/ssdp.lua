@@ -2,7 +2,7 @@ local class = require 'pl.class'
 local SSDP = class()
 
 
-function SSDP:_init(tLog, strServerUrl, strMuhkuhVersion)
+function SSDP:_init(tLog, strDescriptionUrl, strMuhkuhVersion)
   self.tLog = tLog
 
   self.pl = require'pl.import_into'()
@@ -16,7 +16,7 @@ function SSDP:_init(tLog, strServerUrl, strMuhkuhVersion)
   self.m_tAnnounceTimer = nil
 
   self.m_strSystemUuid = nil
-  self.m_strServerUrl = strServerUrl
+  self.m_strDescriptionUrl = strDescriptionUrl
   self.m_strMuhkuhVersion = strMuhkuhVersion
 
   self:__generateTypeLookup()
@@ -118,7 +118,7 @@ function SSDP:__announce(tSocket, tAttr, strSourceIp, uiSourcePort)
   end
 
   local atReplace = {
-    LOCATION = self.m_strServerUrl,
+    LOCATION = self.m_strDescriptionUrl,
     MAX_AGE = 80,
     MUHKUH_VERSION = self.m_strMuhkuhVersion,
     NT = strNT,
@@ -143,7 +143,6 @@ function SSDP:__onReceive(tSocket, tError, strData, tFlags, strHost, uiPort)
 
   -- Does the packet start with "M-SEARCH *" ?
   if string.sub(strData, 1, 10)=='M-SEARCH *' then
-print('receive')
     -- Search for "ST".
     local strService = string.match(strData, '\r\nST:([^\r\n]+)\r\n')
     if strService==nil then
@@ -154,9 +153,7 @@ print('receive')
     end
     for _, tAttr in ipairs(self.m_atSsdpTypes) do
       local strTypeData = tAttr.type .. ':' .. tAttr.data
-print(string.format('%s %s %s', strTypeData, strService, tostring(strService==strTypeData)))
       if strService==strTypeData then
-print('Announce')
         self:__announce(tSocket, tAttr, strHost, uiPort)
       end
     end
