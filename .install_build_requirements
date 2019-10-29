@@ -1,0 +1,19 @@
+#! /bin/bash
+set -e
+
+# Check for all build dependencies.
+declare -a -r astrDeb=(
+	"npm"
+)
+declare -a astrInstall=()
+for strDeb in "${astrDeb[@]}"
+do
+	DPKG_STATUS=`dpkg-query -W -f='${Status}' ${strDeb} || echo 'unknown'`
+	if [ "$DPKG_STATUS" != "install ok installed" ]; then
+		astrInstall+=("${strDeb}")
+	fi
+done
+if [ ${#astrInstall[@]} -gt 0 ]; then
+	sudo apt-get update --assume-yes
+	sudo apt-get install --assume-yes ${astrInstall[@]}
+fi
