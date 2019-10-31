@@ -100,6 +100,9 @@ end
 
 
 function WebUiBuffer:setTitle(strTitle, strSubTitle)
+  strTitle = tostring(strTitle)
+  strSubTitle = tostring(strSubTitle)
+
   -- Did the title or subtitle change?
   local fChanged = (self.strTitle~=strTitle) or (self.strSubTitle~=strSubTitle)
   if fChanged==true then
