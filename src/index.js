@@ -175,6 +175,9 @@ class TesterApp extends React.Component {
     /* This is a reference to the log. */
     this.tTesterLog = React.createRef();
 
+    /* This is a reference to the interaction element. */
+    this.tTesterInteraction = React.createRef();
+
     /* This is the scroll position for all tester tabs. */
     this.auiScrollPosition = [0, 0, 0];
 
@@ -251,6 +254,10 @@ class TesterApp extends React.Component {
 
       case 'SetInteraction':
         this.onMessage_SetInteraction(tJson);
+        break;
+
+      case 'SetInteractionData':
+        this.onMessage_SetInteractionData(tJson);
         break;
 
       case 'Log':
@@ -384,6 +391,18 @@ class TesterApp extends React.Component {
         } catch(error) {
           console.error('Failed to parse the received code:', error, tCode);
         }
+      }
+    }
+  }
+
+  onMessage_SetInteractionData(tJson) {
+    const strData = tJson.data;
+
+    /* Does an interaction exist? */
+    let tElement = this.tTesterInteraction.current;
+    if( tElement!==null ) {
+      if( typeof(tElement.onInteractionData)=="function" ) {
+        tElement.onInteractionData(strData);
       }
     }
   }
@@ -696,7 +715,7 @@ class TesterApp extends React.Component {
         );
       } else {
         try {
-          tTabContentsInteraction = React.createElement(tElement);
+          tTabContentsInteraction = React.createElement(tElement, {ref: this.tTesterInteraction});
         } catch(error) {
           console.error('Failed to instanciate the interaction element:', error);
           tTabContentsInteraction = (

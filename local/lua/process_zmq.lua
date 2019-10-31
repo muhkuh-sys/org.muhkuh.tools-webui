@@ -26,6 +26,7 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingP
   self.m_zmqReceiveHandler = {
     LOG = self.__onZmqReceiveLog,
     INT = self.__onZmqReceiveInt,
+    IDA = self.__onZmqReceiveIda,
     TTL = self.__onZmqReceiveTtl,
     SER = self.__onZmqReceiveSer,
     NAM = self.__onZmqReceiveNam,
@@ -104,6 +105,22 @@ function ProcessZmq:__onZmqReceiveInt(tHandle, strMessage)
     end
   else
     print(string.format('Invalid interaction received: "%s".', strMessage))
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveIda(tHandle, strMessage)
+  local strInteractionData = string.match(strMessage, '^IDA(.*)')
+  if strInteractionData~=nil then
+    local tBuffer = self.m_buffer
+    if tBuffer==nil then
+      print('warning: discarding interaction data as no buffer present.')
+    else
+      tBuffer:setInteractionData(strInteractionData)
+    end
+  else
+    print(string.format('Invalid interaction data received: "%s".', strMessage))
   end
 end
 

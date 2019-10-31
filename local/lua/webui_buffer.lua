@@ -202,6 +202,19 @@ end
 
 
 
+function WebUiBuffer:setInteractionData(strData)
+  if strData==nil then
+    strData = ''
+  else
+    strData = tostring(strData)
+  end
+
+  -- Push the code to the UI if there is a connection.
+  self:__sendInteractionData(strData)
+end
+
+
+
 function WebUiBuffer:setCurrentSerial(uiCurrentSerial)
   -- The current serial number can be nil or a number.
   if uiCurrentSerial==nil or tonumber(uiCurrentSerial)~=nil then
@@ -306,6 +319,20 @@ function WebUiBuffer:__sendInteraction()
     local tMessage = {
       id = 'SetInteraction',
       jsx = self.strInteractionJsx
+    }
+    local strJson = self.json.encode(tMessage)
+    tConnection:write(strJson)
+  end
+end
+
+
+
+function WebUiBuffer:__sendInteractionData(strData)
+  local tConnection = self.tActiveConnection
+  if tConnection~=nil then
+    local tMessage = {
+      id = 'SetInteractionData',
+      data = strData
     }
     local strJson = self.json.encode(tMessage)
     tConnection:write(strJson)
