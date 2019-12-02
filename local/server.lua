@@ -23,6 +23,9 @@ local strVersion, strVcsVersion = cPackageFile.read()
 local cConfigurationFile = require 'configuration_file'
 local tConfiguration = cConfigurationFile.read()
 
+-- Prepare the path of the "www" folder. Add a path separator at the end.
+local strPathTestWww = pl.path.join(tConfiguration.tests_folder, 'www', '')
+
 
 ------------------------------------------------------------------------------
 --
@@ -165,7 +168,7 @@ server:start(function(req, tResponse)
 
   elseif string.sub(strPath, 1, 6)=='/test/' and strMethod=='GET' then
     -- Read the file from the "test/www" folder.
-    local strRealPath = 'test/www/' .. string.sub(strPath, 7)
+    local strRealPath = strPathTestWww .. string.sub(strPath, 7)
     -- Try to open the file for reading.
     local tFile = io.open(strRealPath, 'rb')
     if tFile~=nil then
