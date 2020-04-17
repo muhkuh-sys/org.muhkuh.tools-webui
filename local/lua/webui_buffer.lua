@@ -264,6 +264,14 @@ end
 
 
 
+function WebUiBuffer:clearLog()
+  -- Clear the log buffer.
+  self.astrLogMessages = {}
+  self.uiSyncedLogIndex = 0
+end
+
+
+
 function WebUiBuffer:__sendTitle()
   -- Push the values to the UI if there is a connection.
   local tConnection = self.tActiveConnection

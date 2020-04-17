@@ -74,6 +74,9 @@ function TestController:setInteractionResponse(strMessage)
       -- Clear the interaction.
       tBuffer:setInteraction()
 
+      -- Clear the log.
+      tBuffer:clearLog()
+
       -- Create a new ZMQ process.
       local tTestProc = self.ProcessZmq(tLog, self.tLogTest, self.strLuaInterpreter, {'test_system.lua', '${ZMQPORT}'}, self.strTestPath)
       -- Connect the buffer to the test process.
