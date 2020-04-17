@@ -822,7 +822,7 @@ function initializeLogOverlay() {
   var tTerm = new Terminal({
     convertEol: true,
     disableStdin: true,
-    scrollback: 10000,
+    scrollback: 5000,
     theme: tTheme
   });
 
