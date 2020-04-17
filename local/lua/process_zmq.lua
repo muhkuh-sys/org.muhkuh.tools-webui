@@ -336,4 +336,13 @@ function ProcessZmq:onStdErr(strData)
 end
 
 
+function ProcessZmq:onCancel()
+  local tLog = self.tLog
+
+  tLog.info('Cancel: stop the running test.')
+  -- TODO: this kills only the process, which is the LUA test. Any subprocesses started by the LUA test will keep running.
+  self:shutdown()
+end
+
+
 return ProcessZmq

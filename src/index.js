@@ -650,7 +650,11 @@ class TesterApp extends React.Component {
   doCancelTest = () => {
     console.log('Cancel test');
 
-    clearInterval(this.interval);
+    const tSocket = this.tSocket;
+    if( tSocket!==null ) {
+      const strJson = JSON.stringify({id: 'Cancel'});
+      tSocket.send(strJson);
+    }
 
     const uiLastRunningTest = this.state.tRunningTest_uiRunningTest;
     if( uiLastRunningTest!==null ) {
@@ -728,7 +732,7 @@ class TesterApp extends React.Component {
     /* Create the application menu. */
     let tAppMenu = (
       <List>
-        <ListItem button key='Cancel test' disabled={this.state.tRunningTest_uiRunningTest===null} onClick={this.doCancelTest}>
+        <ListItem button key='Cancel test' onClick={this.doCancelTest}>
           <ListItemIcon><CancelIcon/></ListItemIcon>
           <ListItemText primary='Cancel test'/>
         </ListItem>
@@ -741,6 +745,7 @@ class TesterApp extends React.Component {
           <ListItemIcon><PowerOffIcon/></ListItemIcon>
           <ListItemText primary='Disconnect'/>
         </ListItem>
+        <Divider/>
         <ListItem button key='Toggle Log' onClick={this.doToggleLog}>
           <ListItemIcon><DescriptionIcon/></ListItemIcon>
           <ListItemText primary='Toggle Log'/>
@@ -754,7 +759,7 @@ class TesterApp extends React.Component {
           <div id='TesterApp'>
             <div id='TesterHeader'>
               <div id='TesterUIHoverButtons'>
-                <Button variant="extendedFab" aria-label="Cancel test" disabled={this.state.tRunningTest_uiRunningTest===null} onClick={this.doCancelTest}>
+                <Button variant="extendedFab" aria-label="Cancel test" onClick={this.doCancelTest}>
                   <CancelIcon/>
                   Cancel test
                 </Button>

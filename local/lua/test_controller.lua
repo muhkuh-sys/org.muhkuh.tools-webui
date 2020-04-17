@@ -97,4 +97,12 @@ function TestController:onTestTerminate()
 end
 
 
+function TestController:onCancel()
+  local tLog = self.tLog
+
+  tLog.info('Cancel: no test running.')
+end
+
+
+
 return TestController

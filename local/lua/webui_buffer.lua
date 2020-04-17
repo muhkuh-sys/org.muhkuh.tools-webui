@@ -417,11 +417,18 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
           self:__sendTestNames()
           self:__sendInteraction()
           self:__sendCurrentSerial()
+          -- TODO: send the running test and all test states.
 
         elseif strId=='RspInteraction' then
           if tTester~=nil then
             tTester:setInteractionResponse(strMessage)
           end
+
+        elseif strId=='Cancel' then
+          if tTester~=nil then
+            tTester:onCancel()
+          end
+
         else
           print('Unknown message ID received.')
           self.pl.pretty.dump(tJson)
