@@ -5,6 +5,8 @@ import './style.scss';
 import 'typeface-roboto';
 import 'typeface-roboto-mono';
 
+import {version as nodejs_package_version} from '../package.json';
+
 import { transform } from 'babel-standalone';
 import { createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -42,12 +44,15 @@ import Typography from '@material-ui/core/Typography';
 import ReactImageMagnify from 'react-image-magnify';
 
 import CancelIcon from '@material-ui/icons/Cancel';
+import DescriptionIcon from '@material-ui/icons/Description';
 import MenuIcon from '@material-ui/icons/Menu';
 import PowerIcon from '@material-ui/icons/Power';
 import PowerOffIcon from '@material-ui/icons/PowerOff';
 
+import { Terminal } from "xterm";
+import { FitAddon } from 'xterm-addon-fit';
+
 import TesterUIHeader from './testerui_header';
-import TesterUILog from './testerui_log';
 import TesterUISummary from './testerui_summary';
 import TesterUITheme from './testerui_theme';
 
@@ -59,9 +64,9 @@ const TesterAppState_ConnectionClosed = 3;
 const TesterAppState_FatalError = 4;
 const TesterAppState_SoftError = 5;
 
-const TesterAppTab_Interaction = 0;
-const TesterAppTab_TestLog = 1;
-const TesterAppTab_SystemLog = 2;
+
+let TesterLog_terminal;
+let TesterLog_terminal_fit;
 
 
 class TesterApp extends React.Component {
@@ -88,7 +93,6 @@ class TesterApp extends React.Component {
     this.state = {
       tState: _tState,
       tErrorMessage: _tErrorMessage,
-      uiActiveTab: TesterAppTab_Interaction,
       fMenuIsOpen: false,
 
       strServerURL: _strServerURL,
@@ -112,8 +116,6 @@ class TesterApp extends React.Component {
 
     /* All log lines combined in one string. */
     this.uiLogFilterLevel = 8;
-    this.astrLevelLogLines = [];
-    this.strLogLines = '';
 
     /* No socket created yet. */
     this.tSocket = null;
@@ -171,17 +173,27 @@ class TesterApp extends React.Component {
     }
     this.strJsxHeaderCode = astrCode.join('\n') + '\n';
 
-    /* This is a reference to the scroll container. */
-    this.tTesterTab = React.createRef();
-
-    /* This is a reference to the log. */
-    this.tTesterLog = React.createRef();
-
     /* This is a reference to the interaction element. */
     this.tTesterInteraction = React.createRef();
 
-    /* This is the scroll position for all tester tabs. */
-    this.auiScrollPosition = [0, 0, 0];
+    /* This is the tester terminal. */
+    this.tTesterLog_terminal = TesterLog_terminal;
+    this.tTesterLog_terminal_fit = TesterLog_terminal_fit;
+
+    const atLogLevelAnsiColors = [
+      '',              /* Log level 0 does not exist. */
+      '\x1B[37;101m',  /* Log level 1: EMERG (FG: white, BG: light red) */
+      '\x1B[34;101m',  /* Log level 2: ALERT (FG: blue, BG: light red) */
+      '\x1B[30;101m',  /* Log level 3: FATAL (FG: black, BG: light red) */
+      '\x1B[91;40m',   /* Log level 4: ERROR (FG light red, BG: black) */
+      '\x1B[95;40m',   /* Log level 5: WARNING (FG: light magenta, BG: black) */
+      '\x1B[96;40m',   /* Log level 6: NOTICE (FG: light cyan, BG: black) */
+      '\x1B[37;40m',   /* Log level 7: INFO (FG: white, BG: black) */
+      '\x1B[33;40m',   /* Log level 8: DEBUG (FG: yellow, BG: black) */
+      '\x1B[92;40m'    /* Log level 9: TRACE (FG: light green, BG: black) */
+    ];
+    this.atLogLevelAnsiColors = atLogLevelAnsiColors;
+    this.uiLastLogLevel = null;
 
     const atResultNameToId = new Map([
       ['ok', 0],
@@ -197,9 +209,6 @@ class TesterApp extends React.Component {
       atResultIdToName.set(uiId, strName);
     }, this);
     this.atResultIdToName = atResultIdToName;
-
-    /* TODO: remove this. */
-    this.demo_counter = 0;
 
     /* This is a regexp for matching log lines. */
     this.regexpLogLine = new RegExp('(\\d+),');
@@ -384,7 +393,6 @@ class TesterApp extends React.Component {
           try {
             const tElement = tFn(this.atComponents);
             this.setState({
-              uiActiveTab: TesterAppTab_Interaction,
               tUI_tInteraction: tElement
             });
           } catch(error) {
@@ -411,14 +419,9 @@ class TesterApp extends React.Component {
 
   onMessage_Log(tJson) {
     const uiLogFilterLevel = this.uiLogFilterLevel;
-    let astrLevelLogLines = this.astrLevelLogLines;
-    const tTesterLog = this.tTesterLog.current;
 
     /* Loop over all new lines. */
     tJson.lines.forEach(function(strLine, uiIndex) {
-      /* Append the new line to the log. */
-      astrLevelLogLines.push(strLine);
-
       const astrLine = strLine.match(this.regexpLogLine);
       if( astrLine==null ) {
         console.error('Ignoring invalid log entry:' + strLine);
@@ -426,12 +429,20 @@ class TesterApp extends React.Component {
         const uiLevel = parseInt(astrLine[1]);
         if( uiLevel<=uiLogFilterLevel ) {
           const strNewLine = strLine.substring(astrLine[0].length);
-          this.strLogLines += strNewLine;
 
-          /* Append the new line to the display if it is visible. */
-          if( tTesterLog!==null ) {
-            tTesterLog.append(strNewLine);
+          /* Get the color for the log level. */
+          let strColor = '';
+          /* Only process valid log levels. */
+          if( uiLevel>0 && uiLevel<10 ) {
+            /* Set the new style if it differs from the last one. */
+            if( this.uiLastLogLevel!=uiLevel ) {
+              strColor = this.atLogLevelAnsiColors[uiLevel];
+              this.uiLastLogLevel = uiLevel;
+            }
           }
+
+          /* Combine the color codes with the lines. */
+          this.tTesterLog_terminal.write(strColor + strNewLine);
         }
       }
     }, this);
@@ -553,29 +564,6 @@ class TesterApp extends React.Component {
     });
   };
 
-  afterTabChange = () => {
-    /* Set the new scroll position. */
-    const tTesterTab = this.tTesterTab.current;
-    if( tTesterTab!==null ) {
-      const uiActiveTab = this.state.uiActiveTab;
-      const uiNewPos = this.auiScrollPosition[uiActiveTab];
-      tTesterTab.scrollTop = uiNewPos;
-    }
-  };
-
-  handleTabChange = (tEvent, uiValue) => {
-    /* Get the scroll position of the old tab. */
-    const uiActiveTab = this.state.uiActiveTab;
-    const tTesterTab = this.tTesterTab.current;
-    if( tTesterTab!==null ) {
-      const uiScrollTop = tTesterTab.scrollTop;
-      this.auiScrollPosition[uiActiveTab] = uiScrollTop;
-    }
-
-    /* Change the tab. */
-    this.setState({ uiActiveTab: uiValue }, this.afterTabChange);
-  };
-
   componentDidMount() {
     /* Create the websocket if it does not exist yet. */
     if( this.state.tState===TesterAppState_Idle )
@@ -589,21 +577,6 @@ class TesterApp extends React.Component {
     if( this.tSocket!==null )
     {
       this.tSocket.close();
-    }
-  }
-
-  appendDemoLogLine() {
-    /* Create a new demo line. */
-    const strNewLines = 'Line ' + String(this.demo_counter) + '\n';
-    this.demo_counter += 1;
-
-    /* Append the new line to the log. */
-    this.strLogLines += strNewLines;
-
-    /* Append the new line to the display if it is visible. */
-    const tTesterLog = this.tTesterLog.current;
-    if( tTesterLog!==null ) {
-      tTesterLog.append(strNewLines);
     }
   }
 
@@ -693,6 +666,18 @@ class TesterApp extends React.Component {
   }
 
 
+  doToggleLog = () => {
+    const tTerminalDiv = document.getElementById('terminal_log');
+    let strVisibility = tTerminalDiv.style.visibility;
+    if( strVisibility=="visible" ) {
+      strVisibility = "hidden";
+    } else {
+      strVisibility = "visible";
+    }
+    tTerminalDiv.style.visibility = strVisibility;
+  }
+
+
   render() {
     let tTabContentsInteraction = null;
     if( this.state.tState===TesterAppState_Idle ) {
@@ -740,14 +725,6 @@ class TesterApp extends React.Component {
       );
     }
 
-    const tTabContentsLog = (
-      <TesterUILog ref={this.tTesterLog} strLogLines={this.strLogLines}/>
-    );
-
-    const tTabContentsSystemLog = (
-      <Typography align="center" variant="h2" gutterBottom>System log</Typography>
-    );
-
     /* Create the application menu. */
     let tAppMenu = (
       <List>
@@ -764,10 +741,13 @@ class TesterApp extends React.Component {
           <ListItemIcon><PowerOffIcon/></ListItemIcon>
           <ListItemText primary='Disconnect'/>
         </ListItem>
+        <ListItem button key='Toggle Log' onClick={this.doToggleLog}>
+          <ListItemIcon><DescriptionIcon/></ListItemIcon>
+          <ListItemText primary='Toggle Log'/>
+        </ListItem>
       </List>
     );
 
-    const uiActiveTab = this.state.uiActiveTab;
     return (
       <MuiThemeProvider theme={TesterUITheme}>
         <CssBaseline>
@@ -789,24 +769,9 @@ class TesterApp extends React.Component {
               </Drawer>
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiFirstSerial={this.state.tTest_uiFirstSerial} uiLastSerial={this.state.tTest_uiLastSerial} />
               <TesterUISummary astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
-              <div id='TesterTabs'>
-                <Tabs value={uiActiveTab} onChange={this.handleTabChange}>
-                  <Tab label="Interaction" />
-                  <Tab label="Test Log" />
-                  <Tab label="System Log" />
-                </Tabs>
-              </div>
             </div>
-            <div id='TesterTabContents' ref={this.tTesterTab}>
-              <div style={{display: ((uiActiveTab==TesterAppTab_Interaction) ? 'inline' : 'none')}}>
-                {tTabContentsInteraction}
-              </div>
-              <div style={{display: ((uiActiveTab==TesterAppTab_TestLog) ? 'inline' : 'none')}}>
-                {tTabContentsLog}
-              </div>
-              <div style={{display: ((uiActiveTab==TesterAppTab_SystemLog) ? 'inline' : 'none')}}>
-                {tTabContentsSystemLog}
-              </div>
+            <div id='TesterTabContents'>
+              {tTabContentsInteraction}
             </div>
           </div>
         </CssBaseline>
@@ -816,4 +781,70 @@ class TesterApp extends React.Component {
 }
 
 
+function initializeLogOverlay() {
+  /* This is the solarized theme for XTerm from here: https://github.com/maniat1k/Solarizedxterm/blob/master/.Xdefaults */
+  const tTheme = {
+    background:    '#222222',
+    foreground:    '#808080',
+    cursor:        '#808080',
+    cursorAccent:  '#222222',
+    selection:     '#FFFFFF4D',
+    black:         '#222222',
+    brightBlack:   '#454545',
+    red:           '#9E5641',
+    brightRed:     '#CC896D',
+    green:         '#6C7E55',
+    brightGreen:   '#C4DF90',
+    yellow:        '#CAAF2B',
+    brightYellow:  '#FFE080',
+    blue:          '#7FB8D8',
+    brightBlue:    '#B8DDEA',
+    magenta:       '#956D9D',
+    brightMagenta: '#C18FCB',
+    cyan:          '#4c8ea1',
+    brightCyan:    '#6bc1d0',
+    white:         '#808080',
+    brightWhite:   '#cdcdcd'
+  };
+
+  /* Create a new terminal.
+   * Options:
+   *   convert EOL so that a "\n" moves to the start of the next line.
+   *   disable STDIN as it is not needed.
+   *   scrollback lines sets the number of lines available when scrolling up.
+   *   theme is the color theme.
+   */
+  var tTerm = new Terminal({
+    convertEol: true,
+    disableStdin: true,
+    scrollback: 10000,
+    theme: tTheme
+  });
+
+  const tFitAddon = new FitAddon();
+  tTerm.loadAddon(tFitAddon);
+
+  var tTermDiv = document.getElementById('terminal_log');
+  tTerm.open(tTermDiv);
+  tFitAddon.fit();
+
+  TesterLog_terminal = tTerm;
+  TesterLog_terminal_fit = tFitAddon;
+
+  /* Show a welcome message with all colors. */
+  var strBuffer = 'Welcome to Muhkuh WebUI V' + nodejs_package_version + ' .\n' +
+                  '\n' +
+                  'Colors:\n';
+  for(let uiColor=40; uiColor<50; ++uiColor) {
+    strBuffer += '  \x1B[' + uiColor.toString() + 'm  \x1B[0m';
+  }
+  strBuffer += '\n';
+  for(let uiColor=100; uiColor<110; ++uiColor) {
+    strBuffer += '  \x1B[' + uiColor.toString() + 'm  \x1B[0m';
+  }
+  strBuffer += '\n\n';
+  tTerm.write(strBuffer);
+}
+
+initializeLogOverlay();
 ReactDOM.render(<TesterApp />, document.getElementById("index"));

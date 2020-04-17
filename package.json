@@ -33,7 +33,10 @@
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
     "react-image-magnify": "^2.7.4",
+    "react-resize-observer": "^1.1.1",
     "typeface-roboto": "0.0.54",
-    "typeface-roboto-mono": "0.0.54"
+    "typeface-roboto-mono": "0.0.54",
+    "xterm": "^4.3.0",
+    "xterm-addon-fit": "^0.3.0"
   }
 }

@@ -11,7 +11,7 @@
 }
 #TesterUIHoverButtons {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   right: 1em;
 }
 #TesterHeader {
@@ -41,9 +41,6 @@
   /* Display this element above the others. */
   z-index: 1;
 }
-#TesterTabs {
-  margin-top: 1em;
-}
 #TesterTabContents {
   /* Set a margin of 1em to left, right and bottom. Set no margin to the top. */
   margin: 0 1em 1em 1em;
@@ -54,10 +51,5 @@
   /* Show a scroll-bar if the content has too many lines. */
   overflow-y: scroll;
 }
-.TesterLog {
-  color: white;
-  background-color: black;
-  font-family: "Roboto Mono", monospace;
-  font-size: medium;
-  white-space: pre;
-}
+
+@import 'xterm';
