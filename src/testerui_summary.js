@@ -4,7 +4,6 @@ import ReactDOM from "react-dom";
 import CircularProgress from '@material-ui/core/CircularProgress';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
-import Typography from '@material-ui/core/Typography';
 
 import ImgCowOk from './images/muhkuh_test_ok.svg';
 import ImgCowErr from './images/muhkuh_test_failed.svg';
@@ -58,19 +57,8 @@ class TesterUISummary extends React.Component {
       );
     }, this);
 
-    let strSerial = 'No current serial.';
-    if( this.props.fHasSerial==true ) {
-      let uiSerial = this.props.uiCurrentSerial;
-      if( Number.isInteger(uiSerial)===true ) {
-        strSerial = 'Current serial: ' + String(uiSerial);
-      } else {
-        strSerial = 'Current serial: none';
-      }
-    }
-
     return (
       <div>
-        <Typography variant="h4" gutterBottom>{strSerial}</Typography>
         <div className='TesterUISummary_CowBar' style={{backgroundColor: this.props.theme.palette.background.paper}}>
           {atCows}
         </div>
