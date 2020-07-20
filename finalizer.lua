@@ -34,10 +34,7 @@ end
 
 
 -- Install the CLI init script.
-if strDistId=='windows' then
-  t:install('local/windows/muhkuh_server_init.lua', '${install_base}/')
-elseif strDistId=='ubuntu' then
-  t:install('local/linux/muhkuh_server_init.lua', '${install_base}/')
+if strDistId=='ubuntu' then
   t:install('local/linux/run_server', '${install_base}/')
 end
 
