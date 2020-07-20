@@ -1,5 +1,3 @@
-require 'muhkuh_server_init'
-
 local pl = require'pl.import_into'()
 local uv  = require"lluv"
 uv.poll_zmq = require "lluv.poll_zmq"

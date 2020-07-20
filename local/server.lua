@@ -2,7 +2,6 @@
 io.stdout:setvbuf('no')
 io.stderr:setvbuf('no')
 
-require 'muhkuh_server_init'
 local Pegasus = require 'pegasus'
 local argparse = require 'argparse'
 local mimetypes = require 'mimetypes'
