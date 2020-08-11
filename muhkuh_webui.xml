@@ -6,24 +6,24 @@
 	      version="0.0.1"
 	      vcs-id="${PROJECT_VERSION_VCS}"
 	      extension="tar.gz">
-		<license name="PROPRIETARY"/>
+		<license name="GPL-V2"/>
 		<author name="Christoph Thelen" url="https://www.hilscher.com/" />
 		<description>
 			A web based UI to run Muhkuh production tests.
 		</description>
 	</info>
 	<dependencies>
-		<dependency group="org.lua" module="lua" artifact="lua" version="5.1"/>
+		<dependency group="org.lua" module="lua" artifact="lua" version="5.4"/>
 		<dependency group="com.github.EvandroLG" module="pegasus.lua" artifact="pegasus.lua" version="0.9"/>
-		<dependency group="com.github.moteus" module="lua-lluv" artifact="lua5.1-lua-lluv" version="0.1"/>
+		<dependency group="com.github.moteus" module="lua-lluv" artifact="lua5.4-lua-lluv" version="0.1"/>
 		<dependency group="com.github.moteus" module="lua-lluv-poll-zmq" artifact="lua-lluv-poll-zmq" version="0.1.0"/>
 		<dependency group="com.github.moteus" module="lua-lluv-websocket" artifact="lua-lluv-websocket" version="0.0.0"/>
 		<dependency group="com.github.moteus" module="lua-log" artifact="lua-log" version="0.1"/>
-		<dependency group="com.github.zeromq" module="lzmq" artifact="lua5.1-lzmq" version="0.4"/>
-		<dependency group="com.github.diegonehab" module="luasocket" artifact="lua5.1-luasocket" version="3.0"/>
+		<dependency group="com.github.zeromq" module="lzmq" artifact="lua5.4-lzmq" version="0.4"/>
+		<dependency group="com.github.diegonehab" module="luasocket" artifact="lua5.4-luasocket" version="3.0"/>
 		<dependency group="com.github.mpeterv" module="argparse" artifact="argparse" version="0.6"/>
 		<dependency group="com.github.stevedonovan" module="penlight" artifact="penlight" version="1.7"/>
-		<dependency group="uk.co.matthewwild" module="luaexpat" artifact="lua5.1-luaexpat" version="1.3"/>
+		<dependency group="uk.co.matthewwild" module="luaexpat" artifact="lua5.4-luaexpat" version="1.3"/>
 		<dependency group="de.dkolf" module="dkjson" artifact="dkjson" version="2.5"/>
 	</dependencies>
 </jonchki-artifact>
