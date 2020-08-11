@@ -54,7 +54,7 @@ function WebUiBuffer:__onLogTimer(tTimer)
   if tConnection~=nil then
     -- Are new log messages waiting?
     local astrLogMessages = self.astrLogMessages
-    local uiLogMessages = table.maxn(astrLogMessages)
+    local uiLogMessages = #astrLogMessages
     local uiSyncedLogIndex = self.uiSyncedLogIndex
 
     if uiSyncedLogIndex<uiLogMessages then
@@ -171,7 +171,7 @@ function WebUiBuffer:setTestStati(astrTestStati)
     end
   end
   if fChanged==true then
-    for uiCnt = 1, table.maxn(astrOldTestStati) do
+    for uiCnt = 1, #astrOldTestStati do
       astrOldTestStati[uiCnt] = astrTestStati[uiCnt]
     end
     self:__sendTestStati()
