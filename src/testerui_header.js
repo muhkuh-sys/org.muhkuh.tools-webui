@@ -48,13 +48,13 @@ class TesterUIHeader extends React.Component {
       }
     }
 
-    let strSerial = 'No current serial.';
+    let strCurrentSerial = 'No current serial.';
     if( this.props.fHasSerial==true ) {
       let uiSerial = this.props.uiCurrentSerial;
       if( Number.isInteger(uiSerial)===true ) {
-        strSerial = 'Current serial: ' + String(uiSerial);
+        strCurrentSerial = 'Current serial: ' + String(uiSerial);
       } else {
-        strSerial = 'Current serial: none';
+        strCurrentSerial = 'Current serial: none';
       }
     }
 
@@ -63,7 +63,7 @@ class TesterUIHeader extends React.Component {
         <Typography align="center" color={strTitleColor} variant="h4" gutterBottom>{strTitleText}</Typography>
         <Typography align="center" variant="subtitle1" gutterBottom>{strSubtitleText}</Typography>
         <Typography variant="body1" gutterBottom>{strSerial}</Typography>
-        <Typography variant="h4" gutterBottom>{strSerial}</Typography>
+        <Typography variant="h4" gutterBottom>{strCurrentSerial}</Typography>
       </div>
     );
   }
