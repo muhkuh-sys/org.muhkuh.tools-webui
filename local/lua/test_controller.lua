@@ -56,6 +56,7 @@ end
 
 function TestController:setInteractionResponse(strMessage)
   local tLog = self.tLog
+  local pl = self.pl
   tLog.debug('Received message: %s', strMessage)
 
   local tJson, uiPos, strJsonErr = self.json.decode(strMessage)
@@ -77,17 +78,34 @@ function TestController:setInteractionResponse(strMessage)
       -- Clear the log.
       tBuffer:clearLog()
 
-      -- Create a new ZMQ process.
-      local tTestProc = self.ProcessZmq(tLog, self.tLogTest, self.strLuaInterpreter, {'test_system.lua', '${ZMQPORT}'}, self.strTestPath)
-      -- Connect the buffer to the test process.
-      tTestProc:setBuffer(tBuffer)
-      -- Register the test process as the new consumer of interaction responses.
-      tBuffer:setTester(tTestProc)
+      -- Detect the LUA interpreter. Try LUA5.4 first, then fallback to LUA5.1 .
+      local strExeSuffix = ''
+      if pl.path.is_windows then
+        strExeSuffix = '.exe'
+      end
+      local strInterpreterPath = pl.path.abspath(pl.path.join(self.strTestPath, 'lua5.4'..strExeSuffix))
+      tLog.debug('Looking for the LUA5.4 interpreter in "%s".', strInterpreterPath)
+      if pl.path.exists(strInterpreterPath)~=strInterpreterPath then
+        strInterpreterPath = pl.path.abspath(pl.path.join(self.strTestPath, 'lua5.1'..strExeSuffix))
+        tLog.debug('Looking for the LUA5.1 interpreter in "%s".', strInterpreterPath)
+        if pl.path.exists(strInterpreterPath)~=strInterpreterPath then
+          tLog.error('No LUA interpreter found.')
+          strInterpreterPath = nil
+        end
+      end
+      if strInterpreterPath~=nil then
+        -- Create a new ZMQ process.
+        local tTestProc = self.ProcessZmq(tLog, self.tLogTest, strInterpreterPath, {'test_system.lua', '${ZMQPORT}'}, self.strTestPath)
+        -- Connect the buffer to the test process.
+        tTestProc:setBuffer(tBuffer)
+        -- Register the test process as the new consumer of interaction responses.
+        tBuffer:setTester(tTestProc)
 
-      -- Run the test and set this as the consumer for the terminate message.
-      tTestProc:run(self.onTestTerminate, self)
+        -- Run the test and set this as the consumer for the terminate message.
+        tTestProc:run(self.onTestTerminate, self)
 
-      self.m_testProcess = tTestProc
+        self.m_testProcess = tTestProc
+      end
     end
   end
 end
