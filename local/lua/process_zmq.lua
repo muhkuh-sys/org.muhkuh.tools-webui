@@ -32,8 +32,10 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingP
     NAM = self.__onZmqReceiveNam,
     STA = self.__onZmqReceiveSta,
     CUR = self.__onZmqReceiveCur,
-    RUN = self.__onZmqReceiveRun,
-    RES = self.__onZmqReceiveRes
+    TSS = self.__onZmqReceiveTss,
+    TSF = self.__onZmqReceiveTsf,
+    TDS = self.__onZmqReceiveTds,
+    TDF = self.__onZmqReceiveTdf
   }
 end
 
@@ -197,30 +199,50 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveRun(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveTss(tHandle, strMessage)
   local tLog = self.tLog
-  local strResponseRaw = string.match(strMessage, '^RUN(.*)')
+  local strResponseRaw = string.match(strMessage, '^TSS(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
   if tJson==nil then
     tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
   else
-    local uiRunningTest = tJson.runningTest
-    self.m_buffer:setRunningTest(uiRunningTest)
+    local uiStepIndex = tJson.stepIndex
+    self.m_buffer:setRunningTest(uiStepIndex)
+    self.m_buffer:setTestState('idle')
+
+    -- TODO: Send the log consumer a test step started event.
+
   end
 end
 
 
 
-function ProcessZmq:__onZmqReceiveRes(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveTsf(tHandle, strMessage)
   local tLog = self.tLog
-  local strResponseRaw = string.match(strMessage, '^RES(.*)')
+  local strResponseRaw = string.match(strMessage, '^TSF(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
   if tJson==nil then
     tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
   else
-    local strTestState = tJson.testState
-    self.m_buffer:setTestState(strTestState)
+    local strTestStepState = tJson.testStepState
+    self.m_buffer:setTestState(strTestStepState)
+    self.m_buffer:setRunningTest(nil)
+
+    -- TODO: Send the log consumer a test step finished event.
+
   end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveTds(tHandle, strMessage)
+  -- TODO: Send the log consumer a test device start event.
+end
+
+
+
+function ProcessZmq:__onZmqReceiveTdf(tHandle, strMessage)
+  -- TODO: Send the log consumer a test device finished event.
 end
 
 
