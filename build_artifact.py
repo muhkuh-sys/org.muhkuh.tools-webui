@@ -1,12 +1,9 @@
-#! /usr/bin/python2.7
+#! /usr/bin/python3
 
 from jonchki import cli_args
-from jonchki import filter
 from jonchki import jonchkihere
-from jonchki import vcs_id
 
 import os
-import shutil
 import subprocess
 import sys
 
@@ -37,7 +34,7 @@ strCfg_jonchkiHerePath = os.path.join(
     'jonchki'
 )
 # This is the Jonchki version to use.
-strCfg_jonchkiVersion = '0.0.5.1'
+strCfg_jonchkiVersion = '0.0.6.1'
 # Look in this folder for Jonchki archives before downloading them.
 strCfg_jonchkiLocalArchives = os.path.join(
     strCfg_projectFolder,
@@ -52,6 +49,10 @@ strCfg_jonchkiInstallationFolder = os.path.join(
     'targets'
 )
 
+strCfg_jonchkiLog = os.path.join(
+    strCfg_workingFolder,
+    'jonchki.log'
+)
 strCfg_jonchkiSystemConfiguration = os.path.join(
     strCfg_projectFolder,
     'jonchki',
@@ -62,15 +63,20 @@ strCfg_jonchkiProjectConfiguration = os.path.join(
     'jonchki',
     'jonchkicfg.xml'
 )
+strCfg_jonchkiPrepare = os.path.join(
+    strCfg_projectFolder,
+    'prepare.lua'
+)
 strCfg_jonchkiFinalizer = os.path.join(
     strCfg_projectFolder,
     'finalizer.lua'
 )
-# This is the artifact configuration file.
-strCfg_artifactConfiguration = os.path.join(
+strCfg_jonchkiDependencyLog = os.path.join(
     strCfg_projectFolder,
-    'muhkuh_webui.xml'
+    'dependency-log.xml'
 )
+# This is the artifact configuration file.
+strCfg_artifactConfiguration = 'muhkuh_webui.xml'
 
 # -
 # --------------------------------------------------------------------------
@@ -92,26 +98,6 @@ strJonchki = jonchkihere.install(
     LOCAL_ARCHIVES=strCfg_jonchkiLocalArchives
 )
 
-# Try to get the VCS ID.
-strProjectVersionVcs, strProjectVersionVcsLong = vcs_id.get(
-    strCfg_projectFolder
-)
-
-# Filter the artifact configuration.
-atMapping = dict(
-    PROJECT_VERSION_VCS=strProjectVersionVcs,
-    PROJECT_VERSION_VCS_LONG=strProjectVersionVcsLong
-)
-strFilteredArtifactConfiguration = os.path.join(
-    strCfg_workingFolder,
-    'muhkuh_webui.xml'
-)
-filter.file(
-    strCfg_artifactConfiguration,
-    strFilteredArtifactConfiguration,
-    atMapping
-)
-
 # Create the command line options for the selected platform.
 astrJonchkiPlatform = cli_args.to_jonchki_args(tPlatform)
 
@@ -121,9 +107,12 @@ sys.stderr.flush()
 astrArguments = [strJonchki]
 astrArguments.append('install-dependencies')
 astrArguments.extend(['-v', 'debug'])
+astrArguments.extend(['--logfile', strCfg_jonchkiLog])
 astrArguments.extend(['--syscfg', strCfg_jonchkiSystemConfiguration])
 astrArguments.extend(['--prjcfg', strCfg_jonchkiProjectConfiguration])
 astrArguments.extend(['--finalizer', strCfg_jonchkiFinalizer])
+astrArguments.extend(['--dependency-log', strCfg_jonchkiDependencyLog])
+astrArguments.extend(['--prepare', strCfg_jonchkiPrepare])
 astrArguments.extend(astrJonchkiPlatform)
-astrArguments.append(strFilteredArtifactConfiguration)
+astrArguments.append(strCfg_artifactConfiguration)
 sys.exit(subprocess.call(astrArguments, cwd=strCfg_workingFolder))
