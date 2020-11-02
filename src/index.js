@@ -20,7 +20,10 @@ import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import FilledInput from '@material-ui/core/FilledInput';
 import FormControl from '@material-ui/core/FormControl';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormGroup from '@material-ui/core/FormGroup';
 import FormHelperText from '@material-ui/core/FormHelperText';
+import FormLabel from '@material-ui/core/FormLabel';
 import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
@@ -144,7 +147,10 @@ class TesterApp extends React.Component {
       'ExpansionPanelDetails': ExpansionPanelDetails,
       'FilledInput': FilledInput,
       'FormControl': FormControl,
+      'FormControlLabel': FormControlLabel,
+      'FormGroup': FormGroup,
       'FormHelperText': FormHelperText,
+      'FormLabel': FormLabel,
       'Grid': Grid,
       'IconButton': IconButton,
       'Input': Input,
