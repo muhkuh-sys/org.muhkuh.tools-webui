@@ -92,6 +92,22 @@ if tResult~=true then
   error('Invalid test description.')
 end
 
+-- Create the kafka log consumer.
+local tLogKafka = require 'log-kafka'(tLog)
+-- Register this test station.
+tLogKafka:registerInstance{
+  ip = strInterfaceAddress,
+  port = usWebserverPort,
+  ssdp = {
+    name = tConfiguration.ssdp_name,
+    uuid = strSSDP_UUID
+  },
+  test = {
+    title = tTestDescription:getTitle(),
+    subtitle = tTestDescription:getSubtitle()
+  }
+}
+
 local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, usWebsocketPort)
 webui_buffer:setTitle(tTestDescription:getTitle(), tTestDescription:getSubtitle())

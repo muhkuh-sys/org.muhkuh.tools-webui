@@ -16,6 +16,7 @@ local atScripts = {
   ['local/server.cfg.template']          = '${install_base}/',
 
   ['local/lua/configuration_file.lua']   = '${install_lua_path}/',
+  ['local/lua/log-kafka.lua']            = '${install_lua_path}/',
   ['local/lua/package_file.lua']         = '${install_lua_path}/',
   ['local/lua/process_keepalive.lua']    = '${install_lua_path}/',
   ['local/lua/process.lua']              = '${install_lua_path}/',
