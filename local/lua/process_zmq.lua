@@ -23,6 +23,8 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingP
   self.m_fnOnTerminate = nil
   self.m_tOnTerminateParameter = nil
 
+  self.m_strPeerName = nil
+
   self.m_zmqReceiveHandler = {
     LOG = self.__onZmqReceiveLog,
     INT = self.__onZmqReceiveInt,
@@ -35,7 +37,8 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingP
     TSS = self.__onZmqReceiveTss,
     TSF = self.__onZmqReceiveTsf,
     TDS = self.__onZmqReceiveTds,
-    TDF = self.__onZmqReceiveTdf
+    TDF = self.__onZmqReceiveTdf,
+    GPN = self.__onZmqReceiveGpn
   }
 end
 
@@ -247,6 +250,17 @@ end
 
 
 
+function ProcessZmq:__onZmqReceiveGpn(tHandle, strMessage)
+  local strPeerName = self.m_strPeerName
+  if strPeerName==nil then
+    strPeerName = ''
+  end
+  local strData = string.format('SPN%s', strPeerName)
+  self.m_zmqSocket:send(strData)
+end
+
+
+
 function ProcessZmq:__onZmqReceive(tHandle, strErr, tSocket)
   if strErr then
     return tHandle:close()
@@ -364,6 +378,12 @@ function ProcessZmq:onCancel()
   tLog.info('Cancel: stop the running test.')
   -- TODO: this kills only the process, which is the LUA test. Any subprocesses started by the LUA test will keep running.
   self:shutdown()
+end
+
+
+
+function ProcessZmq:onPeerNameChanged(strPeerName)
+  self.m_strPeerName = strPeerName
 end
 
 

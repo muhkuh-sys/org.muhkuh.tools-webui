@@ -14,6 +14,7 @@ function TestController:_init(tLog, tLogTest, strLuaInterpreter, strTestPath)
 
   self.m_buffer = nil
   self.m_testProcess = nil
+  self.m_strPeerName = nil
 end
 
 
@@ -50,6 +51,12 @@ end
 
 function TestController:run()
   self:__setStartPage()
+end
+
+
+
+function TestController:onPeerNameChanged(strPeerName)
+  self.m_strPeerName = strPeerName
 end
 
 
@@ -100,6 +107,8 @@ function TestController:setInteractionResponse(strMessage)
         tTestProc:setBuffer(tBuffer)
         -- Register the test process as the new consumer of interaction responses.
         tBuffer:setTester(tTestProc)
+        -- Set the current peer name.
+        tTestProc:onPeerNameChanged(self.m_strPeerName)
 
         -- Run the test and set this as the consumer for the terminate message.
         tTestProc:run(self.onTestTerminate, self)

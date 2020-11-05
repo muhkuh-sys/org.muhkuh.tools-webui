@@ -99,6 +99,20 @@ end
 
 
 
+function WebUiBuffer:__sendCurrentPeerName()
+  local tTester = self.tTester
+  if tTester~=nil then
+    local strPeerName
+    local tConnection = self.tActiveConnection
+    if tConnection~=nil then
+      strPeerName = tConnection:getpeername()
+    end
+    tTester:onPeerNameChanged(strPeerName)
+  end
+end
+
+
+
 function WebUiBuffer:setTitle(strTitle, strSubTitle)
   -- Did the title or subtitle change?
   local fChanged = (self.strTitle~=strTitle) or (self.strSubTitle~=strSubTitle)
@@ -405,6 +419,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
     self.tActiveConnection = nil
     self.uiSyncedLogIndex = 0
     self.tLogTimer:stop()
+    self:__sendCurrentPeerName()
     return tConnection:close()
   else
     self.tLog.debug('__connectionOnReceive: %s %s', tostring(tConnection), tostring(self.tActiveConnection))
@@ -463,6 +478,9 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
   else
     self.tLog.info('New server connection: %s', tostring(protocol))
     self.tActiveConnection = tConnection
+
+    self:__sendCurrentPeerName()
+
     local this = self
     self.tLogTimer:start(self.uiLogTimerMs, function(tTimer) this:__onLogTimer(tTimer) end)
     tConnection:start_read(function(tConnection, err, strMessage, opcode) this:__connectionOnReceive(tConnection, err, strMessage, opcode) end)
