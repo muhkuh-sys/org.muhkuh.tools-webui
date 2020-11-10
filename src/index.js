@@ -7,7 +7,8 @@ import 'typeface-roboto-mono';
 
 import {version as nodejs_package_version} from '../package.json';
 
-import { transform } from 'babel-standalone';
+import { transform, registerPlugin, availablePlugins } from '@babel/standalone';
+
 import { createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -218,6 +219,8 @@ class TesterApp extends React.Component {
 
     /* This is a regexp for matching log lines. */
     this.regexpLogLine = new RegExp('(\\d+),');
+
+    registerPlugin('@babel/plugin-proposal-class-properties')
   }
 
   socketClosed(tEvent) {
@@ -383,7 +386,10 @@ class TesterApp extends React.Component {
           strJSX,
           {
             filename: 'dynamic_loaded.jsx',
-            presets: ['es2015', 'stage-2' , 'react']
+            presets: ['env', 'react'],
+            plugins: [
+              [ availablePlugins["proposal-class-properties"], { decoratorsBeforeExport: true } ]
+            ]
           }
         );
       } catch(error) {
