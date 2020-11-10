@@ -198,7 +198,7 @@ end
 
 
 
-function LogKafka:onTestStepStarted(uiStepIndex, atLogAttributes)
+function LogKafka:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName, atLogAttributes)
   local pl = self.pl
 
   -- Send any waiting messages.
@@ -216,6 +216,9 @@ function LogKafka:onTestStepStarted(uiStepIndex, atLogAttributes)
   atAttributes.test_run_ulid = self.m_strUlidTestRun
   -- Append the test step.
   atAttributes.test_step = uiStepIndex
+  -- Append the test ID and name.
+  atAttributes.test_id = strTestCaseId
+  atAttributes.test_name = strTestCaseName
   -- Append the ULID for the test step.
   atAttributes.test_step_ulid = strUlidTestStep
   -- Append a placeholder for the log message.

@@ -218,6 +218,8 @@ function ProcessZmq:__onZmqReceiveTss(tHandle, strMessage)
     tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
   else
     local uiStepIndex = tJson.stepIndex
+    local strTestCaseId = tJson.testId
+    local strTestCaseName = tJson.testName
     local atLogAttributes = tJson.attributes
 
     self.m_buffer:setRunningTest(uiStepIndex)
@@ -226,7 +228,7 @@ function ProcessZmq:__onZmqReceiveTss(tHandle, strMessage)
     -- Send the log consumer a test step started event and the log atttributes.
     local tLogConsumer = self.m_logConsumer
     if tLogConsumer~=nil then
-      tLogConsumer:onTestStepStarted(uiStepIndex, atLogAttributes)
+      tLogConsumer:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName, atLogAttributes)
     end
   end
 end
