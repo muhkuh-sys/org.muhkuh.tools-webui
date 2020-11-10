@@ -25,6 +25,8 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingP
 
   self.m_strPeerName = nil
 
+  self.m_logConsumer = nil
+
   self.m_zmqReceiveHandler = {
     LOG = self.__onZmqReceiveLog,
     INT = self.__onZmqReceiveInt,
@@ -91,6 +93,12 @@ function ProcessZmq:__onZmqReceiveLog(tHandle, strMessage)
       print(string.format('Invalid LOG level received: "%s".', strMessage))
     else
       self.tLogTest.log(uiLogLevel, strLogMessage)
+
+      -- Send the log to the log consumer.
+      local tLogConsumer = self.m_logConsumer
+      if tLogConsumer~=nil then
+        tLogConsumer:onLogMessage(uiLogLevel, strLogMessage)
+      end
     end
   else
     print(string.format('Invalid LOG message received: "%s".', strMessage))
@@ -210,11 +218,16 @@ function ProcessZmq:__onZmqReceiveTss(tHandle, strMessage)
     tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
   else
     local uiStepIndex = tJson.stepIndex
+    local atLogAttributes = tJson.attributes
+
     self.m_buffer:setRunningTest(uiStepIndex)
     self.m_buffer:setTestState('idle')
 
-    -- TODO: Send the log consumer a test step started event.
-
+    -- Send the log consumer a test step started event and the log atttributes.
+    local tLogConsumer = self.m_logConsumer
+    if tLogConsumer~=nil then
+      tLogConsumer:onTestStepStarted(uiStepIndex, atLogAttributes)
+    end
   end
 end
 
@@ -228,24 +241,45 @@ function ProcessZmq:__onZmqReceiveTsf(tHandle, strMessage)
     tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
   else
     local strTestStepState = tJson.testStepState
+
     self.m_buffer:setTestState(strTestStepState)
     self.m_buffer:setRunningTest(nil)
 
-    -- TODO: Send the log consumer a test step finished event.
-
+    -- Send the log consumer a test step finished event.
+    local tLogConsumer = self.m_logConsumer
+    if tLogConsumer~=nil then
+      tLogConsumer:onTestStepFinished()
+    end
   end
 end
 
 
 
 function ProcessZmq:__onZmqReceiveTds(tHandle, strMessage)
-  -- TODO: Send the log consumer a test device start event.
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^TDS(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    local atLogAttributes = tJson.attributes
+
+    -- Send the log consumer a test device started event and the log atttributes.
+    local tLogConsumer = self.m_logConsumer
+    if tLogConsumer~=nil then
+      tLogConsumer:onTestRunStarted(atLogAttributes)
+    end
+  end
 end
 
 
 
 function ProcessZmq:__onZmqReceiveTdf(tHandle, strMessage)
-  -- TODO: Send the log consumer a test device finished event.
+  -- Send the log consumer a test device finished event.
+  local tLogConsumer = self.m_logConsumer
+  if tLogConsumer~=nil then
+    tLogConsumer:onTestRunFinished()
+  end
 end
 
 
@@ -320,6 +354,12 @@ end
 
 function ProcessZmq:setBuffer(tBuffer)
   self.m_buffer = tBuffer
+end
+
+
+
+function ProcessZmq:setLogConsumer(tLogConsumer)
+  self.m_logConsumer = tLogConsumer
 end
 
 

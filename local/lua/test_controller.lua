@@ -15,12 +15,20 @@ function TestController:_init(tLog, tLogTest, strLuaInterpreter, strTestPath)
   self.m_buffer = nil
   self.m_testProcess = nil
   self.m_strPeerName = nil
+
+  self.m_logConsumer = nil
 end
 
 
 
 function TestController:setBuffer(tBuffer)
   self.m_buffer = tBuffer
+end
+
+
+
+function TestController:setLogConsumer(tLogConsumer)
+  self.m_logConsumer = tLogConsumer
 end
 
 
@@ -109,6 +117,8 @@ function TestController:setInteractionResponse(strMessage)
         tBuffer:setTester(tTestProc)
         -- Set the current peer name.
         tTestProc:onPeerNameChanged(self.m_strPeerName)
+        -- Set the current log consumer.
+        tTestProc:setLogConsumer(self.m_logConsumer)
 
         -- Run the test and set this as the consumer for the terminate message.
         tTestProc:run(self.onTestTerminate, self)

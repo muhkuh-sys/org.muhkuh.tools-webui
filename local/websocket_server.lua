@@ -93,11 +93,7 @@ if tResult~=true then
 end
 
 -- Create the kafka log consumer.
-local tLogKafka = require 'log-kafka'(tLog)
--- Register this test station.
-tLogKafka:registerInstance{
-  ip = strInterfaceAddress,
-  port = usWebserverPort,
+local tSystemAttributes = {
   ssdp = {
     name = tConfiguration.ssdp_name,
     uuid = strSSDP_UUID
@@ -106,6 +102,12 @@ tLogKafka:registerInstance{
     title = tTestDescription:getTitle(),
     subtitle = tTestDescription:getSubtitle()
   }
+}
+local tLogKafka = require 'log-kafka'(tLog, tSystemAttributes)
+-- Register this test station.
+tLogKafka:registerInstance{
+  ip = strInterfaceAddress,
+  port = usWebserverPort
 }
 
 local WebUiBuffer = require 'webui_buffer'
@@ -134,6 +136,7 @@ local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, astrServerArgs, 3)
 local TestController = require 'test_controller'
 local tTestController = TestController(tLog, tLogTest, strLuaInterpreter, tConfiguration.tests_folder)
 tTestController:setBuffer(webui_buffer)
+tTestController:setLogConsumer(tLogKafka)
 
 
 tServerProc:run()
