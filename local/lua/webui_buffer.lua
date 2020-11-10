@@ -69,9 +69,6 @@ function WebUiBuffer:__onLogTimer(tTimer)
       }
       local strJson = self.json.encode(tMessage)
       tConnection:write(strJson)
-
-      print('LOG:', strJson)
-
       self.uiSyncedLogIndex = uiLogMessages
     end
 
