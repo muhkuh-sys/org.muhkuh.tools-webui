@@ -402,6 +402,11 @@ end
 function ProcessZmq:onStdOut(strData)
   if strData~=nil then
     self.tLogTest.info(strData)
+
+    local tLogConsumer = self.m_logConsumer
+    if tLogConsumer~=nil then
+      tLogConsumer:onLogMessage(7, strData)
+    end
   end
 end
 
@@ -410,6 +415,11 @@ end
 function ProcessZmq:onStdErr(strData)
   if strData~=nil then
     self.tLogTest.error(strData)
+
+    local tLogConsumer = self.m_logConsumer
+    if tLogConsumer~=nil then
+      tLogConsumer:onLogMessage(4, strData)
+    end
   end
 end
 
