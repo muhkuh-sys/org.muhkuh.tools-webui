@@ -210,7 +210,7 @@ function LogKafka:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName,
 
   -- Make a copy of the attributes.
   local atAttributes = pl.tablex.deepcopy(atLogAttributes)
-  pl.tablex.insertvalues(atAttributes, self.m_atSystemAttributes)
+  pl.tablex.update(atAttributes, self.m_atSystemAttributes)
 
   -- Append the ULID for the test run.
   atAttributes.test_run_ulid = self.m_strUlidTestRun
