@@ -240,6 +240,9 @@ function LogKafka:onTestStepFinished()
 
   -- Remove the test step from the attributes.
   atAttributes.test_step = nil
+  -- Remove the test ID and name.
+  atAttributes.test_id = nil
+  atAttributes.test_name = nil
   -- Remove the test step ULID from the attributes.
   atAttributes.test_step_ulid = nil
 
