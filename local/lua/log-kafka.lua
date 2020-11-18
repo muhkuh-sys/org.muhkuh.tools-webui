@@ -3,6 +3,7 @@ local LogKafka = class()
 
 
 function LogKafka:_init(tLog, tSystemAttributes)
+  self.date = require 'date'
   self.dkjson = require 'dkjson'
 
   local kafka = require 'kafka'
@@ -144,6 +145,7 @@ end
 
 
 function LogKafka:onLogMessage(uiLogLevel, strLogMessage)
+  local date = self.date
   local sizLogMessagesMax = self.m_sizLogMessagesMax
   local astrLogMessages = self.m_astrLogMessages
 
@@ -154,7 +156,7 @@ function LogKafka:onLogMessage(uiLogLevel, strLogMessage)
   end
 
   -- Combine the pretty-print level with the log message.
-  local strMsg = '['..strLogLevel..'] '..tostring(strLogMessage)
+  local strMsg = date(false):fmt('%Y-%m-%d %H:%M:%S')..' ['..strLogLevel..'] '..tostring(strLogMessage)
   local sizMsg = string.len(strMsg)
 
   -- Does the new log message fit into the buffer?
