@@ -411,26 +411,28 @@ end
 
 
 function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
+  local tLog = self.tLog
+
   if err then
-    self.tLog.error('Server read error, closing the connection: %s', tostring(err))
+    tLog.error('Server read error, closing the connection: %s', tostring(err))
     self.tActiveConnection = nil
     self.uiSyncedLogIndex = 0
     self.tLogTimer:stop()
     self:__sendCurrentPeerName()
     return tConnection:close()
   else
-    self.tLog.debug('__connectionOnReceive: %s %s', tostring(tConnection), tostring(self.tActiveConnection))
-    self.tLog.debug('JSON: "%s"', strMessage)
+    tLog.debug('__connectionOnReceive: %s %s', tostring(tConnection), tostring(self.tActiveConnection))
+    tLog.debug('JSON: "%s"', strMessage)
 
     local tTester = self.tTester
 
     local tJson, uiPos, strJsonErr = self.json.decode(strMessage)
     if tJson==nil then
-      self.tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+      tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
     else
       local strId = tJson.id
       if strId==nil then
-        self.tLog.error('Ignoring invalid message without "id".')
+        tLog.error('Ignoring invalid message without "id".')
       else
         if strId=='ReqInit' then
           self:__sendTitle()
@@ -461,19 +463,21 @@ end
 
 
 function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
+  local tLog = self.tLog
+
   if err then
-    self.tLog.error('Server handshake error: %s', tostring(err))
+    tLog.error('Server handshake error: %s', tostring(err))
     self.tActiveConnection = nil
     self.uiSyncedLogIndex = 0
     self.tLogTimer:stop()
     return tConnection:close()
 
   elseif self.tActiveConnection~=nil then
-    self.tLog.notice('Not accepting a second conncetion.')
+    tLog.notice('Not accepting a second conncetion.')
     return tConnection:close()
 
   else
-    self.tLog.info('New server connection: %s', tostring(protocol))
+    tLog.info('New server connection: %s', tostring(protocol))
     self.tActiveConnection = tConnection
 
     self:__sendCurrentPeerName()
