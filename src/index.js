@@ -112,7 +112,6 @@ class TesterApp extends React.Component {
 
       tRunningTest_uiCurrentSerial: null,
       tRunningTest_uiRunningTest: null,
-      tRunningTest_uiLastRunningTest: null,
 
       tUI_CowIconSize: '5em',
       tUI_tInteraction: null
@@ -133,7 +132,6 @@ class TesterApp extends React.Component {
       'fnGetFirstSerial': this.getFirstSerial,
       'fnGetLastSerial': this.getLastSerial,
       'fnGetRunningTest': this.getRunningTest,
-      'fnGetLastRunningTest': this.getLastRunningTest,
       'fnGetTestNames': this.getTestNames,
       'fnGetTestStati': this.getTestStati,
       'fnSetTestState': this.setTestState,
@@ -472,18 +470,9 @@ class TesterApp extends React.Component {
     if('runningTest' in tJson) {
       uiRunningTest = tJson.runningTest;
     }
-    const uiLastRunningTest = this.state.tRunningTest_uiRunningTest;
-    /* Only overwrite the last running test if currently something is running. */
-    if( uiLastRunningTest!==null ) {
-      this.setState({
-        tRunningTest_uiRunningTest: uiRunningTest,
-        tRunningTest_uiLastRunningTest: uiLastRunningTest
-      });
-    } else {
-      this.setState({
-        tRunningTest_uiRunningTest: uiRunningTest
-      });
-    }
+    this.setState({
+      tRunningTest_uiRunningTest: uiRunningTest
+    });
   }
 
   onMessage_SetTestState(tJson) {
@@ -518,10 +507,6 @@ class TesterApp extends React.Component {
 
   getRunningTest = () => {
     return this.state.tRunningTest_uiRunningTest;
-  };
-
-  getLastRunningTest = () => {
-    return this.state.tRunningTest_uiLastRunningTest;
   };
 
   getTestNames = () => {
@@ -668,17 +653,9 @@ class TesterApp extends React.Component {
       tSocket.send(strJson);
     }
 
-    const uiLastRunningTest = this.state.tRunningTest_uiRunningTest;
-    if( uiLastRunningTest!==null ) {
-      this.setState({
-        tRunningTest_uiRunningTest: null,
-        tRunningTest_uiLastRunningTest: uiLastRunningTest
-      });
-    } else {
-      this.setState({
-        tRunningTest_uiRunningTest: null
-      });
-    }
+    this.setState({
+      tRunningTest_uiRunningTest: null
+    });
   }
 
 
