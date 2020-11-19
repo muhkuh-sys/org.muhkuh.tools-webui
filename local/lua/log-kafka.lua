@@ -21,15 +21,9 @@ function LogKafka:_init(tLog, tSystemAttributes)
   ulid.set_time_func(socket.gettime)
 
   self.m_atSystemAttributes = tSystemAttributes
-  self.m_atAttributes = nil
-
 
   -- Make a copy of the attributes.
-  local atAttributes = pl.tablex.deepcopy(tSystemAttributes)
-  -- Append a placeholder for the log message.
-  atAttributes.log = '%s'
-  self.m_strMessageTemplate = self.dkjson.encode(atAttributes)
-
+  self.m_atAttributes = pl.tablex.deepcopy(tSystemAttributes)
 
   self.m_astrLogMessages = {}
   self.m_sizLogMessages = 0
@@ -58,6 +52,8 @@ function LogKafka:_init(tLog, tSystemAttributes)
   self.tTopic_teststations_cnt = 0
   self.tTopic_logs = nil
   self.tTopic_logs_cnt = 0
+  self.tTopic_events = nil
+  self.tTopic_events_cnt = 0
 end
 
 
@@ -86,6 +82,9 @@ function LogKafka:connect(strBrokerList)
 
       self.tTopic_logs = tProducer:create_topic('muhkuh-production-logs')
       self.tTopic_logs_cnt = 0
+
+      self.tTopic_events = tProducer:create_topic('muhkuh-production-events')
+      self.tTopic_events_cnt = 0
 
       self.m_strBrokerList = strBrokerList
     end
@@ -129,10 +128,13 @@ function LogKafka:__sendMessageBuffer()
     -- Get all log messages.
     local strMsg = table.concat(astrLogMessages)
     -- Create a new message.
-    local strJson = string.format(self.m_strMessageTemplate, strMsg)
+    local atAttr = self.m_atAttributes
+    atAttr.log = strMsg
+    local strJson = self.dkjson.encode(atAttr)
+    atAttr.log = nil
 
     -- DEBUG: Write this to a temp file.
-    local tFile = io.open(string.format('/tmp/message%03d.json', self.tTopic_logs_cnt), 'w')
+    local tFile = io.open(string.format('/tmp/muhkuh-production-logs-%03d.json', self.tTopic_logs_cnt), 'w')
     tFile:write(strJson)
     tFile:close()
     self.tTopic_logs_cnt = self.tTopic_logs_cnt + 1
@@ -140,6 +142,24 @@ function LogKafka:__sendMessageBuffer()
 
   self.m_astrLogMessages = {}
   self.m_sizLogMessages = 0
+end
+
+
+
+function LogKafka:__sendEvent(strEventId, atAttributes)
+  -- Create a new message.
+  local atAttr = self.m_atAttributes
+  atAttr.event = strEventId
+  atAttr.eventAttr = atAttributes
+  local strJson = self.dkjson.encode(atAttr)
+  atAttr.event = nil
+  atAttr.eventAttr = nil
+
+  -- DEBUG: Write this to a temp file.
+  local tFile = io.open(string.format('/tmp/muhkuh-production-events-%03d.json', self.tTopic_events_cnt), 'w')
+  tFile:write(strJson)
+  tFile:close()
+  self.tTopic_events_cnt = self.tTopic_events_cnt + 1
 end
 
 
@@ -200,6 +220,12 @@ end
 
 
 
+function LogKafka:onEvent(strEventId, tEventAttributes)
+  self:__sendEvent(strEventId, tEventAttributes)
+end
+
+
+
 function LogKafka:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName, atLogAttributes)
   local pl = self.pl
 
@@ -223,11 +249,8 @@ function LogKafka:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName,
   atAttributes.test_name = strTestCaseName
   -- Append the ULID for the test step.
   atAttributes.test_step_ulid = strUlidTestStep
-  -- Append a placeholder for the log message.
-  atAttributes.log = '%s'
 
   self.m_atAttributes = atAttributes
-  self.m_strMessageTemplate = self.dkjson.encode(atAttributes)
 end
 
 
@@ -247,9 +270,6 @@ function LogKafka:onTestStepFinished()
   atAttributes.test_name = nil
   -- Remove the test step ULID from the attributes.
   atAttributes.test_step_ulid = nil
-
-  -- Update the template.
-  self.m_strMessageTemplate = self.dkjson.encode(atAttributes)
 end
 
 
@@ -272,11 +292,8 @@ function LogKafka:onTestRunStarted(atLogAttributes)
 
   -- Append the ULID for the test run.
   atAttributes.test_run_ulid = strUlidTestRun
-  -- Append a placeholder for the log message.
-  atAttributes.log = '%s'
 
   self.m_atAttributes = atAttributes
-  self.m_strMessageTemplate = self.dkjson.encode(atAttributes)
 end
 
 
@@ -296,9 +313,6 @@ function LogKafka:onTestRunFinished()
   atAttributes.test_step = nil
   -- Remove the test step ULID from the attributes.
   atAttributes.test_step_ulid = nil
-
-  -- Update the template.
-  self.m_strMessageTemplate = self.dkjson.encode(atAttributes)
 end
 
 

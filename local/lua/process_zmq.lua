@@ -40,7 +40,8 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingP
     TSF = self.__onZmqReceiveTsf,
     TDS = self.__onZmqReceiveTds,
     TDF = self.__onZmqReceiveTdf,
-    GPN = self.__onZmqReceiveGpn
+    GPN = self.__onZmqReceiveGpn,
+    LEV = self.__onZmqReceiveLev
   }
 end
 
@@ -293,6 +294,26 @@ function ProcessZmq:__onZmqReceiveGpn(tHandle, strMessage)
   end
   local strData = string.format('SPN%s', strPeerName)
   self.m_zmqSocket:send(strData)
+end
+
+
+
+function ProcessZmq:__onZmqReceiveLev(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^LEV(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    local strEventId = tJson.id
+    local atAttributes = tJson.attr
+
+    -- Send the log consumer an event.
+    local tLogConsumer = self.m_logConsumer
+    if tLogConsumer~=nil then
+      tLogConsumer:onEvent(strEventId, atAttributes)
+    end
+  end
 end
 
 
