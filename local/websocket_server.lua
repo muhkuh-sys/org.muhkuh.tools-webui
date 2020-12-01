@@ -2,15 +2,6 @@ local pl = require'pl.import_into'()
 local uv  = require"lluv"
 uv.poll_zmq = require "lluv.poll_zmq"
 
--- This is the port for the websocket.
-local usWebsocketPort = 12345
-
--- This number is used as the serial number in the SSDP responses.
-local ulSystemSerial = 4321
-
--- This is the port for the web server.
-local usWebserverPort = 9090
-
 -- Set the logger level from the command line options.
 local strLogLevel = 'debug'
 local cLogWriter = require 'log.writer.filter'.new(
@@ -72,7 +63,7 @@ end
 --
 -- Start the SSDP server.
 --
-local strDescriptionLocation = string.format('http://%s:%s/description.xml', strInterfaceAddress, usWebserverPort)
+local strDescriptionLocation = string.format('http://%s:%s/description.xml', strInterfaceAddress, tConfiguration.webserver_port)
 local SSDP = require 'ssdp'
 local tSsdp = SSDP(tLog, strDescriptionLocation, strVersion)
 local strSSDP_UUID = tSsdp:setSystemUuid()
@@ -107,11 +98,11 @@ local tLogKafka = require 'log-kafka'(tLog, tSystemAttributes)
 -- Register this test station.
 tLogKafka:registerInstance{
   ip = strInterfaceAddress,
-  port = usWebserverPort
+  port = tConfiguration.webserver_port
 }
 
 local WebUiBuffer = require 'webui_buffer'
-local webui_buffer = WebUiBuffer(tLog, usWebsocketPort)
+local webui_buffer = WebUiBuffer(tLog, tConfiguration.websocket_port)
 webui_buffer:setTitle(tTestDescription:getTitle(), tTestDescription:getSubtitle())
 local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()
@@ -122,13 +113,9 @@ tLog.debug('LUA interpreter: %s', strLuaInterpreter)
 local ProcessKeepalive = require 'process_keepalive'
 local astrServerArgs = {
   'server.lua',
-  tostring(usWebsocketPort),
   strSSDP_UUID,
-  tostring(ulSystemSerial),
   '--webserver-address',
-  strInterfaceAddress,
-  '--webserver-port',
-  tostring(usWebserverPort)
+  strInterfaceAddress
 }
 local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, astrServerArgs, 3)
 

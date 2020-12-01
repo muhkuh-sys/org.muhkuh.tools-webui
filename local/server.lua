@@ -30,20 +30,6 @@ local strPathTestWww = pl.path.join(tConfiguration.tests_folder, 'www', '')
 --
 -- Parse the command line arguments.
 --
-local function convertPortNumber(strArgument)
-  -- Try to convert the string to a number.
-  local usPort = tonumber(strArgument)
-  local strError = nil
-  if usPort==nil then
-    strError = string.format('The port "%s" is not a number.', strArgument)
-  elseif (usPort<1) or (usPort>65535) then
-    usPort = nil
-    strError = string.format('The port must be between 1 and 65535, but it is %d.' % usPort)
-  end
-
-  return usPort, strError
-end
-
 local tParser = argparse('serverkuh', 'A Pegasus based webserver for Muhkuh tests.')
 
 tParser:flag('--version')
@@ -52,27 +38,14 @@ tParser:flag('--version')
     print(string.format('serverkuh V%s %s', strVersion, strVcsVersion))
     os.exit(0)
   end)
-tParser:argument('websocket-port', 'Announce the websocket port in cfg.js as PORT.')
-  :argname('<PORT>')
-  :target('usWebsocketPort')
-  :convert(convertPortNumber)
 tParser:argument('ssdp-uuid', 'Use UUID as the SSDP UUID.')
   :argname('<UUID>')
   :target('strUUID')
-tParser:argument('ssdp-serial', 'Use SERIAL as the SSDP serial number.')
-  :argname('<SERIAL>')
-  :target('strSerial')
 tParser:option('-i --webserver-address')
   :description('Serve the HTTP documents on address ADDRESS.')
   :argname('<ADDRESS>')
   :default('localhost')
   :target('strWebserverAddress')
-tParser:option('-w --webserver-port')
-  :description('Serve the HTTP documents on port PORT.')
-  :argname('<PORT>')
-  :default(9090)
-  :target('usWebserverPort')
-  :convert(convertPortNumber)
 
 local tArgs = tParser:parse()
 
@@ -81,7 +54,6 @@ local tArgs = tParser:parse()
 -- Get a local copy of the SSDP serial and UUID.
 -- Get the system UUID if no UUID was set on the command line.
 --
-local strSSDP_serial = tArgs.strSerial
 local strSSDP_UUID = tArgs.strUUID
 
 
@@ -92,9 +64,9 @@ local strSSDP_UUID = tArgs.strUUID
 print()
 print('Parameter:')
 print(string.format('Webserver address: %s', tArgs.strWebserverAddress))
-print(string.format('Webserver port:    %d', tArgs.usWebserverPort))
-print(string.format('Websocket port:    %d', tArgs.usWebsocketPort))
-print(string.format('SSDP serial:      "%s"', strSSDP_serial))
+print(string.format('Webserver port:    %d', tConfiguration.webserver_port))
+print(string.format('Websocket port:    %d', tConfiguration.websocket_port))
+print(string.format('SSDP serial:      "%s"', tConfiguration.system_serial))
 print(string.format('SSDP UUID:        "%s"', strSSDP_UUID))
 print()
 
@@ -103,7 +75,7 @@ print()
 --
 -- Generate the javacript configuration file.
 --
-local strJavacriptCfg = string.format("var g_CFG_strServerURL = 'ws://%s:%s';\n", tArgs.strWebserverAddress, tArgs.usWebsocketPort)
+local strJavacriptCfg = string.format("var g_CFG_strServerURL = 'ws://%s:%s';\n", tArgs.strWebserverAddress, tConfiguration.websocket_port)
 
 ------------------------------------------------------------------------------
 --
@@ -111,8 +83,8 @@ local strJavacriptCfg = string.format("var g_CFG_strServerURL = 'ws://%s:%s';\n"
 --
 local atReplacement = {
   FRIENDLY_NAME = tConfiguration.ssdp_name,
-  PRESENTATION_URL = string.format('http://%s:%d/index.html', tArgs.strWebserverAddress, tArgs.usWebserverPort),
-  SERIAL_NUMBER = strSSDP_serial,
+  PRESENTATION_URL = string.format('http://%s:%d/index.html', tArgs.strWebserverAddress, tConfiguration.webserver_port),
+  SERIAL_NUMBER = tConfiguration.system_serial,
   MODEL_NUMBER = string.format('%s %s', strVersion, strVcsVersion),
   UUID = strSSDP_UUID
 }
@@ -146,7 +118,7 @@ local strSsdpDescription = string.gsub(strSsdpTemplate, '%%([%w_]+)%%', atReplac
 --
 local server = Pegasus:new({
   host=tArgs.strWebserverAddress,
-  port=tArgs.usWebserverPort,
+  port=tConfiguration.webserver_port,
   location='/www/'
 })
 

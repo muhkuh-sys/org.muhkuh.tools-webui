@@ -1,2 +1,5 @@
 ssdp_name = Muhkuh Teststation
 tests_folder = test/another_subfolder
+webserver_port = 9090
+websocket_port = 12345
+system_serial = 4321

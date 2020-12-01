@@ -16,7 +16,10 @@ function ConfigurationFile.read(tLog)
   end
   local tConfigurationDefault = {
     ssdp_name = 'Muhkuh Teststation',
-    tests_folder = pl.path.abspath('test')
+    tests_folder = pl.path.abspath('test'),
+    webserver_port = 9090,
+    websocket_port = 12345,
+    system_serial = 4321
   }
   -- Join both configurations.
   local tConfiguration = {}
