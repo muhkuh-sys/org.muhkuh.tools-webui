@@ -110,6 +110,14 @@ local tSystemAttributes = {
   }
 }
 local tLogKafka = require 'log-kafka'(tLog, tSystemAttributes)
+-- Connect the log consumer to a broker.
+local strKafkaBroker = tConfiguration.kafka_broker
+if strKafkaBroker~=nil and strKafkaBroker~='' then
+  tLog.info('Connecting to kafka brokers: %s', strKafkaBroker)
+  tLogKafka:connect(strKafkaBroker)
+else
+  tLog.warning('Not connecting to any kafka brokers. The logs will not be saved.')
+end
 -- Register this test station.
 tLogKafka:registerInstance{
   ip = strInterfaceAddress,

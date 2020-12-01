@@ -20,7 +20,8 @@ function ConfigurationFile.read(tLog)
     interface = '',
     webserver_port = 9090,
     websocket_port = 12345,
-    system_serial = 4321
+    system_serial = 4321,
+    kafka_broker = ''
   }
   -- Join both configurations.
   local tConfiguration = {}
