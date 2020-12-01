@@ -28,7 +28,7 @@ local atScripts = {
 
   ['local/jsx/test_start.jsx']           = '${install_base}/jsx/',
 
-  ['local/linux/systemd/muhkuh_webui.service'] = '${install_base}/systemd',
+  ['local/linux/systemd/muhkuh_webui.service'] = '${install_base}/systemd/',
 
   ['${report_path}']                     = '${install_base}/.jonchki/'
 }
