@@ -17,6 +17,7 @@ function ConfigurationFile.read(tLog)
   local tConfigurationDefault = {
     ssdp_name = 'Muhkuh Teststation',
     tests_folder = pl.path.abspath('test'),
+    interface = '',
     webserver_port = 9090,
     websocket_port = 12345,
     system_serial = 4321

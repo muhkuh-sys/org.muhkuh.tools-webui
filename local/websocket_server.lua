@@ -46,16 +46,31 @@ if tInterfaces==nil then
   error('Failed to get the list of ethernet interfaces.')
 end
 local strInterfaceAddress = nil
-for uiCnt, tIf in ipairs(tInterfaces) do
-  -- Select the first interface of the type "inet" which is not internal.
-  if tIf.family=='inet' and tIf.internal==false then
-    strInterfaceAddress = tIf.address
-    tLog.info('Seleceting interface "%s" with address %s.', tIf.name, strInterfaceAddress)
-    break
+local strInterfaceName = tConfiguration.interface
+if strInterfaceName==nil or strInterfaceName=='' then
+  for uiCnt, tIf in ipairs(tInterfaces) do
+    -- Select the first interface of the type "inet" which is not internal.
+    if tIf.family=='inet' and tIf.internal==false then
+      strInterfaceAddress = tIf.address
+      tLog.info('Selecting interface "%s" with address %s.', tIf.name, strInterfaceAddress)
+      break
+    end
   end
-end
-if strInterfaceAddress==nil then
-  error('No suitable interface found.')
+  if strInterfaceAddress==nil then
+    error('No suitable interface found.')
+  end
+else
+  -- Search the requested interface.
+  for uiCnt, tIf in ipairs(tInterfaces) do
+    if tIf.name==strInterfaceName then
+      strInterfaceAddress = tIf.address
+      tLog.info('Using interface "%s" with address %s.', tIf.name, strInterfaceAddress)
+      break
+    end
+  end
+  if strInterfaceAddress==nil then
+    error('No interface with the name "' .. tostring(strInterfaceName) .. '" found.')
+  end
 end
 
 
