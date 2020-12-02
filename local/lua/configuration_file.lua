@@ -21,7 +21,8 @@ function ConfigurationFile.read(tLog)
     webserver_port = 9090,
     websocket_port = 12345,
     system_serial = 4321,
-    kafka_broker = ''
+    kafka_broker = '',
+    kafka_options = {}
   }
   -- Join both configurations.
   local tConfiguration = {}
@@ -29,9 +30,9 @@ function ConfigurationFile.read(tLog)
     local tValueFile = tConfigurationFromFile[strKey]
     if tValueFile~=nil then
       tValue = tValueFile
-      tLog.debug('  [%s] from file = %s', strKey, tostring(tValueFile))
+      tLog.debug('  [%s] from file = %s', strKey, pl.pretty.write(tValueFile))
     else
-      tLog.debug('  [%s] default = %s', strKey, tostring(tValue))
+      tLog.debug('  [%s] default = %s', strKey, pl.pretty.write(tValue))
     end
     tConfiguration[strKey] = tValue
   end

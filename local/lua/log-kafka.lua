@@ -83,9 +83,11 @@ end
 
 
 
-function LogKafka:connect(strBrokerList)
+function LogKafka:connect(strBrokerList, atOptions)
+  atOptions = atOptions or {}
   local tLog = self.tLog
   local kafka = self.kafka
+  local pl = self.pl
 
   if self.m_strBrokerList~=nil then
     tLog.alert('Refusing to connect an already connected instance.')
@@ -97,6 +99,8 @@ function LogKafka:connect(strBrokerList)
         ['queue.buffering.max.ms'] = 500,
         ['batch.num.messages'] = 32
       }
+      -- Merge the options into the producer configuration.
+      pl.tablex.update(tProducer_conf, atOptions)
 
       local tProducer = kafka.Producer(strBrokerList, tProducer_conf)
       self.tProducer = tProducer
