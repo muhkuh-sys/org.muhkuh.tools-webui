@@ -124,6 +124,7 @@ function LogKafka:registerInstance(atAttributes)
     -- Merge the attributes with the system attributes.
     local atAttrMerged = pl.tablex.deepcopy(atAttributes)
     pl.tablex.update(atAttrMerged, self.m_atSystemAttributes)
+    atAttrMerged.timestamp = self.date(false):fmt('%Y-%m-%d %H:%M:%S')
 
     -- Convert the attributes to JSON.
     local strJson = self.dkjson.encode(atAttrMerged)
@@ -171,9 +172,11 @@ function LogKafka:__sendEvent(strEventId, atAttributes)
   local atAttr = self.m_atAttributes
   atAttr.event = strEventId
   atAttr.eventAttr = atAttributes
+  atAttr.timestamp = self.date(false):fmt('%Y-%m-%d %H:%M:%S')
   local strJson = self.dkjson.encode(atAttr)
   atAttr.event = nil
   atAttr.eventAttr = nil
+  atAttr.timestamp = nil
 
   self:__sendMessage(self.tTopic_events, strJson)
 
