@@ -299,6 +299,10 @@ class TesterApp extends React.Component {
         this.onMessage_SetTestState(tJson)
         break;
 
+      case 'SetDocs':
+        this.onMessage_SetDocs(tJson)
+        break;
+
       default:
         console.error('Received unknown message id:', strId);
       }
@@ -483,6 +487,20 @@ class TesterApp extends React.Component {
   onMessage_SetTestState(tJson) {
     const strTestState = tJson.testState;
     this.setTestState(strTestState);
+  }
+
+  onMessage_SetDocs(tJson) {
+    if('docs' in tJson) {
+      let atDocs = []
+      tJson.docs.forEach(function(tAttr, uiIndex) {
+        if(('name' in tAttr) && ('url' in tAttr)) {
+          atDocs.push({name: tAttr.name, url: tAttr.url});
+        }
+      }, this);
+      this.setState({
+        tTest_atDocuments: atDocs
+      });
+    }
   }
 
   sendInteractionMessage = (atObject) => {
@@ -675,12 +693,11 @@ class TesterApp extends React.Component {
 
 
   doShowDocument = (uiIndex) => {
-    console.log('Documents', uiIndex);
     if(uiIndex in this.state.tTest_atDocuments) {
       const tAttr = this.state.tTest_atDocuments[uiIndex];
       if('url' in tAttr) {
         const strUrl = tAttr.url;
-        console.log('Open URL:', strUrl);
+        console.log('Open document at URL:', strUrl);
         window.open(strUrl, '_blank');
       }
     }

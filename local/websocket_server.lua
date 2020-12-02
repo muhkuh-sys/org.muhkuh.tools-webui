@@ -156,6 +156,7 @@ tLogKafka:registerInstance{
 local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, tConfiguration.websocket_port)
 webui_buffer:setTitle(tTestDescription:getTitle(), tTestDescription:getSubtitle())
+webui_buffer:setDocuments(tTestDescription:getDocuments())
 local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()
 

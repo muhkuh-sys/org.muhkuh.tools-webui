@@ -33,6 +33,8 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
   self.astrLogMessages = {}
   self.uiSyncedLogIndex = 0
 
+  self.atDocuments = {}
+
   self.tTester = nil
 
   -- Create a new log target for the test output.
@@ -168,6 +170,29 @@ function WebUiBuffer:setTestNames(astrTestNames)
 
     -- Push the new values to the UI if there is a connection.
     self:__sendTestNames()
+  end
+end
+
+
+
+function WebUiBuffer:setDocuments(atDocuments)
+  local strType = type(atDocuments)
+  if strType~='table' then
+    self.tLogWebUi.error(string.format('The argument to "setDocuments" must be an array. Here it is %s.', strType))
+  else
+    -- Copy all documents.
+    local atDocs = {}
+    for _,tAttr in ipairs(atDocuments) do
+      local strName = tAttr.name
+      local strUrl = tAttr.url
+      if strName~=nil and strUrl~=nil then
+        table.insert(atDocs, {name=strName, url=strUrl})
+      end
+    end
+
+    self.atDocuments = atDocs
+
+    self:__sendDocuments()
   end
 end
 
@@ -317,6 +342,21 @@ end
 
 
 
+function WebUiBuffer:__sendDocuments()
+  -- Push the values to the UI if there is a connection.
+  local tConnection = self.tActiveConnection
+  if tConnection~=nil then
+    local tMessage = {
+      id = 'SetDocs',
+      docs = self.atDocuments
+    }
+    local strJson = self.json.encode(tMessage)
+    tConnection:write(strJson)
+  end
+end
+
+
+
 function WebUiBuffer:__sendTestStati()
   -- Push the values to the UI if there is a connection.
   local tConnection = self.tActiveConnection
@@ -437,6 +477,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
         if strId=='ReqInit' then
           self:__sendTitle()
           self:__sendTestNames()
+          self:__sendDocuments()
           self:__sendInteraction()
           self:__sendCurrentSerial()
           -- TODO: send the running test and all test states.

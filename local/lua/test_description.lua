@@ -15,6 +15,8 @@ function TestDescription:_init(tLog)
   self.atTestCases = nil
   self.uiNumberOfTests = nil
   self.astrTestNames = nil
+  self.tSystem = nil
+  self.atDocuments = nil
 end
 
 
@@ -87,6 +89,34 @@ function TestDescription.__parseTests_StartElement(tParser, strName, atAttribute
     else
       aLxpAttr.strParameterName = strName
     end
+
+  elseif strCurrentPath=='/MuhkuhTest/System' then
+    aLxpAttr.strParameterName = nil
+    aLxpAttr.strParameterValue = nil
+
+  elseif strCurrentPath=='/MuhkuhTest/System/Parameter' then
+    local strName = atAttributes['name']
+    if strName==nil or strName=='' then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
+    else
+      aLxpAttr.strParameterName = strName
+    end
+
+  elseif strCurrentPath=='/MuhkuhTest/Documents' then
+    aLxpAttr.strDocumentName = nil
+    aLxpAttr.strDocumentUrl = nil
+
+  elseif strCurrentPath=='/MuhkuhTest/Documents/Document' then
+    local strName = atAttributes['name']
+    if strName==nil or strName=='' then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
+    else
+      aLxpAttr.strDocumentName = strName
+    end
+
+
   end
 end
 
@@ -106,6 +136,7 @@ function TestDescription.__parseTests_EndElement(tParser, strName)
   if strCurrentPath=='/MuhkuhTest/Testcase' then
     table.insert(aLxpAttr.atTestCases, aLxpAttr.tTestCase)
     aLxpAttr.tTestCase = nil
+
   elseif strCurrentPath=='/MuhkuhTest/Testcase/Parameter' then
     if aLxpAttr.strParameterName==nil then
       aLxpAttr.tResult = nil
@@ -116,6 +147,7 @@ function TestDescription.__parseTests_EndElement(tParser, strName)
     else
       table.insert(aLxpAttr.tTestCase.parameter, {name=aLxpAttr.strParameterName, value=aLxpAttr.strParameterValue})
     end
+
   elseif strCurrentPath=='/MuhkuhTest/Testcase/Connection' then
     if aLxpAttr.strParameterName==nil then
       aLxpAttr.tResult = nil
@@ -125,6 +157,28 @@ function TestDescription.__parseTests_EndElement(tParser, strName)
       aLxpAttr.tLog.error('Error in line %d, col %d: missing connection for parameter.', iPosLine, iPosColumn)
     else
       table.insert(aLxpAttr.tTestCase.parameter, {name=aLxpAttr.strParameterName, connection=aLxpAttr.strParameterConnection})
+    end
+
+  elseif strCurrentPath=='/MuhkuhTest/System/Parameter' then
+    if aLxpAttr.strParameterName==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
+    elseif aLxpAttr.strParameterValue==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing value for parameter.', iPosLine, iPosColumn)
+    else
+      table.insert(aLxpAttr.tSystem.parameter, {name=aLxpAttr.strParameterName, value=aLxpAttr.strParameterValue})
+    end
+
+  elseif strCurrentPath=='/MuhkuhTest/Documents/Document' then
+    if aLxpAttr.strDocumentName==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
+    elseif aLxpAttr.strDocumentUrl==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing value for document.', iPosLine, iPosColumn)
+    else
+      table.insert(aLxpAttr.atDocuments, {name=aLxpAttr.strDocumentName, url=aLxpAttr.strDocumentUrl})
     end
   end
 
@@ -142,10 +196,19 @@ end
 function TestDescription.__parseTests_CharacterData(tParser, strData)
   local aLxpAttr = tParser:getcallbacks().userdata
 
-  if aLxpAttr.strCurrentPath=="/MuhkuhTest/Testcase/Parameter" then
+  local strCurrentPath = aLxpAttr.strCurrentPath
+  if strCurrentPath=="/MuhkuhTest/Testcase/Parameter" then
     aLxpAttr.strParameterValue = strData
-  elseif aLxpAttr.strCurrentPath=="/MuhkuhTest/Testcase/Connection" then
+
+  elseif strCurrentPath=="/MuhkuhTest/Testcase/Connection" then
     aLxpAttr.strParameterConnection = strData
+
+  elseif strCurrentPath=="/MuhkuhTest/System/Parameter" then
+    aLxpAttr.strParameterValue = strData
+
+  elseif strCurrentPath=='/MuhkuhTest/Documents/Document' then
+    aLxpAttr.strDocumentUrl = strData
+
   end
 end
 
@@ -172,10 +235,14 @@ function TestDescription:__parse_tests(strTestsFile)
       strPre = nil,
       strPost = nil,
       tTestCase = nil,
+      tSystem = { parameter={} },
       strParameterName = nil,
       strParameterValue = nil,
       strParameterConnection = nil,
       atTestCases = {},
+      strDocumentName = nil,
+      strDocumentUrl = nil,
+      atDocuments = {},
 
       tResult = true,
       tLog = tLog
@@ -208,6 +275,8 @@ function TestDescription:__parse_tests(strTestsFile)
       self.strPre = aLxpAttr.strPre
       self.strPost = aLxpAttr.strPost
       self.atTestCases = aLxpAttr.atTestCases
+      self.tSystem = aLxpAttr.tSystem
+      self.atDocuments = aLxpAttr.atDocuments
       tResult = true
     end
   end
@@ -278,6 +347,18 @@ end
 
 
 
+function TestDescription:getSystemParameter()
+  local tResult
+
+  if self.tSystem~=nil then
+    tResult = self.tSystem.parameter
+  end
+
+  return tResult
+end
+
+
+
 function TestDescription:getNumberOfTests()
   return self.uiNumberOfTests
 end
@@ -304,6 +385,55 @@ function TestDescription:getTestCaseName(uiTestCase)
     end
   else
     tLog.error('The test case must be a number, here it has the type %s.', strType)
+  end
+
+  return tResult
+end
+
+
+
+function TestDescription:getTestCaseId(uiTestCase)
+  local tLog = self.tLog
+  local tResult
+
+  -- Is the test case valid?
+  local strType = type(uiTestCase)
+  if strType=='number' then
+    if uiTestCase>0 and uiTestCase<=self.uiNumberOfTests then
+      local tAttr = self.atTestCases[uiTestCase]
+      if tAttr~=nil then
+        tResult = tAttr.id
+      end
+    else
+      tLog.error('Invalid test case index for test cases 1 to %d: %d .', self.uiNumberOfTests, uiTestCase)
+    end
+  else
+    tLog.error('The test case must be a number, here it has the type %s.', strType)
+  end
+
+  return tResult
+end
+
+
+
+function TestDescription:getTestCaseIndex(strTestCaseName)
+  local tLog = self.tLog
+  local tResult
+
+  -- Is the test case valid?
+  local strType = type(strTestCaseName)
+  if strType=='string' then
+    for uiIndex, strName in ipairs(self.astrTestNames) do
+      if strName==strTestCaseName then
+        tResult = uiIndex
+        break
+      end
+    end
+    if tResult==nil then
+      tLog.error('No test with the name "%s" found.', strTestCaseName)
+    end
+  else
+    tLog.error('The test case must be a string, here it has the type %s.', strType)
   end
 
   return tResult
@@ -372,6 +502,11 @@ function TestDescription:getTestCaseActionPost(uiTestCase)
   return tResult
 end
 
+
+
+function TestDescription:getDocuments()
+  return self.atDocuments
+end
 
 
 return TestDescription
