@@ -13,6 +13,7 @@ import { createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Collapse from '@material-ui/core/Collapse';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Divider from '@material-ui/core/Divider';
 import Drawer from '@material-ui/core/Drawer';
@@ -49,6 +50,8 @@ import ReactImageMagnify from 'react-image-magnify';
 
 import CancelIcon from '@material-ui/icons/Cancel';
 import DescriptionIcon from '@material-ui/icons/Description';
+import ExpandLess from '@material-ui/icons/ExpandLess';
+import ExpandMore from '@material-ui/icons/ExpandMore';
 import MenuIcon from '@material-ui/icons/Menu';
 import PowerIcon from '@material-ui/icons/Power';
 import PowerOffIcon from '@material-ui/icons/PowerOff';
@@ -98,6 +101,7 @@ class TesterApp extends React.Component {
       tState: _tState,
       tErrorMessage: _tErrorMessage,
       fMenuIsOpen: false,
+      fMenuDocumentsOpen: false,
 
       strServerURL: _strServerURL,
       strServerProtocol: 'echo',
@@ -109,6 +113,7 @@ class TesterApp extends React.Component {
       tTest_uiLastSerial: 0,
       tTest_astrTestNames: [],
       tTest_atTestStati: [],
+      tTest_atDocuments: [],
 
       tRunningTest_uiCurrentSerial: null,
       tRunningTest_uiRunningTest: null,
@@ -659,6 +664,29 @@ class TesterApp extends React.Component {
   }
 
 
+  doToggleDocuments = (tEvent) => {
+    /* Do not pass the event to the other components or the menu will close. */
+    tEvent.stopPropagation();
+
+    this.setState({
+      fMenuDocumentsOpen: !this.state.fMenuDocumentsOpen
+    });
+  }
+
+
+  doShowDocument = (uiIndex) => {
+    console.log('Documents', uiIndex);
+    if(uiIndex in this.state.tTest_atDocuments) {
+      const tAttr = this.state.tTest_atDocuments[uiIndex];
+      if('url' in tAttr) {
+        const strUrl = tAttr.url;
+        console.log('Open URL:', strUrl);
+        window.open(strUrl, '_blank');
+      }
+    }
+  }
+
+
   doToggleLog = () => {
     const tTerminalDiv = document.getElementById('terminal_log');
     let strVisibility = tTerminalDiv.style.visibility;
@@ -718,6 +746,25 @@ class TesterApp extends React.Component {
       );
     }
 
+    /* Create the document items for the menu. */
+    let atDocumentLinks = [];
+    this.state.tTest_atDocuments.forEach(function(tAttr, uiIndex) {
+      if(('name' in tAttr) && ('url' in tAttr)) {
+        atDocumentLinks.push(
+          <ListItem button key="Document_{uiIndex}" onClick={() => this.doShowDocument(uiIndex)}>
+            <ListItemText inset primary={tAttr.name}/>
+          </ListItem>
+        );
+      }
+    }, this);
+    if( atDocumentLinks.length==0 ) {
+      atDocumentLinks.push(
+        <ListItem key="Document_0">
+          <ListItemText inset primary="no documents"/>
+        </ListItem>
+      );
+    }
+
     /* Create the application menu. */
     let tAppMenu = (
       <List>
@@ -734,6 +781,15 @@ class TesterApp extends React.Component {
           <ListItemIcon><PowerOffIcon/></ListItemIcon>
           <ListItemText primary='Disconnect'/>
         </ListItem>
+        <Divider/>
+        <ListItem button key='Documents' onClick={this.doToggleDocuments}>
+          <ListItemIcon><DescriptionIcon/></ListItemIcon>
+          <ListItemText primary='Documents'/>
+          {this.state.fMenuDocumentsOpen ? <ExpandLess /> : <ExpandMore />}
+        </ListItem>
+        <Collapse in={this.state.fMenuDocumentsOpen} timeout="auto" unmountOnExit>
+          {atDocumentLinks}
+        </Collapse>
         <Divider/>
         <ListItem button key='Toggle Log' onClick={this.doToggleLog}>
           <ListItemIcon><DescriptionIcon/></ListItemIcon>
