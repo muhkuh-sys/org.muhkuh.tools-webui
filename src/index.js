@@ -104,7 +104,7 @@ class TesterApp extends React.Component {
       fMenuDocumentsOpen: false,
 
       strServerURL: _strServerURL,
-      strServerProtocol: 'echo',
+      strServerProtocol: 'muhkuh-tester',
 
       tTest_Title: null,
       tTest_Subtitle: null,

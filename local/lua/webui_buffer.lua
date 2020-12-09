@@ -5,7 +5,7 @@ local WebUiBuffer = class()
 function WebUiBuffer:_init(tLog, usWebsocketPort)
   self.tLog = tLog
   self.usWebsocketPort = usWebsocketPort
-  self.strWebsocketProtocol = 'muhkuh'
+  self.strWebsocketProtocol = 'muhkuh-tester'
   self.strWebsocketURL = string.format('ws://*:%d', usWebsocketPort)
 
   self.json = require 'dkjson'
