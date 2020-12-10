@@ -298,7 +298,8 @@ end
 
 
 function LogKafka:onTestStepFinished()
-  if self.tTopic_logs~=nil then
+  local tTopic = self.tTopic_logs
+  if tTopic~=nil then
     -- Send any waiting messages.
     self:__sendMessageBuffer()
 
@@ -313,6 +314,9 @@ function LogKafka:onTestStepFinished()
     atAttributes.test_name = nil
     -- Remove the test step ULID from the attributes.
     atAttributes.test_step_ulid = nil
+
+    -- Try to flush a few messages.
+    tTopic:poll(500)
   end
 end
 
@@ -360,6 +364,12 @@ function LogKafka:onTestRunFinished()
     atAttributes.test_step = nil
     -- Remove the test step ULID from the attributes.
     atAttributes.test_step_ulid = nil
+
+    -- Try to flush the rest of the messages.
+    local tProducer = self.tProducer
+    if tProducer~=nil then
+      tProducer:flush(2000)
+    end
   end
 end
 
