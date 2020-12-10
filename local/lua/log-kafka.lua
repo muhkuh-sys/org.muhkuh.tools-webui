@@ -105,9 +105,18 @@ function LogKafka:connect(strBrokerList, atOptions)
       local tProducer = kafka.Producer(strBrokerList, tProducer_conf)
       self.tProducer = tProducer
 
-      self.tTopic_teststations = tProducer:create_topic('muhkuh-production-teststations')
-      self.tTopic_logs = tProducer:create_topic('muhkuh-production-logs')
-      self.tTopic_events = tProducer:create_topic('muhkuh-production-events')
+      -- Compress all topics with GZIP. This takes the most CPU power to
+      -- produce and consume messages, but it results in the smallest files
+      -- compared to the alternatives snappy and lz4. As we are using kafka as
+      -- a temporary storage for a while, it is our top priority to keep the
+      -- disk usage as small as possible.
+      local tTopic_conf = {
+        ['compression.codec'] = 'gzip',
+        ['compression.level'] = 9
+      }
+      self.tTopic_teststations = tProducer:create_topic('muhkuh-production-teststations', tTopic_conf)
+      self.tTopic_logs = tProducer:create_topic('muhkuh-production-logs', tTopic_conf)
+      self.tTopic_events = tProducer:create_topic('muhkuh-production-events', tTopic_conf)
 
       self.m_strBrokerList = strBrokerList
     end
