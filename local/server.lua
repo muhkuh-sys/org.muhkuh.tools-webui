@@ -37,9 +37,6 @@ local strVersion, strVcsVersion = cPackageFile.read()
 local cConfigurationFile = require 'configuration_file'(tLog)
 local tConfiguration = cConfigurationFile:read()
 
--- Prepare the path of the "www" folder. Add a path separator at the end.
-local strPathTestWww = pl.path.join(tConfiguration.tests_folder, 'www', '')
-
 
 ------------------------------------------------------------------------------
 --
@@ -53,12 +50,15 @@ tParser:flag('--version')
     print(string.format('serverkuh V%s %s', strVersion, strVcsVersion))
     os.exit(0)
   end)
+tParser:argument('www-path', 'Serve contents of the www folder from WWW_PATH.')
+  :argname('WWW_PATH')
+  :target('strWwwPath')
 tParser:argument('ssdp-uuid', 'Use UUID as the SSDP UUID.')
-  :argname('<UUID>')
+  :argname('UUID')
   :target('strUUID')
 tParser:option('-i --webserver-address')
   :description('Serve the HTTP documents on address ADDRESS.')
-  :argname('<ADDRESS>')
+  :argname('ADDRESS')
   :default('localhost')
   :target('strWebserverAddress')
 
@@ -66,9 +66,10 @@ local tArgs = tParser:parse()
 
 ------------------------------------------------------------------------------
 --
--- Get a local copy of the SSDP serial and UUID.
--- Get the system UUID if no UUID was set on the command line.
+-- Get a local copy of the WWW path and the SSDP UUID.
 --
+-- Add a separator the the end of the path.
+local strPathTestWww = pl.path.join(tArgs.strWwwPath, '')
 local strSSDP_UUID = tArgs.strUUID
 
 
@@ -76,14 +77,13 @@ local strSSDP_UUID = tArgs.strUUID
 --
 -- Show a summary of the parameters.
 --
-print()
-print('Parameter:')
-print(string.format('Webserver address: %s', tArgs.strWebserverAddress))
-print(string.format('Webserver port:    %d', tConfiguration.webserver_port))
-print(string.format('Websocket port:    %d', tConfiguration.websocket_port))
-print(string.format('SSDP serial:      "%s"', tConfiguration.system_serial))
-print(string.format('SSDP UUID:        "%s"', strSSDP_UUID))
-print()
+tLog.info('Parameter:')
+tLog.info('  Webserver address: %s', tArgs.strWebserverAddress)
+tLog.info('  Webserver port:    %d', tConfiguration.webserver_port)
+tLog.info('  Websocket port:    %d', tConfiguration.websocket_port)
+tLog.info('  SSDP serial:      "%s"', tConfiguration.system_serial)
+tLog.info('  SSDP UUID:        "%s"', strSSDP_UUID)
+tLog.info('  WWW path:         "%s"', strPathTestWww)
 
 
 ------------------------------------------------------------------------------

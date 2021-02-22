@@ -44,7 +44,9 @@ function ConfigurationFile:read()
   end
   local tConfigurationDefault = {
     ssdp_name = 'Muhkuh Teststation Unconfigured',
-    tests_folder = pl.path.abspath('test'),
+    archive_path = '',
+    test_archive = '',
+    depack_path = '',
     interface = '',
     webserver_port = 9090,
     websocket_port = 12345,

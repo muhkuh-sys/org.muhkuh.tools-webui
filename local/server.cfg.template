@@ -1,8 +1,11 @@
 ssdp_name = Muhkuh Teststation Unconfigured
-tests_folder = test/another_subfolder
+archive_path =
+test_archive =
+depack_path =
 interface =
 webserver_port = 9090
 websocket_port = 12345
 system_serial = 4321
 kafka_broker =
 kafka_options =
+local_config =
