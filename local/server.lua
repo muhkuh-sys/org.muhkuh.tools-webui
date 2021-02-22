@@ -2,6 +2,21 @@
 io.stdout:setvbuf('no')
 io.stderr:setvbuf('no')
 
+-- Create a new logger without color.
+local strLogLevel = 'debug'
+local cLogWriter = require 'log.writer.filter'.new(
+  strLogLevel,
+  require 'log.writer.console'.new()
+)
+local cLogWriterServer = require 'log.writer.prefix'.new('[Server] ', cLogWriter)
+local tLog = require "log".new(
+  -- maximum log level
+  "trace",
+  cLogWriterServer,
+  -- Formatter
+  require "log.formatter.format".new()
+)
+
 local Pegasus = require 'pegasus'
 local argparse = require 'argparse'
 local mimetypes = require 'mimetypes'
@@ -19,8 +34,8 @@ local strVersion, strVcsVersion = cPackageFile.read()
 --
 -- Try to read the configuration file.
 --
-local cConfigurationFile = require 'configuration_file'
-local tConfiguration = cConfigurationFile.read()
+local cConfigurationFile = require 'configuration_file'(tLog)
+local tConfiguration = cConfigurationFile:read()
 
 -- Prepare the path of the "www" folder. Add a path separator at the end.
 local strPathTestWww = pl.path.join(tConfiguration.tests_folder, 'www', '')

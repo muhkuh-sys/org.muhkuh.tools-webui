@@ -1,18 +1,46 @@
-local ConfigurationFile = {}
+local class = require 'pl.class'
+local ConfigurationFile = class()
 
-function ConfigurationFile.read(tLog)
-  tLog = tLog or {
-    debug = function (...) print(string.format(...)) end
-  }
-  local pl = require'pl.import_into'()
 
-  local strConfigurationFile = pl.path.abspath('server.cfg')
-  local tConfigurationFromFile = {}
-  if pl.path.isfile(strConfigurationFile)~=true then
-    tLog.debug('The configuration file "%s" does not exist.', strConfigurationFile)
+function ConfigurationFile:_init(tLog)
+  self.tLog = tLog
+  self.pl = require'pl.import_into'()
+end
+
+
+function ConfigurationFile:__merge(strIdBase, atCfgBase, strIdOverlay, atCfgOverlay)
+  local tLog = self.tLog
+  local pl = self.pl
+
+  local tConfiguration = {}
+  for strKey, tValue in pairs(atCfgBase) do
+    local strId = strIdBase
+    local tValueOverlay = atCfgOverlay[strKey]
+    if tValueOverlay~=nil then
+      strId = strIdOverlay
+      tValue = tValueOverlay
+    end
+    if strId~=nil then
+      tLog.debug('  %s [%s] = %s', strId, strKey, pl.pretty.write(tValue))
+    end
+    tConfiguration[strKey] = tValue
+  end
+
+  return tConfiguration
+end
+
+
+function ConfigurationFile:read()
+  local tLog = self.tLog
+  local pl = self.pl
+
+  local strServerConfigFile = pl.path.abspath('server.cfg')
+  local tServerConfig = {}
+  if pl.path.isfile(strServerConfigFile)~=true then
+    tLog.debug('The server configuration file "%s" does not exist.', strServerConfigFile)
   else
-    tLog.debug('Reading the configuration from "%s"...', strConfigurationFile)
-    tConfigurationFromFile = pl.config.read(strConfigurationFile)
+    tLog.debug('Reading the server configuration from "%s"...', strServerConfigFile)
+    tServerConfig = pl.config.read(strServerConfigFile)
   end
   local tConfigurationDefault = {
     ssdp_name = 'Muhkuh Teststation Unconfigured',
@@ -22,22 +50,27 @@ function ConfigurationFile.read(tLog)
     websocket_port = 12345,
     system_serial = 4321,
     kafka_broker = '',
-    kafka_options = {}
+    kafka_options = {},
+    local_config = ''
   }
-  -- Join both configurations.
-  local tConfiguration = {}
-  for strKey, tValue in pairs(tConfigurationDefault) do
-    local tValueFile = tConfigurationFromFile[strKey]
-    if tValueFile~=nil then
-      tValue = tValueFile
-      tLog.debug('  [%s] from file = %s', strKey, pl.pretty.write(tValueFile))
-    else
-      tLog.debug('  [%s] default = %s', strKey, pl.pretty.write(tValue))
-    end
-    tConfiguration[strKey] = tValue
-  end
+  -- Merge the default and server configuration.
+  local tMergedConfig0 = self:__merge('defaults', tConfigurationDefault, 'server config', tServerConfig)
 
-  return tConfiguration
+  -- Is a local configuration defined?
+  local strLocalConfigFile = tMergedConfig0.local_config
+  local tLocalConfig = {}
+  if strLocalConfigFile~=nil and strLocalConfigFile~='' then
+    if pl.path.isfile(strLocalConfigFile)~=true then
+      tLog.debug('The local configuration file "%s" does not exist.', strLocalConfigFile)
+    else
+      tLog.debug('Reading the local configuration from "%s"...', strLocalConfigFile)
+      tLocalConfig = pl.config.read(strLocalConfigFile)
+    end
+  end
+  -- Merge the local configuration.
+  local tMergedConfig = self:__merge(nil, tMergedConfig0, 'local config', tLocalConfig)
+
+  return tMergedConfig
 end
 
 

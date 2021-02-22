@@ -31,8 +31,8 @@ local strVersion, strVcsVersion = cPackageFile.read(tLog)
 --
 --  Try to read the configuration file.
 --
-local cConfigurationFile = require 'configuration_file'
-local tConfiguration = cConfigurationFile.read(tLog)
+local cConfigurationFile = require 'configuration_file'(tLog)
+local tConfiguration = cConfigurationFile:read()
 
 
 ------------------------------------------------------------------------------
