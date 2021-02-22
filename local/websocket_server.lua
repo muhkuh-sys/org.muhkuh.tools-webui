@@ -92,10 +92,9 @@ local strTestXmlFile = pl.path.join(tConfiguration.tests_folder, 'tests.xml')
 
 local TestDescription = require 'test_description'
 local tTestDescription = TestDescription(tLog)
-local tResult = tTestDescription:parse(strTestXmlFile)
-if tResult~=true then
+local bHaveValidTestDescription = tTestDescription:parse(strTestXmlFile)
+if bHaveValidTestDescription~=true then
   tLog.error('Failed to parse the test description.')
-  error('Invalid test description.')
 end
 
 -- Create the kafka log consumer.
@@ -180,7 +179,7 @@ tTestController:setLogConsumer(tLogKafka)
 
 
 tServerProc:run()
-tTestController:run()
+tTestController:run(bHaveValidTestDescription)
 
 
 local function OnCancelAll()

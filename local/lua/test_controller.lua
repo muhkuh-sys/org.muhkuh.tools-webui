@@ -17,6 +17,9 @@ function TestController:_init(tLog, tLogTest, strLuaInterpreter, strTestPath)
   self.m_strPeerName = nil
 
   self.m_logConsumer = nil
+
+  self.m_strStartPageOk = 'jsx/test_start.jsx'
+  self.m_strStartPageNoTestDescription = 'jsx/test_error_testdescription.jsx'
 end
 
 
@@ -33,7 +36,7 @@ end
 
 
 
-function TestController:__setStartPage()
+function TestController:__setStartPage(strFilename)
   local tBuffer = self.m_buffer
 
   -- Clear all fields in the tester header.
@@ -46,7 +49,6 @@ function TestController:__setStartPage()
   tBuffer:setTester(self)
 
   -- Read the first interaction.
-  local strFilename = 'jsx/test_start.jsx'
   local strJsx, strErr = self.pl.file.read(strFilename)
   if strJsx==nil then
     self.tLog.error('Failed to read JSX from "%s": %s', strFilename, strErr)
@@ -57,8 +59,13 @@ end
 
 
 
-function TestController:run()
-  self:__setStartPage()
+function TestController:run(bHaveValidTestDescription)
+  local strFilename = self.m_strStartPageOk
+  if bHaveValidTestDescription~=true then
+    strFilename = self.m_strStartPageNoTestDescription
+  end
+
+  self:__setStartPage(strFilename)
 end
 
 
@@ -133,7 +140,7 @@ end
 
 function TestController:onTestTerminate()
   -- The test finished.
-  self:__setStartPage()
+  self:__setStartPage(self.m_strStartPageOk)
 end
 
 

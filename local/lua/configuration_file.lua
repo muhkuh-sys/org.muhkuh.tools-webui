@@ -15,7 +15,7 @@ function ConfigurationFile.read(tLog)
     tConfigurationFromFile = pl.config.read(strConfigurationFile)
   end
   local tConfigurationDefault = {
-    ssdp_name = 'Muhkuh Teststation',
+    ssdp_name = 'Muhkuh Teststation Unconfigured',
     tests_folder = pl.path.abspath('test'),
     interface = '',
     webserver_port = 9090,

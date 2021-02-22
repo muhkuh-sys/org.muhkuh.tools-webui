@@ -1,4 +1,4 @@
-ssdp_name = Muhkuh Teststation
+ssdp_name = Muhkuh Teststation Unconfigured
 tests_folder = test/another_subfolder
 interface =
 webserver_port = 9090
