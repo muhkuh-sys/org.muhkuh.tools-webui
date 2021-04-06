@@ -91,7 +91,7 @@ local tTestDescription = require 'test_description'(tLog)
 
 local tResult = true
 local bHaveValidTestDescription = false
-local strTestBasePath
+local strTestBasePath = ''
 
 -- Refuse to work with a relative depack folder.
 local strDepackPath = tConfiguration.depack_path
