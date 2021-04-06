@@ -44,6 +44,7 @@ function ConfigurationFile:read()
   end
   local tConfigurationDefault = {
     ssdp_name = 'Muhkuh Teststation Unconfigured',
+    announce_interval = 300000,
     archive_path = '',
     test_archive = '',
     depack_path = '',
@@ -53,6 +54,7 @@ function ConfigurationFile:read()
     system_serial = 4321,
     kafka_broker = '',
     kafka_options = {},
+    kafka_debugging = false,
     local_config = ''
   }
   -- Merge the default and server configuration.
@@ -71,6 +73,16 @@ function ConfigurationFile:read()
   end
   -- Merge the local configuration.
   local tMergedConfig = self:__merge(nil, tMergedConfig0, 'local config', tLocalConfig)
+
+  -- Convert the "kafka_debugging" entry to a boolean.
+  local tValue = tMergedConfig.kafka_debugging
+  local fValue = false
+  if type(tValue)=='boolean' then
+    fValue = tValue
+  elseif type(tValue)=='string' and string.lower(tValue)=='true' then
+    fValue = true
+  end
+  tMergedConfig.kafka_debugging = fValue
 
   return tMergedConfig
 end

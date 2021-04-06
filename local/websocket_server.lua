@@ -96,7 +96,7 @@ local strTestBasePath = ''
 -- Refuse to work with a relative depack folder.
 local strDepackPath = tConfiguration.depack_path
 if pl.path.isabs(strDepackPath)~=true then
-  tLog.error('The depcak path "%s" is not absolute.', strDepackPath)
+  tLog.error('The depack path "%s" is not absolute.', strDepackPath)
   tResult = false
 else
   -- Remove all files in the depack folder.
@@ -200,7 +200,8 @@ local tSystemAttributes = {
     subtitle = tTestDescription:getSubtitle()
   }
 }
-local tLogKafka = require 'log-kafka'(tLog, tSystemAttributes)
+local tLogKafka = require 'log-kafka'(tLog, tConfiguration.kafka_debugging)
+tLogKafka:setSystemAttributes(tSystemAttributes)
 -- Connect the log consumer to a broker.
 local strKafkaBroker = tConfiguration.kafka_broker
 if strKafkaBroker~=nil and strKafkaBroker~='' then
@@ -238,11 +239,18 @@ if strKafkaBroker~=nil and strKafkaBroker~='' then
 else
   tLog.warning('Not connecting to any kafka brokers. The logs will not be saved.')
 end
--- Register this test station.
-tLogKafka:registerInstance{
+-- Announce the test station in regular intervals.
+-- The interval can be set in milliseconds with the "announce_interval" item in the configuration.
+local tAnnounceData = {
   ip = strInterfaceAddress,
   port = tConfiguration.webserver_port
 }
+local uiAnnounceInterval = tConfiguration.announce_interval
+tLogKafka:announceInstance(tAnnounceData)
+local tAnnounceTimer = uv.timer():start(uiAnnounceInterval, function(tTimer)
+  tLogKafka:announceInstance(tAnnounceData)
+  tTimer:again(uiAnnounceInterval)
+end)
 
 local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, tConfiguration.websocket_port)
