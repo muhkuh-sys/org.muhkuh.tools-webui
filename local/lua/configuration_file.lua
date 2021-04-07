@@ -43,7 +43,7 @@ function ConfigurationFile:read()
     tServerConfig = pl.config.read(strServerConfigFile)
   end
   local tConfigurationDefault = {
-    ssdp_name = 'Muhkuh Teststation Unconfigured',
+    station_name = 'Muhkuh Teststation Unconfigured',
     announce_interval = 300000,
     archive_path = '',
     test_archive = '',

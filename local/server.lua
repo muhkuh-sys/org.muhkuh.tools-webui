@@ -97,7 +97,7 @@ local strJavacriptCfg = string.format("var g_CFG_strServerURL = 'ws://%s:%s';\n"
 -- Generate the SSDP description.
 --
 local atReplacement = {
-  FRIENDLY_NAME = tConfiguration.ssdp_name,
+  FRIENDLY_NAME = tConfiguration.station_name,
   PRESENTATION_URL = string.format('http://%s:%d/index.html', tArgs.strWebserverAddress, tConfiguration.webserver_port),
   SERIAL_NUMBER = tConfiguration.system_serial,
   MODEL_NUMBER = string.format('%s %s', strVersion, strVcsVersion),

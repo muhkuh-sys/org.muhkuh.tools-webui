@@ -191,8 +191,8 @@ end
 
 -- Create the kafka log consumer.
 local tSystemAttributes = {
-  ssdp = {
-    name = tConfiguration.ssdp_name,
+  station = {
+    name = tConfiguration.station_name,
     uuid = strSSDP_UUID
   },
   test = {
