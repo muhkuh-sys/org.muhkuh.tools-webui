@@ -209,7 +209,8 @@ class TesterApp extends React.Component {
       ['ok', 0],
       ['error', 1],
       ['idle', 2],
-      ['disabled', 3]
+      ['disabled', 3],
+      ['excluded', 4]
     ]);
     this.atResultNameToId = atResultNameToId;
     /* Generate a reverse mapping. */

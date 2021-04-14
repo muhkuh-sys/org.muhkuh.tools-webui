@@ -9,6 +9,7 @@ import ImgCowOk from './images/muhkuh_test_ok.svg';
 import ImgCowErr from './images/muhkuh_test_failed.svg';
 import ImgCowIdle from './images/muhkuh_untested.svg';
 import ImgCowDisabled from './images/muhkuh_disabled.svg';
+import ImgCowExcluded from './images/muhkuh_excluded.svg';
 
 
 class TesterUISummary extends React.Component {
@@ -21,7 +22,8 @@ class TesterUISummary extends React.Component {
       0: ImgCowOk,
       1: ImgCowErr,
       2: ImgCowIdle,
-      3: ImgCowDisabled
+      3: ImgCowDisabled,
+      4: ImgCowExcluded
     };
     this.astrImages = astrImages;
   }
