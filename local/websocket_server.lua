@@ -99,14 +99,33 @@ if pl.path.isabs(strDepackPath)~=true then
   tLog.error('The depack path "%s" is not absolute.', strDepackPath)
   tResult = false
 else
-  -- Remove all files in the depack folder.
-  local astrObsoleteFiles = pl.dir.getallfiles(strDepackPath)
-  for _, strObsoleteFile in ipairs(astrObsoleteFiles) do
-    tLog.debug('Delete %s', strObsoleteFile)
-    local tDeleteResult, strError = pl.file.delete(strObsoleteFile)
-    if tDeleteResult~=true then
-      tLog.error('Failed to delete "%s": %s', strObsoleteFile, tostring(strError))
+  -- Does the depack folder exist?
+  if pl.path.exists(strDepackPath)~=strDepackPath then
+    -- The depack path does not exist. Try to create it now.
+    local tMkdirResult, strError = pl.path.mkdir(strDepackPath)
+    if tMkdirResult~=true then
+      tLog.error('Falied to create the depack path "%s": %s', strDepackPath, strError)
       tResult = false
+    end
+  end
+
+  if tResult==true then
+    if pl.path.isdir(strDepackPath)~=true then
+      tLog.error('The depack path "%s" does not point to a directory.', strDepackPath)
+      tResult = false
+    end
+  end
+
+  if tResult==true then
+    -- Remove all files in the depack folder.
+    local astrObsoleteFiles = pl.dir.getallfiles(strDepackPath)
+    for _, strObsoleteFile in ipairs(astrObsoleteFiles) do
+      tLog.debug('Delete %s', strObsoleteFile)
+      local tDeleteResult, strError = pl.file.delete(strObsoleteFile)
+      if tDeleteResult~=true then
+        tLog.error('Failed to delete "%s": %s', strObsoleteFile, tostring(strError))
+        tResult = false
+      end
     end
   end
 
