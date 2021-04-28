@@ -44,7 +44,7 @@ function ConfigurationFile:read()
   end
   local tConfigurationDefault = {
     station_name = 'Muhkuh Teststation Unconfigured',
-    announce_interval = 300000,
+    announce_interval = 300,
     archive_path = '',
     test_archive = '',
     depack_path = '',

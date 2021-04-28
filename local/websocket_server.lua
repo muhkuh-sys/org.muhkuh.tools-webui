@@ -265,10 +265,16 @@ local tAnnounceData = {
   port = tConfiguration.webserver_port
 }
 local uiAnnounceInterval = tConfiguration.announce_interval
+local uiCheckInterval = 10000
 tLogKafka:announceInstance(tAnnounceData)
-local tAnnounceTimer = uv.timer():start(uiAnnounceInterval, function(tTimer)
-  tLogKafka:announceInstance(tAnnounceData)
-  tTimer:again(uiAnnounceInterval)
+local uiLastAnnouncedTime = os.time()
+local tAnnounceTimer = uv.timer():start(uiCheckInterval, function(tTimer)
+  local uiNow = os.time()
+  if os.difftime(uiNow, uiLastAnnouncedTime)>=uiAnnounceInterval then
+    tLogKafka:announceInstance(tAnnounceData)
+    uiLastAnnouncedTime = uiNow
+  end
+  tTimer:again(uiCheckInterval)
 end)
 
 local WebUiBuffer = require 'webui_buffer'
