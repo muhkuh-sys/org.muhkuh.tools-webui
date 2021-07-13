@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import './style.scss';
+import css from './style.css';
 import 'typeface-roboto';
 import 'typeface-roboto-mono';
 
