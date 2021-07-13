@@ -10,7 +10,6 @@ const muhkuh_package_vcsversion = require("./get_vcsversion");
 
 import { transform, registerPlugin, availablePlugins } from '@babel/standalone';
 
-import { createMuiTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
 import CircularProgress from '@material-ui/core/CircularProgress';
