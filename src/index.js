@@ -39,11 +39,15 @@ import MenuItem from '@material-ui/core/MenuItem';
 import MuiThemeProvider from '@material-ui/core/styles/MuiThemeProvider';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
 import Paper from '@material-ui/core/Paper';
+import Radio from '@material-ui/core/Radio';
+import RadioGroup from '@material-ui/core/RadioGroup';
 import Select from '@material-ui/core/Select';
 import SvgIcon from '@material-ui/core/SvgIcon';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import TextField from '@material-ui/core/TextField';
+import TreeView from '@material-ui/lab/TreeView';
+import TreeItem from '@material-ui/lab/TreeItem';
 import Typography from '@material-ui/core/Typography';
 
 import ReactImageZoom from 'react-image-zoom';
@@ -167,11 +171,15 @@ class TesterApp extends React.Component {
       'MenuItem': MenuItem,
       'OutlinedInput': OutlinedInput,
       'Paper': Paper,
+      'Radio': Radio,
+      'RadioGroup': RadioGroup,
       'Select': Select,
       'SvgIcon': SvgIcon,
       'Tabs': Tabs,
       'Tab': Tab,
       'TextField': TextField,
+      'TreeView': TreeView,
+      'TreeItem': TreeItem,
       'Typography': Typography,
       'ReactImageZoom': ReactImageZoom
     };
@@ -182,6 +190,7 @@ class TesterApp extends React.Component {
       astrCode.push('const ' + strName + ' = atComponents.' + strName + ';');
     }
     this.strJsxHeaderCode = astrCode.join('\n') + '\n';
+console.log(this.strJsxHeaderCode);
 
     /* This is a reference to the interaction element. */
     this.tTesterInteraction = React.createRef();
