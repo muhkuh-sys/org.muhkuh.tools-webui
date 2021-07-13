@@ -5,7 +5,8 @@ import css from './style.css';
 import 'typeface-roboto';
 import 'typeface-roboto-mono';
 
-import {version as nodejs_package_version} from '../package.json';
+const muhkuh_package_version = require("./get_version");
+const muhkuh_package_vcsversion = require("./get_vcsversion");
 
 import { transform, registerPlugin, availablePlugins } from '@babel/standalone';
 
@@ -909,7 +910,7 @@ function initializeLogOverlay() {
   TesterLog_terminal_fit = tFitAddon;
 
   /* Show a welcome message with all colors. */
-  var strBuffer = 'Welcome to Muhkuh WebUI V' + nodejs_package_version + ' .\n' +
+  var strBuffer = 'Welcome to Muhkuh WebUI V' + muhkuh_package_version + ' ' + muhkuh_package_vcsversion + ' .\n' +
                   '\n' +
                   'Colors:\n';
   for(let uiColor=40; uiColor<50; ++uiColor) {

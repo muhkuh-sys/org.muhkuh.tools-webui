@@ -41,6 +41,22 @@ module.exports = {
             }
           }
         ]
+      },
+      {
+        test: /get_version.js$/,
+        use: [
+          {
+            loader: 'val-loader',
+          },
+        ],
+      },
+      {
+        test: /get_vcsversion.js$/,
+        use: [
+          {
+            loader: 'val-loader',
+          },
+        ],
       }
     ]
   },
