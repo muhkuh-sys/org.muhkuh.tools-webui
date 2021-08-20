@@ -19,7 +19,8 @@ function TestController:_init(tLog, tLogTest, strLuaInterpreter, strTestPath)
   self.m_logConsumer = nil
 
   self.m_strStartPageOk = 'jsx/test_start.jsx'
-  self.m_strStartPageNoTestDescription = 'jsx/test_error_testdescription.jsx'
+  self.m_strStartPageSeriousError = 'jsx/test_error_serious.jsx'
+  self.m_strStartPageInstallPossible = 'jsx/test_error_install_possible.jsx'
 end
 
 
@@ -36,7 +37,7 @@ end
 
 
 
-function TestController:__setStartPage(strFilename)
+function TestController:__setStartPage(strFilename, atReplace)
   local tBuffer = self.m_buffer
 
   -- Clear all fields in the tester header.
@@ -49,23 +50,36 @@ function TestController:__setStartPage(strFilename)
   tBuffer:setTester(self)
 
   -- Read the first interaction.
-  local strJsx, strErr = self.pl.file.read(strFilename)
-  if strJsx==nil then
+  local strJsxTemplate, strErr = self.pl.file.read(strFilename)
+  if strJsxTemplate==nil then
     self.tLog.error('Failed to read JSX from "%s": %s', strFilename, strErr)
   else
+    local strJsx
+    if atReplace==nil then
+      strJsx = strJsxTemplate
+    else
+      strJsx = string.gsub(strJsxTemplate, '@([%w_]+)@', atReplace)
+    end
     self.m_buffer:setInteraction(strJsx)
   end
 end
 
 
 
-function TestController:run(bHaveValidTestDescription)
+function TestController:run(bHaveValidTestDescription, bInstallPossible, strErrorMessage)
   local strFilename = self.m_strStartPageOk
+  local atReplace = {}
   if bHaveValidTestDescription~=true then
-    strFilename = self.m_strStartPageNoTestDescription
+    if bInstallPossible~=true then
+      strFilename = self.m_strStartPageSeriousError
+      atReplace['ERROR_MESSAGE'] = strErrorMessage
+    else
+      strFilename = self.m_strStartPageInstallPossible
+      atReplace['ERROR_MESSAGE'] = strErrorMessage
+    end
   end
 
-  self:__setStartPage(strFilename)
+  self:__setStartPage(strFilename, atReplace)
 end
 
 
