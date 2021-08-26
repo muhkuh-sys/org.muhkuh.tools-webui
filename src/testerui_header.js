@@ -6,21 +6,6 @@ import Typography from '@material-ui/core/Typography';
 class TesterUIHeader extends React.Component {
   constructor(props) {
     super(props);
-
-    let _uiFirstSerial = null;
-    if( props.uiFirstSerial!==null ) {
-      _uiFirstSerial = Number(props.uiFirstSerial);
-      if( isNaN(_uiFirstSerial)===true ) {
-        _uiFirstSerial = null;
-      }
-    }
-    let _uiLastSerial = null;
-    if( props.uiLastSerial!==null ) {
-      _uiLastSerial = Number(props.uiLastSerial);
-      if( isNaN(_uiLastSerial)===true ) {
-        _uiLastSerial = null;
-      }
-    }
   }
 
   render() {
@@ -36,19 +21,7 @@ class TesterUIHeader extends React.Component {
       strSubtitleText = '-';
     }
 
-    let strSerial = 'This test uses no serial numbers.';
-    if( this.props.fHasSerial===true ) {
-      let uiFirstSerial = this.props.uiFirstSerial;
-      let uiLastSerial = this.props.uiLastSerial;
-      if( uiFirstSerial!==null && uiLastSerial!==null )
-      {
-        strSerial = 'First serial: ' + String(uiFirstSerial) + ', last serial: ' + String(uiLastSerial);
-      } else {
-        strSerial = 'Serial numbers are not set yet.';
-      }
-    }
-
-    let strCurrentSerial = 'No current serial.';
+    let strCurrentSerial = 'This test uses no serial numbers.';
     if( this.props.fHasSerial==true ) {
       let uiSerial = this.props.uiCurrentSerial;
       if( Number.isInteger(uiSerial)===true ) {
@@ -62,7 +35,6 @@ class TesterUIHeader extends React.Component {
       <div>
         <Typography align="center" color={strTitleColor} variant="h4" gutterBottom>{strTitleText}</Typography>
         <Typography align="center" variant="subtitle1" gutterBottom>{strSubtitleText}</Typography>
-        <Typography variant="body1" gutterBottom>{strSerial}</Typography>
         <Typography variant="h4" gutterBottom>{strCurrentSerial}</Typography>
       </div>
     );

@@ -41,7 +41,6 @@ function TestController:__setStartPage(strFilename, atReplace)
   local tBuffer = self.m_buffer
 
   -- Clear all fields in the tester header.
-  tBuffer:setSerials(true, nil, nil)
   tBuffer:setTestNames({})
   tBuffer:setCurrentSerial(nil)
   tBuffer:setRunningTest(nil)

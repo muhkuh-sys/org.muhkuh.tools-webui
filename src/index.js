@@ -113,8 +113,6 @@ class TesterApp extends React.Component {
       tTest_Title: null,
       tTest_Subtitle: null,
       tTest_fHasSerial: false,
-      tTest_uiFirstSerial: 0,
-      tTest_uiLastSerial: 0,
       tTest_astrTestNames: [],
       tTest_atTestStati: [],
       tTest_atDocuments: [],
@@ -337,22 +335,10 @@ console.log(this.strJsxHeaderCode);
       fHasSerial = tJson.hasSerial;
     }
 
-    let uiFirstSerial = null;
-    if('firstSerial' in tJson) {
-      uiFirstSerial = tJson.firstSerial;
-    }
-
-    let uiLastSerial = null;
-    if('lastSerial' in tJson) {
-      uiLastSerial = tJson.lastSerial;
-    }
-
     this.setState({
       tTest_Title: strTitle,
       tTest_Subtitle: strSubtitle,
-      tTest_fHasSerial: fHasSerial,
-      tTest_uiFirstSerial: uiFirstSerial,
-      tTest_uiLastSerial: uiLastSerial
+      tTest_fHasSerial: fHasSerial
     });
   }
 
@@ -528,14 +514,6 @@ console.log(this.strJsxHeaderCode);
 
   getCurrentSerial = () => {
     return this.state.tRunningTest_uiCurrentSerial;
-  };
-
-  getFirstSerial = () => {
-    return this.state.tTest_uiFirstSerial;
-  };
-
-  getLastSerial = () => {
-    return this.state.tTest_uiLastSerial;
   };
 
   getRunningTest = () => {
@@ -844,7 +822,7 @@ console.log(this.strJsxHeaderCode);
                   {tAppMenu}
                 </div>
               </Drawer>
-              <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiFirstSerial={this.state.tTest_uiFirstSerial} uiLastSerial={this.state.tTest_uiLastSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} />
+              <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} />
               <TesterUISummary astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
             </div>
             <div id='TesterTabContents'>

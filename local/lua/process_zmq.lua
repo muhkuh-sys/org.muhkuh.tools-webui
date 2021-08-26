@@ -32,7 +32,6 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingP
     INT = self.__onZmqReceiveInt,
     IDA = self.__onZmqReceiveIda,
     TTL = self.__onZmqReceiveTtl,
-    SER = self.__onZmqReceiveSer,
     NAM = self.__onZmqReceiveNam,
     STA = self.__onZmqReceiveSta,
     CUR = self.__onZmqReceiveCur,
@@ -150,22 +149,6 @@ function ProcessZmq:__onZmqReceiveTtl(tHandle, strMessage)
     local strTitle = tJson.title
     local strSubtitle = tJson.subtitle
     self.m_buffer:setTitle(strTitle, strSubtitle)
-  end
-end
-
-
-
-function ProcessZmq:__onZmqReceiveSer(tHandle, strMessage)
-  local tLog = self.tLog
-  local strResponseRaw = string.match(strMessage, '^SER(.*)')
-  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
-  if tJson==nil then
-    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
-  else
-    local fHasSerial = tJson.hasSerial
-    local uiFirstSerial = tJson.firstSerial
-    local uiLastSerial = tJson.lastSerial
-    self.m_buffer:setSerials(fHasSerial, uiFirstSerial, uiLastSerial)
   end
 end
 

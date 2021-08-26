@@ -20,9 +20,7 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
 
   self.strTitle = ''
   self.strSubTitle = ''
-  self.fHasSerial = false
-  self.uiFirstSerial = 0
-  self.uiLastSerial = 0
+  self.fHasSerial = true
 
   self.uiCurrentSerial = nil
   self.uiRunningTest = nil
@@ -121,28 +119,6 @@ function WebUiBuffer:setTitle(strTitle, strSubTitle)
     -- Accept the new values.
     self.strTitle = strTitle
     self.strSubTitle = strSubTitle
-
-    -- Push the new values to the UI if there is a connection.
-    self:__sendTitle()
-  end
-end
-
-
-
-function WebUiBuffer:setSerials(fHasSerial, uiFirstSerial, uiLastSerial)
-  fHasSerial = (fHasSerial==true)
-  uiFirstSerial = tonumber(uiFirstSerial)
-  uiLastSerial = tonumber(uiLastSerial)
-
-  -- Did something change?
-  local fChanged = (self.fHasSerial~=fHasSerial) or (self.uiFirstSerial~=uiFirstSerial) or (self.uiLastSerial~=uiLastSerial)
-  if fChanged==true then
-    -- Yes, something changed.
-
-    -- Accept the new values.
-    self.fHasSerial = fHasSerial
-    self.uiFirstSerial = uiFirstSerial
-    self.uiLastSerial = uiLastSerial
 
     -- Push the new values to the UI if there is a connection.
     self:__sendTitle()
@@ -316,9 +292,7 @@ function WebUiBuffer:__sendTitle()
       id = 'SetTitle',
       title = self.strTitle,
       subtitle = self.strSubTitle,
-      hasSerial = self.fHasSerial,
-      firstSerial = self.uiFirstSerial,
-      lastSerial = self.uiLastSerial
+      hasSerial = self.fHasSerial
     }
     local strJson = self.json.encode(tMessage)
     tConnection:write(strJson)
