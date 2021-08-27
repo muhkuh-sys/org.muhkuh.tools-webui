@@ -7,8 +7,8 @@ Requires=time-sync.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/webui-0.0.2
-ExecStart=/opt/webui-0.0.2/lua5.4 websocket_server.lua
+WorkingDirectory=/opt/webui-0.0.3
+ExecStart=/opt/webui-0.0.3/lua5.4 websocket_server.lua
 User=muhkuh
 Group=muhkuh
 Restart=on-failure
