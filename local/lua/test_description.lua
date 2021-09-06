@@ -17,6 +17,7 @@ function TestDescription:_init(tLog)
   self.astrTestNames = nil
   self.tSystem = nil
   self.atDocuments = nil
+  self.tConfiguration = nil
 end
 
 
@@ -27,7 +28,7 @@ end
 -- @param strName The name of the new element.
 function TestDescription.__parseTests_StartElement(tParser, strName, atAttributes)
   local aLxpAttr = tParser:getcallbacks().userdata
-  local iPosLine, iPosColumn, iPosAbs = tParser:pos()
+  local iPosLine, iPosColumn = tParser:pos()
 
   table.insert(aLxpAttr.atCurrentPath, strName)
   local strCurrentPath = table.concat(aLxpAttr.atCurrentPath, "/")
@@ -65,12 +66,30 @@ function TestDescription.__parseTests_StartElement(tParser, strName, atAttribute
         name = strName,
         pre = strPre,
         post = strPost,
-        parameter = {}
+        parameter = {},
+        errorIf = {},
+        excludeIf = {}
       }
       aLxpAttr.tTestCase = tTestCase
       aLxpAttr.strParameterName = nil
       aLxpAttr.strParameterValue = nil
+      aLxpAttr.strConditionValue = nil
+      aLxpAttr.strConditionMessage = nil
     end
+
+  elseif strCurrentPath=='/MuhkuhTest/Testcase/ErrorIf' then
+    local strMessage = atAttributes['message']
+    if strMessage==nil then
+      strMessage = ''
+    end
+    aLxpAttr.strConditionMessage = strMessage
+
+  elseif strCurrentPath=='/MuhkuhTest/Testcase/ExcludeIf' then
+    local strMessage = atAttributes['message']
+    if strMessage==nil then
+      strMessage = ''
+    end
+    aLxpAttr.strConditionMessage = strMessage
 
   elseif strCurrentPath=='/MuhkuhTest/Testcase/Parameter' then
     local strName = atAttributes['name']
@@ -116,6 +135,19 @@ function TestDescription.__parseTests_StartElement(tParser, strName, atAttribute
       aLxpAttr.strDocumentName = strName
     end
 
+  elseif strCurrentPath=='/MuhkuhTest/Configuration' then
+    aLxpAttr.strParameterName = nil
+    aLxpAttr.strParameterValue = nil
+
+  elseif strCurrentPath=='/MuhkuhTest/Configuration/Parameter' then
+    local strName = atAttributes['name']
+    if strName==nil or strName=='' then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
+    else
+      aLxpAttr.strParameterName = strName
+    end
+
 
   end
 end
@@ -127,15 +159,31 @@ end
 -- It is called when an element is closed.
 -- @param tParser The parser object.
 -- @param strName The name of the closed element.
-function TestDescription.__parseTests_EndElement(tParser, strName)
+function TestDescription.__parseTests_EndElement(tParser)
   local aLxpAttr = tParser:getcallbacks().userdata
-  local iPosLine, iPosColumn, iPosAbs = tParser:pos()
+  local iPosLine, iPosColumn = tParser:pos()
 
   local strCurrentPath = aLxpAttr.strCurrentPath
 
   if strCurrentPath=='/MuhkuhTest/Testcase' then
     table.insert(aLxpAttr.atTestCases, aLxpAttr.tTestCase)
     aLxpAttr.tTestCase = nil
+
+  elseif strCurrentPath=='/MuhkuhTest/Testcase/ErrorIf' then
+    if aLxpAttr.strConditionValue==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing condition expression.', iPosLine, iPosColumn)
+    else
+      table.insert(aLxpAttr.tTestCase.errorIf, { condition=aLxpAttr.strConditionValue, message=aLxpAttr.strConditionMessage})
+    end
+
+  elseif strCurrentPath=='/MuhkuhTest/Testcase/ExcludeIf' then
+    if aLxpAttr.strConditionValue==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing condition expression.', iPosLine, iPosColumn)
+    else
+      table.insert(aLxpAttr.tTestCase.excludeIf, { condition=aLxpAttr.strConditionValue, message=aLxpAttr.strConditionMessage})
+    end
 
   elseif strCurrentPath=='/MuhkuhTest/Testcase/Parameter' then
     if aLxpAttr.strParameterName==nil then
@@ -180,6 +228,17 @@ function TestDescription.__parseTests_EndElement(tParser, strName)
     else
       table.insert(aLxpAttr.atDocuments, {name=aLxpAttr.strDocumentName, url=aLxpAttr.strDocumentUrl})
     end
+
+  elseif strCurrentPath=='/MuhkuhTest/Configuration/Parameter' then
+    if aLxpAttr.strParameterName==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing "name".', iPosLine, iPosColumn)
+    elseif aLxpAttr.strParameterValue==nil then
+      aLxpAttr.tResult = nil
+      aLxpAttr.tLog.error('Error in line %d, col %d: missing value for parameter.', iPosLine, iPosColumn)
+    else
+      table.insert(aLxpAttr.tConfiguration.parameter, {name=aLxpAttr.strParameterName, value=aLxpAttr.strParameterValue})
+    end
   end
 
   table.remove(aLxpAttr.atCurrentPath)
@@ -200,6 +259,12 @@ function TestDescription.__parseTests_CharacterData(tParser, strData)
   if strCurrentPath=="/MuhkuhTest/Testcase/Parameter" then
     aLxpAttr.strParameterValue = strData
 
+  elseif strCurrentPath=="/MuhkuhTest/Testcase/ErrorIf" then
+    aLxpAttr.strConditionValue = strData
+
+  elseif strCurrentPath=="/MuhkuhTest/Testcase/ExcludeIf" then
+    aLxpAttr.strConditionValue = strData
+
   elseif strCurrentPath=="/MuhkuhTest/Testcase/Connection" then
     aLxpAttr.strParameterConnection = strData
 
@@ -208,6 +273,9 @@ function TestDescription.__parseTests_CharacterData(tParser, strData)
 
   elseif strCurrentPath=='/MuhkuhTest/Documents/Document' then
     aLxpAttr.strDocumentUrl = strData
+
+  elseif strCurrentPath=="/MuhkuhTest/Configuration/Parameter" then
+    aLxpAttr.strParameterValue = strData
 
   end
 end
@@ -243,6 +311,7 @@ function TestDescription:__parse_tests(strTestsFile)
       strDocumentName = nil,
       strDocumentUrl = nil,
       atDocuments = {},
+      tConfiguration = { parameter={} },
 
       tResult = true,
       tLog = tLog
@@ -277,6 +346,7 @@ function TestDescription:__parse_tests(strTestsFile)
       self.atTestCases = aLxpAttr.atTestCases
       self.tSystem = aLxpAttr.tSystem
       self.atDocuments = aLxpAttr.atDocuments
+      self.tConfiguration = aLxpAttr.tConfiguration
       tResult = true
     end
   end
@@ -311,7 +381,7 @@ function TestDescription:parse(strTestsFile)
 
       -- Get a lookup table with the test names.
       local astrTestNames = {}
-      for uiTestIndex, tTestCase in ipairs(atTestCases) do
+      for _, tTestCase in ipairs(atTestCases) do
         table.insert(astrTestNames, tTestCase.name)
       end
       self.astrTestNames = astrTestNames
@@ -352,6 +422,18 @@ function TestDescription:getSystemParameter()
 
   if self.tSystem~=nil then
     tResult = self.tSystem.parameter
+  end
+
+  return tResult
+end
+
+
+
+function TestDescription:getConfigurationParameter()
+  local tResult
+
+  if self.tConfiguration~=nil then
+    tResult = self.tConfiguration.parameter
   end
 
   return tResult
@@ -492,6 +574,48 @@ function TestDescription:getTestCaseActionPost(uiTestCase)
   if strType=='number' then
     if uiTestCase>0 and uiTestCase<=self.uiNumberOfTests then
       tResult = self.atTestCases[uiTestCase].post
+    else
+      tLog.error('Invalid test case index for test cases 1 to %d: %d .', self.uiNumberOfTests, uiTestCase)
+    end
+  else
+    tLog.error('The test case must be a number, here it has the type %s.', strType)
+  end
+
+  return tResult
+end
+
+
+
+function TestDescription:getTestCaseExcludeIf(uiTestCase)
+  local tLog = self.tLog
+  local tResult
+
+  -- Is the test case valid?
+  local strType = type(uiTestCase)
+  if strType=='number' then
+    if uiTestCase>0 and uiTestCase<=self.uiNumberOfTests then
+      tResult = self.atTestCases[uiTestCase].excludeIf
+    else
+      tLog.error('Invalid test case index for test cases 1 to %d: %d .', self.uiNumberOfTests, uiTestCase)
+    end
+  else
+    tLog.error('The test case must be a number, here it has the type %s.', strType)
+  end
+
+  return tResult
+end
+
+
+
+function TestDescription:getTestCaseErrorIf(uiTestCase)
+  local tLog = self.tLog
+  local tResult
+
+  -- Is the test case valid?
+  local strType = type(uiTestCase)
+  if strType=='number' then
+    if uiTestCase>0 and uiTestCase<=self.uiNumberOfTests then
+      tResult = self.atTestCases[uiTestCase].errorIf
     else
       tLog.error('Invalid test case index for test cases 1 to %d: %d .', self.uiNumberOfTests, uiTestCase)
     end
