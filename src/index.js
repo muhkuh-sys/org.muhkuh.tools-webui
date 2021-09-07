@@ -899,6 +899,12 @@ function initializeLogOverlay() {
   }
   strBuffer += '\n\n';
   tTerm.write(strBuffer);
+
+  /* Add a simple resize handler for the terminal. */
+  function handleTerminalResize() {
+    TesterLog_terminal_fit.fit();
+  }
+  window.addEventListener('resize', handleTerminalResize);
 }
 
 initializeLogOverlay();
