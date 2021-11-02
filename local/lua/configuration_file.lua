@@ -49,17 +49,41 @@ function ConfigurationFile:read()
     -- The announce interval in seconds for the Kafka teststations topic.
     announce_interval = 300,
 
-    -- OPT1: The path to a folder containing an extracted test.
+    -- Choose the storage type for the test. This can be...
+    -- "FOLDER": The test is stored in a local folder. It is ready-to-run.
+    --           The option "test_path" points to the local folder.
+    -- "LOCAL_ARCHIVE": The test is in a compressed local archive.
+    --           The options "archive_path" and "test_archive" form the complete path to the archive.
+    --           It is depacked to the folder specified in "depack_path".
+    -- "REMOTE_LIST": Read a remote list from the URL specified in "remote_list_url".
+    --                Look up the station ID specified in "remote_list_station_id" to get the URL to the test archive.
+    --                Download the URL to the folder specified in "remote_list_download_folder" and
+    --                extract it to the folder specified in "remote_list_depack_path".
+    test_storage = 'FOLDER',
+
+    -- Only for test_storage="FOLDER": The path to a folder containing an extracted test.
     test_path = '',
 
-    -- OPT2: The folder where test archives are stored.
+    -- Only for test_storage="LOCAL_ARCHIVE": The folder where test archives are stored.
     archive_path = '',
 
-    -- OPT2: The file name of the test archive. It will be combined with the "archive_path" to form a complete path.
+    -- Only for test_storage="LOCAL_ARCHIVE": The file name of the test archive. It will be combined with the "archive_path" to form a complete path.
     test_archive = '',
 
-    -- OPT2: A working folder. Here the test archive will be extracted.
+    -- Only for test_storage="LOCAL_ARCHIVE": A working folder. Here the test archive will be extracted.
     depack_path = '',
+
+    -- Only for test_storage="REMOTE_LIST": The URL of the remote list mapping the station ID to a test archive.
+    remote_list_url = '',
+
+    -- Only for test_storage="REMOTE_LIST": The station ID for the lookup operation.
+    remote_list_station_id = '',
+
+    -- Only for test_storage="REMOTE_LIST": Download the archive here.
+    remote_list_download_folder = '',
+
+    -- Only for test_storage="REMOTE_LIST": Depack the downloaded archive here.
+    remote_list_depack_path = '',
 
     -- The name of the ethernet interface o use. If none specified, take the first non-local.
     interface = '',

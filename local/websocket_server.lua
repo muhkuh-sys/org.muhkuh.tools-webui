@@ -1,8 +1,179 @@
-local archive = require 'archive'
-local lfs = require 'lfs'
 local pl = require 'pl.import_into'()
 local uv  = require 'lluv'
 uv.poll_zmq = require 'lluv.poll_zmq'
+
+
+local function __prepareDepackFolder(tLog, strDepackPath)
+  local tResult = true
+  local bSeriousError = false
+  local bInstallPossible = false
+
+  -- Refuse to work with a relative depack folder.
+  if pl.path.isabs(strDepackPath)~=true then
+    strErrorMessage =string.format('The depack path "%s" is not absolute.', strDepackPath)
+    tLog.error(strErrorMessage)
+    bSeriousError = true
+    tResult = false
+  else
+    -- Does the depack folder exist?
+    if pl.path.exists(strDepackPath)~=strDepackPath then
+      -- The depack path does not exist. Try to create it now.
+      local tMkdirResult, strError = pl.path.mkdir(strDepackPath)
+      if tMkdirResult~=true then
+        strErrorMessage = string.format('Falied to create the depack path "%s": %s', strDepackPath, strError)
+        tLog.error(strErrorMessage)
+        bSeriousError = true
+        tResult = false
+      end
+    end
+
+    if tResult==true then
+      if pl.path.isdir(strDepackPath)~=true then
+        strErrorMessage = string.format('The depack path "%s" does not point to a directory.', strDepackPath)
+        tLog.error(strErrorMessage)
+        bSeriousError = true
+        tResult = false
+      end
+    end
+
+    if tResult==true then
+      -- Remove all files in the depack folder.
+      local astrObsoleteFiles = pl.dir.getallfiles(strDepackPath)
+      for _, strObsoleteFile in ipairs(astrObsoleteFiles) do
+        tLog.debug('Delete %s', strObsoleteFile)
+        local tDeleteResult, strError = pl.file.delete(strObsoleteFile)
+        if tDeleteResult~=true then
+          strErrorMessage = string.format('Failed to delete "%s": %s', strObsoleteFile, tostring(strError))
+          tLog.error(strErrorMessage)
+          bSeriousError = true
+          tResult = false
+        end
+      end
+    end
+  end
+
+  return tResult, bSeriousError, bInstallPossible
+end
+
+
+local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
+  local archive = require 'archive'
+  local lfs = require 'lfs'
+  local tResult = true
+  local bSeriousError = false
+  local bInstallPossible = false
+  local strTestBasePath
+
+  local tArcRead = archive.ArchiveRead()
+  tArcRead:support_filter_all()
+  tArcRead:support_format_all()
+
+  local tArcWrite = archive.ArchiveWriteDisk()
+  local iExtractFlags = archive.ARCHIVE_EXTRACT_NO_OVERWRITE + archive.ARCHIVE_EXTRACT_SECURE_SYMLINKS + archive.ARCHIVE_EXTRACT_SECURE_NODOTDOT + archive.ARCHIVE_EXTRACT_SECURE_NOABSOLUTEPATHS
+  tArcWrite:set_options(iExtractFlags)
+  tArcWrite:set_standard_lookup()
+
+  -- Keep the old working directory for later.
+  local strOldWorkingDir = lfs.currentdir()
+  -- Move to the extract folder.
+  local tLfsResult, strError = lfs.chdir(strDepackPath)
+  if tLfsResult~=true then
+    strErrorMessage = string.format('Failed to change to the depack path "%s": %s', strDepackPath, strError)
+    tLog.error(strErrorMessage)
+    bSeriousError = true
+    tResult = false
+  else
+    tLog.debug('Extracting archive "%s".', strTestArchivePath)
+    local r = tArcRead:open_filename(strTestArchivePath, 262144)
+    if r~=0 then
+      strErrorMessage = string.format('Failed to open the archive "%s": %s', strTestArchivePath, tArcRead:error_string())
+      tLog.error(strErrorMessage)
+      bInstallPossible = true
+      tResult = false
+    else
+      local iResult = 0
+      for tEntry in tArcRead:iter_header() do
+        local strPathName = tEntry:pathname()
+        tLog.debug('Processing entry "%s".', strPathName)
+
+        local iResult = tArcWrite:write_header(tEntry)
+        if iResult~=0 then
+          strErrorMessage = string.format('Failed to create "%s": %s', strPathName, tArcWrite:error_string())
+          tLog.error(strErrorMessage)
+          bSeriousError = true
+          tResult = false
+          break
+        end
+
+        -- Copy the data in chunks of 256k.
+        repeat
+          local strData = tArcRead:read_data(262144)
+          if strData~=nil then
+            iResult = tArcWrite:write_data(strData)
+            if iResult~=0 then
+              strErrorMessage = string.format('Failed to write "%s": %s', strPathName, tArcWrite:error_string())
+              tLog.error(strErrorMessage)
+              bSeriousError = true
+              tResult = false
+              break
+            end
+          end
+        until strData==nil
+
+        iResult = tArcWrite:finish_entry()
+        if iResult~=0 then
+          strErrorMessage = string.format('Failed to write "%s": %s', strPathName, tArcWrite:error_string())
+          tLog.error(strErrorMessage)
+          bSeriousError = true
+          tResult = false
+          break
+        end
+      end
+      tArcRead:close()
+      tArcWrite:close()
+    end
+
+    -- Restore the old working directory.
+    local tLfsResult, strError = lfs.chdir(strOldWorkingDir)
+    if tLfsResult~=true then
+      strErrorMessage = string.format('Failed to restore the working directory "%s" after depacking: %s', strOldWorkingDir, strError)
+      tLog.error(strErrorMessage)
+      bSeriousError = true
+      tResult = false
+    end
+
+    if tResult==true then
+      -- Find all "tests.xml" files.
+      local astrTestsXmlPaths = {}
+      for strPathName, fIsDirectory in pl.dir.dirtree(strDepackPath) do
+        if fIsDirectory==false and pl.path.basename(strPathName)=='tests.xml' then
+          table.insert(astrTestsXmlPaths, strPathName)
+        end
+      end
+      -- There must be exactly one tests.xml file.
+      local sizTestsXmlPaths = #astrTestsXmlPaths
+      if sizTestsXmlPaths==0 then
+        strErrorMessage = string.format('No "tests.xml" found in path "%s".', strDepackPath)
+        tLog.error(strErrorMessage)
+        bInstallPossible = true
+        tResult = false
+      elseif sizTestsXmlPaths~=1 then
+        strErrorMessage = string.format('More than 1 "tests.xml" found in path "%s".', strDepackPath)
+        tLog.error(strErrorMessage)
+        bInstallPossible = true
+        tResult = false
+      else
+        -- Get the path to the tests.xml path. The dirname is the test base path.
+        local strTestXmlFile = astrTestsXmlPaths[1]
+        strTestBasePath = pl.path.dirname(strTestXmlFile)
+        tLog.debug('Found "tests.xml" in path "%s".', strTestBasePath)
+      end
+    end
+  end
+
+  return tResult, bSeriousError, bInstallPossible, strTestBasePath
+end
+
 
 -- Set the logger level from the command line options.
 local strLogLevel = 'debug'
@@ -97,9 +268,10 @@ local strErrorMessage
 local strTestBasePath = ''
 
 -- Does the configuration have a path to a test folder?
-local strTestPath = tConfiguration.test_path
-if strTestPath~='' then
-  -- Config option "test_path" is set -> use a folder and do not depack an archive.
+local strTestStorage = tConfiguration.test_storage
+if strTestStorage=='FOLDER' then
+  -- Use a folder with a ready-to-run test.
+  local strTestPath = tConfiguration.test_path
 
   -- Get an absolute path to the test.
   strTestBasePath = pl.path.abspath(strTestPath)
@@ -125,53 +297,12 @@ if strTestPath~='' then
       tResult = false
     end
   end
-else
+elseif strTestStorage=='LOCAL_ARCHIVE' then
   -- Config option "test_path" is not set -> depack an archive.
 
-  -- Refuse to work with a relative depack folder.
   local strDepackPath = tConfiguration.depack_path
-  if pl.path.isabs(strDepackPath)~=true then
-    strErrorMessage =string.format('The depack path "%s" is not absolute.', strDepackPath)
-    tLog.error(strErrorMessage)
-    bSeriousError = true
-    tResult = false
-  else
-    -- Does the depack folder exist?
-    if pl.path.exists(strDepackPath)~=strDepackPath then
-      -- The depack path does not exist. Try to create it now.
-      local tMkdirResult, strError = pl.path.mkdir(strDepackPath)
-      if tMkdirResult~=true then
-        strErrorMessage = string.format('Falied to create the depack path "%s": %s', strDepackPath, strError)
-        tLog.error(strErrorMessage)
-        bSeriousError = true
-        tResult = false
-      end
-    end
-
-    if tResult==true then
-      if pl.path.isdir(strDepackPath)~=true then
-        strErrorMessage = string.format('The depack path "%s" does not point to a directory.', strDepackPath)
-        tLog.error(strErrorMessage)
-        bSeriousError = true
-        tResult = false
-      end
-    end
-
-    if tResult==true then
-      -- Remove all files in the depack folder.
-      local astrObsoleteFiles = pl.dir.getallfiles(strDepackPath)
-      for _, strObsoleteFile in ipairs(astrObsoleteFiles) do
-        tLog.debug('Delete %s', strObsoleteFile)
-        local tDeleteResult, strError = pl.file.delete(strObsoleteFile)
-        if tDeleteResult~=true then
-          strErrorMessage = string.format('Failed to delete "%s": %s', strObsoleteFile, tostring(strError))
-          tLog.error(strErrorMessage)
-          bSeriousError = true
-          tResult = false
-        end
-      end
-    end
-
+  tResult, bSeriousError, bInstallPossible = __prepareDepackFolder(tLog, strDepackPath)
+  if tResult==true then
     local strArchivePath = tConfiguration.archive_path
     if tResult==true then
       if pl.path.exists(strArchivePath)~=strArchivePath then
@@ -210,90 +341,26 @@ else
         bInstallPossible = true
         tResult = false
       else
-        local tArc = archive.ArchiveRead()
-        tArc:support_filter_all()
-        tArc:support_format_all()
-
-        local iExtractFlags = archive.ARCHIVE_EXTRACT_SECURE_SYMLINKS + archive.ARCHIVE_EXTRACT_SECURE_NODOTDOT + archive.ARCHIVE_EXTRACT_SECURE_NOABSOLUTEPATHS
-
-        -- Keep the old working directory for later.
-        local strOldWorkingDir = lfs.currentdir()
-        -- Move to the extract folder.
-        local tLfsResult, strError = lfs.chdir(strDepackPath)
-        if tLfsResult~=true then
-          strErrorMessage = string.format('Failed to change to the depack path "%s": %s', strDepackPath, strError)
-          tLog.error(strErrorMessage)
-          bSeriousError = true
-          tResult = false
-        else
-          tLog.debug('Extracting archive "%s".', strTestArchivePath)
-          local r = tArc:open_filename(strTestArchivePath, 16384)
-          if r~=0 then
-            strErrorMessage = string.format('Failed to open the archive "%s": %s', strTestArchivePath, tArc:error_string())
+        tResult, bSeriousError, bInstallPossible, strTestBasePath = __extractArchive(tLog, strTestArchivePath, strDepackPath)
+        if tResult==true then
+          local strTestXmlFile = pl.path.join(strTestBasePath, 'tests.xml')
+          bHaveValidTestDescription = tTestDescription:parse(strTestXmlFile)
+          if bHaveValidTestDescription~=true then
+            strErrorMessage = string.format('Failed to parse the test description.')
             tLog.error(strErrorMessage)
             bInstallPossible = true
-            tResult = false
-          else
-            for tEntry in tArc:iter_header() do
-              local strPathName = tEntry:pathname()
-              tLog.debug('Processing entry "%s".', strPathName)
-
-              local iResult = tArc:extract(tEntry, iExtractFlags)
-              if iResult~=0 then
-                strErrorMessage = string.format('Failed to extract entry "%s" from archive "%s".', strPathName, strTestArchivePath)
-                tLog.error(strErrorMessage)
-                bInstallPossible = true
-                tResult = false
-                break
-              end
-            end
-          end
-
-          -- Restore the old working directory.
-          local tLfsResult, strError = lfs.chdir(strOldWorkingDir)
-          if tLfsResult~=true then
-            strErrorMessage = string.format('Failed to restore the working directory "%s" after depacking: %s', strOldWorkingDir, strError)
-            tLog.error(strErrorMessage)
-            bSeriousError = true
-            tResult = false
-          else
-            -- Find all "tests.xml" files.
-            local astrTestsXmlPaths = {}
-            for strPathName, fIsDirectory in pl.dir.dirtree(strDepackPath) do
-              if fIsDirectory==false and pl.path.basename(strPathName)=='tests.xml' then
-                table.insert(astrTestsXmlPaths, strPathName)
-              end
-            end
-            -- There must be exactly one tests.xml file.
-            local sizTestsXmlPaths = #astrTestsXmlPaths
-            if sizTestsXmlPaths==0 then
-              strErrorMessage = string.format('No "tests.xml" found in path "%s".', strDepackPath)
-              tLog.error(strErrorMessage)
-              bInstallPossible = true
-              tResult = false
-            elseif sizTestsXmlPaths~=1 then
-              strErrorMessage = string.format('More than 1 "tests.xml" found in path "%s".', strDepackPath)
-              tLog.error(strErrorMessage)
-              bInstallPossible = true
-              tResult = false
-            else
-              -- Get the path to the tests.xml path. The dirname is the test base path.
-              local strTestXmlFile = astrTestsXmlPaths[1]
-              strTestBasePath = pl.path.dirname(strTestXmlFile)
-              tLog.debug('Found "tests.xml" in path "%s".', strTestBasePath)
-
-              bHaveValidTestDescription = tTestDescription:parse(strTestXmlFile)
-              if bHaveValidTestDescription~=true then
-                strErrorMessage = string.format('Failed to parse the test description.')
-                tLog.error(strErrorMessage)
-                bInstallPossible = true
-              end
-            end
           end
         end
       end
     end
   end
+elseif strTestStorage=='REMOTE_LIST' then
+
+else
+  strErrorMessage = string.format('The configuration option "test_storage" defines an invalid type: %s', strTestStorage)
+  tLog.error(strErrorMessage)
+  bSeriousError = true
+  tResult = false
 end
 
 
