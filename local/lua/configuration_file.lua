@@ -43,19 +43,48 @@ function ConfigurationFile:read()
     tServerConfig = pl.config.read(strServerConfigFile)
   end
   local tConfigurationDefault = {
+    -- The station name for the announcement in the Kafka teststations topic and the "friendly name" in SSDP.
     station_name = 'Muhkuh Teststation Unconfigured',
+
+    -- The announce interval in seconds for the Kafka teststations topic.
     announce_interval = 300,
+
+    -- OPT1: The path to a folder containing an extracted test.
     test_path = '',
+
+    -- OPT2: The folder where test archives are stored.
     archive_path = '',
+
+    -- OPT2: The file name of the test archive. It will be combined with the "archive_path" to form a complete path.
     test_archive = '',
+
+    -- OPT2: A working folder. Here the test archive will be extracted.
     depack_path = '',
+
+    -- The name of the ethernet interface o use. If none specified, take the first non-local.
     interface = '',
+
+    -- The port of the webserver. Must be >1024 if the server is starting with non-root rights.
     webserver_port = 9090,
+
+    -- The port number for the websocket. This is a regular port on the teststation server.
+    -- It can be changed if it colliges with something else.
     websocket_port = 12345,
+
+    -- This is used as the SSDP serial number.
     system_serial = 4321,
+
+    -- One or more Kafka brokers to contact.
     kafka_broker = '',
+
+    -- Options for the Kafka conneection.
     kafka_options = {},
+
+    -- Store a copy of all kafka messages in /tmp .
     kafka_debugging = false,
+
+    -- A second configuration file. If this option is present, the entries from the file will extend and override the
+    -- entries in the mail configuration.
     local_config = ''
   }
   -- Merge the default and server configuration.
