@@ -348,7 +348,7 @@ else
   tLog.warning('Not connecting to any kafka brokers. The logs will not be saved.')
 end
 -- Announce the test station in regular intervals.
--- The interval can be set in milliseconds with the "announce_interval" item in the configuration.
+-- The interval can be set in seconds with the "announce_interval" item in the configuration.
 local tAnnounceData = {
   ip = strInterfaceAddress,
   port = tConfiguration.webserver_port
