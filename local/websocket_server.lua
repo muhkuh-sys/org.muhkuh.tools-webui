@@ -3,56 +3,62 @@ local uv  = require 'lluv'
 uv.poll_zmq = require 'lluv.poll_zmq'
 
 
-local function __prepareDepackFolder(tLog, strDepackPath)
+local function __prepareFolder(tLog, strPath, strName)
   local tResult = true
-  local bSeriousError = false
   local bInstallPossible = false
+  local strErrorMessage
 
-  -- Refuse to work with a relative depack folder.
-  if pl.path.isabs(strDepackPath)~=true then
-    strErrorMessage =string.format('The depack path "%s" is not absolute.', strDepackPath)
+  -- Refuse to work with a relative folder.
+  if pl.path.isabs(strPath)~=true then
+    strErrorMessage =string.format('The %s path "%s" is not absolute.', strName, strPath)
     tLog.error(strErrorMessage)
-    bSeriousError = true
     tResult = false
   else
-    -- Does the depack folder exist?
-    if pl.path.exists(strDepackPath)~=strDepackPath then
-      -- The depack path does not exist. Try to create it now.
-      local tMkdirResult, strError = pl.path.mkdir(strDepackPath)
+    -- Does the folder exist?
+    if pl.path.exists(strPath)~=strPath then
+      -- The path does not exist. Try to create it now.
+      local tMkdirResult, strError = pl.dir.makepath(strPath)
       if tMkdirResult~=true then
-        strErrorMessage = string.format('Falied to create the depack path "%s": %s', strDepackPath, strError)
+        strErrorMessage = string.format('Failed to create the %s path "%s": %s', strName, strPath, strError)
         tLog.error(strErrorMessage)
-        bSeriousError = true
         tResult = false
       end
     end
 
     if tResult==true then
-      if pl.path.isdir(strDepackPath)~=true then
-        strErrorMessage = string.format('The depack path "%s" does not point to a directory.', strDepackPath)
+      if pl.path.isdir(strPath)~=true then
+        strErrorMessage = string.format('The %s path "%s" does not point to a directory.', strName, strPath)
         tLog.error(strErrorMessage)
-        bSeriousError = true
         tResult = false
-      end
-    end
-
-    if tResult==true then
-      -- Remove all files in the depack folder.
-      local astrObsoleteFiles = pl.dir.getallfiles(strDepackPath)
-      for _, strObsoleteFile in ipairs(astrObsoleteFiles) do
-        tLog.debug('Delete %s', strObsoleteFile)
-        local tDeleteResult, strError = pl.file.delete(strObsoleteFile)
-        if tDeleteResult~=true then
-          strErrorMessage = string.format('Failed to delete "%s": %s', strObsoleteFile, tostring(strError))
-          tLog.error(strErrorMessage)
-          bSeriousError = true
-          tResult = false
-        end
       end
     end
   end
 
-  return tResult, bSeriousError, bInstallPossible
+  return tResult, bInstallPossible, strErrorMessage
+end
+
+
+local function __prepareAndCleanFolder(tLog, strPath, strName)
+  local tResult = true
+  local bInstallPossible = false
+  local strErrorMessage
+
+  local tResult, bInstallPossible, strErrorMessage = __prepareFolder(tLog, strPath, strName)
+  if tResult==true then
+    -- Remove all files in the depack folder.
+    local astrObsoleteFiles = pl.dir.getallfiles(strPath)
+    for _, strObsoleteFile in ipairs(astrObsoleteFiles) do
+      tLog.debug('Delete %s', strObsoleteFile)
+      local tDeleteResult, strError = pl.file.delete(strObsoleteFile)
+      if tDeleteResult~=true then
+        strErrorMessage = string.format('Failed to delete "%s": %s', strObsoleteFile, tostring(strError))
+        tLog.error(strErrorMessage)
+        tResult = false
+      end
+    end
+  end
+
+  return tResult, bInstallPossible, strErrorMessage
 end
 
 
@@ -60,9 +66,9 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
   local archive = require 'archive'
   local lfs = require 'lfs'
   local tResult = true
-  local bSeriousError = false
   local bInstallPossible = false
   local strTestBasePath
+  local strErrorMessage
 
   local tArcRead = archive.ArchiveRead()
   tArcRead:support_filter_all()
@@ -80,7 +86,6 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
   if tLfsResult~=true then
     strErrorMessage = string.format('Failed to change to the depack path "%s": %s', strDepackPath, strError)
     tLog.error(strErrorMessage)
-    bSeriousError = true
     tResult = false
   else
     tLog.debug('Extracting archive "%s".', strTestArchivePath)
@@ -100,7 +105,6 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
         if iResult~=0 then
           strErrorMessage = string.format('Failed to create "%s": %s', strPathName, tArcWrite:error_string())
           tLog.error(strErrorMessage)
-          bSeriousError = true
           tResult = false
           break
         end
@@ -113,7 +117,6 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
             if iResult~=0 then
               strErrorMessage = string.format('Failed to write "%s": %s', strPathName, tArcWrite:error_string())
               tLog.error(strErrorMessage)
-              bSeriousError = true
               tResult = false
               break
             end
@@ -124,7 +127,6 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
         if iResult~=0 then
           strErrorMessage = string.format('Failed to write "%s": %s', strPathName, tArcWrite:error_string())
           tLog.error(strErrorMessage)
-          bSeriousError = true
           tResult = false
           break
         end
@@ -138,7 +140,6 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
     if tLfsResult~=true then
       strErrorMessage = string.format('Failed to restore the working directory "%s" after depacking: %s', strOldWorkingDir, strError)
       tLog.error(strErrorMessage)
-      bSeriousError = true
       tResult = false
     end
 
@@ -171,7 +172,346 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
     end
   end
 
-  return tResult, bSeriousError, bInstallPossible, strTestBasePath
+  return tResult, bInstallPossible, strTestBasePath, strErrorMessage
+end
+
+
+local function __download(tLog, strUrl)
+  local curl = require 'lcurl'
+  local tResult
+  local strMessage
+
+  local tCURL = curl.easy()
+
+  -- Set the URL to download.
+  tCURL:setopt_url(strUrl)
+
+  -- Collect the received data in a table.
+  local atDownloadData = {}
+  tLastProgressTime = 0
+
+  -- Allow redirects. This is important for all big hosters which use cloud
+  -- services in the background.
+  tCURL:setopt(curl.OPT_FOLLOWLOCATION, true)
+
+  -- Set the write function.
+  -- The write function is called with a configurable first parameter. The
+  -- second parameter will be a string with the received data.
+  -- Here we want to insert the string of received data in the table
+  -- atDownloadData.
+  tCURL:setopt_writefunction(table.insert, atDownloadData)
+
+  -- Show progress information.
+  local tLastProgressTime = 0
+  tCURL:setopt_noprogress(false)
+  tCURL:setopt_progressfunction(function(tDummy, ulTotal, ulNow)
+    tNow = os.time()
+    if os.difftime(tNow, tLastProgressTime)>=2 then
+      tLastProgressTime = tNow
+      if ulTotal~=nil and ulNow~=nil then
+        if ulTotal~=0 then
+          local ulPercent = math.floor(0.5 + (ulNow * 100.0 / ulTotal))
+          tLog.debug('Downloading % 3d%% (% 8d/% 8d bytes)', ulPercent, ulNow, ulTotal)
+        else
+          tLog.debug('Downloading %d bytes', ulNow)
+        end
+      end
+    end
+  end, 1234)
+
+  local tCallResult, strError = pcall(tCURL.perform, tCURL)
+  if tCallResult~=true then
+    tResult = nil
+    strMessage = string.format('Failed to retrieve URL "%s": %s', strUrl, strError)
+  else
+    local uiHttpResult = tCURL:getinfo(curl.INFO_RESPONSE_CODE)
+    if uiHttpResult==200 then
+      tResult = table.concat(atDownloadData)
+    else
+      tResult = nil
+      strMessage = string.format('Error downloading URL "%s": HTTP response %s', strUrl, tostring(uiHttpResult))
+    end
+  end
+  tCURL:close()
+
+  return tResult, strMessage
+end
+
+
+--- Convert a string to a HEX dump.
+-- Convert each char in the string to its HEX representation.
+-- @param strBin The string with the data to dump.
+-- @return A HEX dump of strBin.
+local function __bin_to_hex(strBin)
+  local aHashHex = {}
+  for iCnt=1,string.len(strBin) do
+    table.insert(aHashHex, string.format('%02x', string.byte(strBin, iCnt)))
+  end
+  return table.concat(aHashHex)
+end
+
+
+local function __downloadBestHash(tLog, strBaseUrl)
+  -- Use mhash to generate the hash sums.
+  local mhash = require 'mhash'
+
+  -- The table lists the accepted hash sums. They are sorted by quality.
+  -- SHA384 is the best and MD5 the worst.
+  local atMhashHashes = {
+    { name='sha384', id=mhash.MHASH_SHA384 },
+    { name='sha512', id=mhash.MHASH_SHA512 },
+    { name='sha224', id=mhash.MHASH_SHA224 },
+    { name='sha256', id=mhash.MHASH_SHA256 },
+    { name='sha1',   id=mhash.MHASH_SHA1 },
+    { name='md5',    id=mhash.MHASH_MD5 }
+  }
+
+  -- Placeholders for the result.
+  local tHashID
+  local strHashServer
+  local strHashName
+
+  -- Loop over all accepted hash algorithms.
+  for _, tAttr in ipairs(atMhashHashes) do
+    -- Append the name with a dot to the base URL. This is the hash file.
+    local strName = tAttr.name
+    local strUrl = strBaseUrl .. '.' .. strName
+    tLog.debug('Looking for a %s hash in %s.', strName, strUrl)
+    -- Try to download the hash file.
+    local strData, strError = __download(tLog, strUrl)
+    if strData~=nil then
+      tLog.debug('Downloaded %s hash.', strName)
+      -- Try to parse the hash.
+      local strHex = string.match(pl.stringx.strip(strData), '^([0-9a-fA-F]+)')
+      if strHex==nil then
+        tLog.debug('The URL %s contains no hash.', strUrl)
+      else
+        -- Check if the hash has the expected size.
+        local sizHex = string.len(strHex)
+        local uiBlocksize = mhash.get_block_size(tAttr.id)
+        if sizHex~=(uiBlocksize*2) then
+          tLog.debug('Invalid size for a %s hash. Expected %d bytes, but found %f.', strName, uiBlocksize, sizHex/2.0)
+        else
+          tLog.debug('Found a valid %s hash.', strName)
+          tHashID = tAttr.id
+          strHashServer = strHex
+          strHashName = strName
+          break
+        end
+      end
+    end
+  end
+
+  return tHashID, strHashServer, strHashName
+end
+
+
+local function __findBestHash(tLog, strBaseFile)
+  -- Use mhash to generate the hash sums.
+  local mhash = require 'mhash'
+
+  -- The table lists the accepted hash sums. They are sorted by quality.
+  -- SHA384 is the best and MD5 the worst.
+  local atMhashHashes = {
+    { name='sha384', id=mhash.MHASH_SHA384 },
+    { name='sha512', id=mhash.MHASH_SHA512 },
+    { name='sha224', id=mhash.MHASH_SHA224 },
+    { name='sha256', id=mhash.MHASH_SHA256 },
+    { name='sha1',   id=mhash.MHASH_SHA1 },
+    { name='md5',    id=mhash.MHASH_MD5 }
+  }
+
+  -- Placeholders for the result.
+  local tHashID
+  local strHashServer
+  local strHashName
+
+  -- Loop over all accepted hash algorithms.
+  for _, tAttr in ipairs(atMhashHashes) do
+    -- Append the name with a dot to the base URL. This is the hash file.
+    local strName = tAttr.name
+    local strFile = strBaseFile .. '.' .. strName
+    tLog.debug('Looking for a %s hash in %s.', strName, strFile)
+    -- Try to read the hash file.
+    if pl.path.isfile(strFile)==true then
+      local strData, strError = pl.utils.readfile(strFile)
+      if strData~=nil then
+        tLog.debug('Found %s hash.', strName)
+        -- Try to parse the hash.
+        local strHex = string.match(pl.stringx.strip(strData), '^([0-9a-fA-F]+)')
+        if strHex==nil then
+          tLog.debug('The file %s contains no hash.', strFile)
+        else
+          -- Check if the hash has the expected size.
+          local sizHex = string.len(strHex)
+          local uiBlocksize = mhash.get_block_size(tAttr.id)
+          if sizHex~=(uiBlocksize*2) then
+            tLog.debug('Invalid size for a %s hash. Expected %d bytes, but found %f.', strName, uiBlocksize, sizHex/2.0)
+          else
+            tLog.debug('Found a valid %s hash.', strName)
+            tHashID = tAttr.id
+            strHashServer = strHex
+            strHashName = strName
+            break
+          end
+        end
+      end
+    end
+  end
+
+  return tHashID, strHashServer, strHashName
+end
+
+
+local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder, strRemoteListDepackPath)
+  local tResult = true
+  local bInstallPossible = false
+  local strTestBasePath
+  local strErrorMessage
+
+  if strRemoteListUrl==nil or strRemoteListUrl=='' then
+    strErrorMessage = 'Test storage "REMOTE_LIST" selected, but no "remote_list_url" found.'
+    tResult = false
+  elseif strRemoteListStationId==nil or strRemoteListStationId=='' then
+    strErrorMessage = 'Test storage "REMOTE_LIST" selected, but no "remote_list_station_id" found.'
+    tResult = false
+  elseif strRemoteDownloadFolder==nil or strRemoteDownloadFolder=='' then
+    strErrorMessage = 'Test storage "REMOTE_LIST" selected, but no "remote_list_download_folder" found.'
+    tResult = false
+  elseif strRemoteListDepackPath==nil or strRemoteListDepackPath=='' then
+    strErrorMessage = 'Test storage "REMOTE_LIST" selected, but no "remote_list_depack_path" found.'
+    tResult = false
+
+  else
+    tResult, bInstallPossible, strErrorMessage = __prepareFolder(tLog, strRemoteDownloadFolder, 'download')
+    if tResult==true then
+      tResult, bInstallPossible, strErrorMessage = __prepareAndCleanFolder(tLog, strRemoteListDepackPath, 'depack')
+      if tResult==true then
+
+        tLog.debug('Downloading test list from %s .', strRemoteListUrl)
+        local strList, strDlError = __download(tLog, strRemoteListUrl)
+        if strList==nil then
+          strErrorMessage = string.format('Failed to download the list from "%s": %s', strRemoteListUrl, strDlError)
+          tResult = false
+        else
+          local dkjson = require 'dkjson'
+          local tList, strJsonError = dkjson.decode(strList)
+          if tList==nil then
+            strErrorMessage = string.format('Failed to parse the downloaded list from "%s" as JSON: %s', strRemoteListUrl, strJsonError)
+            tResult = false
+          else
+            -- TODO: Schema test?
+
+            tLog.debug('Looking for station ID "%s" in the downloaded test list.', strRemoteListStationId)
+            -- Search all mapping entries for the station name.
+            local strMatchingUrl
+            for strUrl, atStationIDs in pairs(tList.mapping) do
+              local iIdx = pl.tablex.find(atStationIDs,  strRemoteListStationId)
+              if iIdx~=nil then
+                strMatchingUrl = strUrl
+                break
+              end
+            end
+
+            if strMatchingUrl==nil then
+              strErrorMessage = string.format('The station ID "%s" was not found in the list "%s".', strRemoteListStationId, strRemoteListUrl)
+              tResult = false
+            else
+              -- Get the optional base URL.
+              local strBaseUrl = tList.baseUrl or ''
+              local strUrl = strMatchingUrl
+              if strBaseUrl~='' then
+                strBaseUrl = pl.stringx.rstrip(strBaseUrl, '/')
+                strMatchingUrl = pl.stringx.lstrip(strMatchingUrl, '/')
+                strUrl = strBaseUrl .. '/' .. strMatchingUrl
+              end
+              tLog.debug('Found a matching URL: %s', strUrl)
+
+              -- Check if the archive was already downloaded.
+              local fHaveLocalFiles = false
+              local strLocalArchive = pl.path.join(strRemoteDownloadFolder, pl.path.basename(strUrl))
+              if pl.path.exists(strLocalArchive)==strLocalArchive then
+                if pl.path.isfile(strLocalArchive)==false then
+                  strErrorMessage = string.format('The download folder contains a directory with the name of the archive: %s', strLocalArchive)
+                  tResult = false
+                else
+                  -- Search the best hash for the file.
+                  local tHashID, strHashServer, strHashName = __findBestHash(tLog, strLocalArchive)
+                  if tHashID==nil then
+                    tLog.debug('No valid hash file found for "%s".', strLocalArchive)
+                  else
+                    -- Check the hash.
+                    local tState = mhash.mhash_state()
+                    tState:init(tHashID)
+                    local tFile, strError = io.open(strLocalArchive, 'rb')
+                    if tFile==nil then
+                      tLog.debug('Failed to read "%s": %s', strLocalArchive, strError)
+                    else
+                      repeat
+                        local tChunk = tFile:read(16384)
+                        if tChunk~=nil then
+                          tState:hash(tChunk)
+                        end
+                      until tChunk==nil
+                      tFile:close()
+                      local strHashMy = __bin_to_hex(tState:hash_end())
+                      if strHashServer~=strHashMy then
+                        tLog.debug('The hash for the file "%s" does not match.', strLocalArchive)
+                      else
+                        fHaveLocalFiles = true
+                      end
+                    end
+                  end
+
+                  if fHaveLocalFiles~=true then
+                    pl.file.delete(strLocalArchive)
+                  end
+                end
+              end
+
+              if tResult==true and fHaveLocalFiles~=true then
+                local strTestData, strDlError2 = __download(tLog, strUrl)
+                if strTestData==nil then
+                  strErrorMessage = string.format('Failed to download the test archive "%s": %s', strUrl, strDlError2)
+                  tResult = false
+                else
+                  -- Try to get the hash sum.
+                  local tHashID, strHashServer, strHashName = __downloadBestHash(tLog, strUrl)
+                  if tHashID==nil then
+                    strErrorMessage = string.format('No valid hash file found for "%s".', strUrl)
+                    tResult = false
+                  else
+                    -- Check the hash.
+                    local tState = mhash.mhash_state()
+                    tState:init(tHashID)
+                    tState:hash(strTestData)
+                    local strHashMy = __bin_to_hex(tState:hash_end())
+                    if strHashServer~=strHashMy then
+                      strErrorMessage = 'The hash does not match. Did the download fail?!?'
+                      tResult = false
+                    else
+                      -- Write the archive and the hash to the download folder.
+                      local strLocalHash = strLocalArchive .. '.' .. strHashName
+                      tResult, strErrorMessage = pl.utils.writefile(strLocalArchive, strTestData, true)
+                      if tResult==true then
+                        tResult, strErrorMessage = pl.utils.writefile(strLocalHash, strHashMy, false)
+                      end
+                    end
+                  end
+                end
+              end
+
+              if tResult==true then
+                tResult, bInstallPossible, strTestBasePath, strErrorMessage = __extractArchive(tLog, strLocalArchive, strRemoteListDepackPath)
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  return tResult, bInstallPossible, strTestBasePath, strErrorMessage
 end
 
 
@@ -261,7 +601,6 @@ tSsdp:run()
 local tTestDescription = require 'test_description'(tLog)
 
 local tResult = true
-local bSeriousError = false
 local bInstallPossible = false
 local bHaveValidTestDescription = false
 local strErrorMessage
@@ -279,36 +618,17 @@ if strTestStorage=='FOLDER' then
     tLog.debug('Expanded the test path from "%s" to "%s".', strTestPath, strTestBasePath)
   end
 
-  -- Does the "tests.xml" file exist?
-  local strTestXmlFile = pl.path.join(strTestBasePath, 'tests.xml')
-  if pl.path.exists(strTestXmlFile)~=strTestXmlFile then
-    strErrorMessage =string.format('No "tests.xml" found in the test path "%s".', strTestBasePath)
-    tLog.error(strErrorMessage)
-    bSeriousError = true
-    tResult = false
-  else
-    tLog.debug('Found "tests.xml" in path "%s".', strTestBasePath)
-
-    bHaveValidTestDescription = tTestDescription:parse(strTestXmlFile)
-    if bHaveValidTestDescription~=true then
-      tLog.error('Failed to parse the test description.')
-      tLog.error(strErrorMessage)
-      bSeriousError = true
-      tResult = false
-    end
-  end
 elseif strTestStorage=='LOCAL_ARCHIVE' then
   -- Config option "test_path" is not set -> depack an archive.
 
   local strDepackPath = tConfiguration.depack_path
-  tResult, bSeriousError, bInstallPossible = __prepareDepackFolder(tLog, strDepackPath)
+  tResult, bInstallPossible, strErrorMessage = __prepareAndCleanFolder(tLog, strDepackPath, 'depack')
   if tResult==true then
     local strArchivePath = tConfiguration.archive_path
     if tResult==true then
       if pl.path.exists(strArchivePath)~=strArchivePath then
         strErrorMessage = string.format('The archive path "%s" does not exist.', strArchivePath)
         tLog.error(strErrorMessage)
-        bSeriousError = true
         tResult = false
       end
     end
@@ -317,7 +637,6 @@ elseif strTestStorage=='LOCAL_ARCHIVE' then
       if pl.path.isdir(strArchivePath)~=true then
         strErrorMessage = string.format('The archive path "%s" does not point to a directory.', strArchivePath)
         tLog.error(strErrorMessage)
-        bSeriousError = true
         tResult = false
       end
     end
@@ -341,26 +660,55 @@ elseif strTestStorage=='LOCAL_ARCHIVE' then
         bInstallPossible = true
         tResult = false
       else
-        tResult, bSeriousError, bInstallPossible, strTestBasePath = __extractArchive(tLog, strTestArchivePath, strDepackPath)
-        if tResult==true then
-          local strTestXmlFile = pl.path.join(strTestBasePath, 'tests.xml')
-          bHaveValidTestDescription = tTestDescription:parse(strTestXmlFile)
-          if bHaveValidTestDescription~=true then
-            strErrorMessage = string.format('Failed to parse the test description.')
-            tLog.error(strErrorMessage)
-            bInstallPossible = true
-          end
-        end
+        tResult, bInstallPossible, strTestBasePath, strErrorMessage = __extractArchive(tLog, strTestArchivePath, strDepackPath)
       end
     end
   end
+
 elseif strTestStorage=='REMOTE_LIST' then
+  -- Download the URL in "remote_list_url".
+  local strRemoteListUrl = tConfiguration.remote_list_url
+  local strRemoteListStationId = tConfiguration.remote_list_station_id
+  local strRemoteDownloadFolder = tConfiguration.remote_list_download_folder
+  local strRemoteListDepackPath = tConfiguration.remote_list_depack_path
+  tResult, bInstallPossible, strTestBasePath, strErrorMessage = __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder, strRemoteListDepackPath)
 
 else
   strErrorMessage = string.format('The configuration option "test_storage" defines an invalid type: %s', strTestStorage)
   tLog.error(strErrorMessage)
-  bSeriousError = true
   tResult = false
+end
+
+
+if tResult==true then
+  local tPackageInfo = pl.config.read(pl.path.join(strTestBasePath, '.jonchki/package.txt'), {convert_numbers=false})
+  local tLocalPackageInfo = pl.config.read('.jonchki/package.txt', {convert_numbers=false})
+  -- At least the host distribution ID and the host CPU architecture must match.
+  if tPackageInfo.HOST_DISTRIBUTION_ID~=tLocalPackageInfo.HOST_DISTRIBUTION_ID then
+    strErrorMessage = string.format('The distribution ID "%s" of the test station does not match the test archive: "%s"', tLocalPackageInfo.HOST_DISTRIBUTION_ID, tPackageInfo.HOST_DISTRIBUTION_ID)
+    tResult = false
+  elseif tPackageInfo.HOST_CPU_ARCHITECTURE~=tLocalPackageInfo.HOST_CPU_ARCHITECTURE then
+    strErrorMessage = string.format('The CPU architecture "%s" of the test station does not match the test archive: %s', tLocalPackageInfo.HOST_CPU_ARCHITECTURE, tPackageInfo.HOST_CPU_ARCHITECTURE)
+    tResult = false
+  else
+    -- Does the "tests.xml" file exist?
+    local strTestXmlFile = pl.path.join(strTestBasePath, 'tests.xml')
+    if pl.path.exists(strTestXmlFile)~=strTestXmlFile then
+      strErrorMessage =string.format('No "tests.xml" found in the test path "%s".', strTestBasePath)
+      tLog.error(strErrorMessage)
+      tResult = false
+    else
+      tLog.debug('Found "tests.xml" in path "%s".', strTestBasePath)
+
+      bHaveValidTestDescription = tTestDescription:parse(strTestXmlFile)
+      if bHaveValidTestDescription~=true then
+        strErrorMessage = 'Failed to parse the test description.'
+        tLog.error(strErrorMessage)
+        bInstallPossible = true
+        tResult = false
+      end
+    end
+  end
 end
 
 
