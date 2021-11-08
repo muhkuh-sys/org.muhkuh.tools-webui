@@ -67,7 +67,7 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
   local lfs = require 'lfs'
   local tResult = true
   local bInstallPossible = false
-  local strTestBasePath
+  local strTestBasePath = ''
   local strErrorMessage
 
   local tArcRead = archive.ArchiveRead()
@@ -366,7 +366,7 @@ end
 local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder, strRemoteListDepackPath)
   local tResult = true
   local bInstallPossible = false
-  local strTestBasePath
+  local strTestBasePath = ''
   local strErrorMessage
 
   if strRemoteListUrl==nil or strRemoteListUrl=='' then
