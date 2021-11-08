@@ -30,5 +30,6 @@
 		<dependency group="org.muhkuh.lua" module="kafka" artifact="lua5.4-kafka" version="0.0"/>
 		<dependency group="com.github.Tieske" module="ulid.lua" artifact="ulid.lua" version="0.1"/>
 		<dependency group="org.muhkuh.lua" module="mhash" artifact="lua5.4-mhash" version="0.9"/>
+		<dependency group="com.github.ittner" module="lua-iconv" artifact="lua5.4-lua-iconv" version="0.0"/>
 	</dependencies>
 </jonchki-artifact>
