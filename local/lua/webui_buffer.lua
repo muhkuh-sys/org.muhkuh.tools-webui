@@ -14,6 +14,15 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
   self.uv = uv
   self.ws  = require"lluv.websocket"
 
+  -- Create a new converter from ISO-8859-1 to UTF-8.
+  local iconv = require 'iconv'
+  self.iconv = iconv
+  tIConvUtf8 = iconv.new('UTF-8//TRANSLIT', 'ISO-8859-1')
+  if tIConvUtf8==nil then
+    tLog.error('Failed to create a new converter from ISO-8859-1 to UTF-8.')
+  end
+  self.tIConvUtf8 = tIConvUtf8
+
   self.tActiveConnection = nil
   self.strInteractionJsx = nil
   self.tServer = nil
@@ -49,6 +58,38 @@ end
 
 
 
+function WebUiBuffer:__toUtf8(strMsg)
+  local iconv = self.iconv
+  local tIConvUtf8 = self.tIConvUtf8
+  local tLog = self.tLog
+
+  -- Logging in the wrong encoding is still better than no logging. %-(
+  if tIConvUtf8~=nil then
+    -- Convert the data from ISO-8859-1 to UTF-8.
+    local strMsgConv, tError = tIConvUtf8:iconv(strMsg)
+    if strMsgConv==nil then
+      if tError==iconv.ERROR_NO_MEMORY then
+        strError = 'Failed to allocate enough memory in the conversion process.'
+      elseif tError==iconv.ERROR_INVALID then
+        strError = 'An invalid character was found in the input sequence.'
+      elseif tError==iconv.ERROR_INCOMPLETE then
+        strError = 'An incomplete character was found in the input sequence.'
+      elseif tError==iconv.iconv.ERROR_FINALIZED then
+        strError = 'Trying to use an already-finalized converter. This usually means that the user was tweaking the garbage collector private methods.'
+      else
+        strError = 'Unknown error.'
+      end
+      tLog.error('UTF-8 conversion failed: %s', strError)
+    else
+      strMsg = strMsgConv
+    end
+  end
+
+  return strMsg
+end
+
+
+
 function WebUiBuffer:__onLogTimer(tTimer)
   local tConnection = self.tActiveConnection
   if tConnection~=nil then
@@ -60,7 +101,7 @@ function WebUiBuffer:__onLogTimer(tTimer)
     if uiSyncedLogIndex<uiLogMessages then
       local l = {}
       for uiCnt=uiSyncedLogIndex+1, uiLogMessages, 1 do
-        table.insert(l, astrLogMessages[uiCnt])
+        table.insert(l, self:__toUtf8(astrLogMessages[uiCnt]))
       end
 
       local tMessage = {
