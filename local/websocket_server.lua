@@ -618,6 +618,13 @@ if strTestStorage=='FOLDER' then
     tLog.debug('Expanded the test path from "%s" to "%s".', strTestPath, strTestBasePath)
   end
 
+  -- Does the folder exist?
+  if pl.path.exists(strTestBasePath)~=strTestBasePath then
+    strErrorMessage = string.format('The specified "test_path" does not exist: %s', strTestBasePath)
+    tLog.error(strErrorMessage)
+    tResult = false
+  end
+
 elseif strTestStorage=='LOCAL_ARCHIVE' then
   -- Config option "test_path" is not set -> depack an archive.
 
