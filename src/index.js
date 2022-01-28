@@ -50,6 +50,7 @@ import TreeView from '@material-ui/lab/TreeView';
 import TreeItem from '@material-ui/lab/TreeItem';
 import Typography from '@material-ui/core/Typography';
 
+import Ajv from "ajv";
 import ReactImageZoom from 'react-image-zoom';
 
 import CancelIcon from '@material-ui/icons/Cancel';
@@ -179,7 +180,8 @@ class TesterApp extends React.Component {
       'TreeView': TreeView,
       'TreeItem': TreeItem,
       'Typography': Typography,
-      'ReactImageZoom': ReactImageZoom
+      'ReactImageZoom': ReactImageZoom,
+      'Ajv': Ajv
     };
     this.atComponents = atComponents;
     /* Generate the code to assign the components. */
