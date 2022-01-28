@@ -1,0 +1,10 @@
+test_storage = LOCAL_ARCHIVE
+archive_path = /absolute/path/to/the/archive/folder
+test_archive = 1234.567_demo_board-0.0.1-ubuntu-20.04_x86_64.tar.gz
+depack_path = /tmp/muhkuh
+interface =
+webserver_port = 9090
+websocket_port = 12345
+system_serial = 4321
+kafka_broker =
+kafka_options =

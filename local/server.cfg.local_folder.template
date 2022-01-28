@@ -1,0 +1,8 @@
+test_storage = FOLDER
+test_path = /absolute/path/to/the/test/folder/
+interface =
+webserver_port = 9090
+websocket_port = 12345
+system_serial = 4321
+kafka_broker =
+kafka_options =

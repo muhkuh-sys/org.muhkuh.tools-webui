@@ -14,6 +14,8 @@ local atScripts = {
   ['local/server.lua']                   = '${install_base}/',
   ['local/websocket_server.lua']         = '${install_base}/',
   ['local/server.cfg.template']          = '${install_base}/',
+  ['local/server.cfg.local_folder.template'] = '${install_base}/',
+  ['local/server.cfg.local_archive.template'] = '${install_base}/',
 
   ['local/lua/configuration_file.lua']   = '${install_lua_path}/',
   ['local/lua/log-kafka.lua']            = '${install_lua_path}/',
