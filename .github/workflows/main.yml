@@ -32,7 +32,8 @@ jobs:
       with:
         name: webpage
         path: targets/webpage.tar.gz
-  build:
+  package:
+    needs: webpage
     runs-on: ubuntu-latest
     strategy:
       matrix:
