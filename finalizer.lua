@@ -1,14 +1,10 @@
 local t = ...
-local strDistId, strDistVersion, strCpuArch = t:get_platform()
-local cLog = t.cLog
-local tLog = t.tLog
-local tResult
-local archives = require 'installer.archives'
+local strDistId = t:get_platform()
 local pl = require'pl.import_into'()
 
 
 -- Copy all additional files.
-local atScripts = {
+t:install{
   ['targets/www']                        = '${install_base}/www/',
 
   ['local/server.lua']                   = '${install_base}/',
@@ -32,13 +28,8 @@ local atScripts = {
   ['local/jsx/test_error_serious.jsx']   = '${install_base}/jsx/',
   ['local/jsx/test_start.jsx']           = '${install_base}/jsx/',
 
-  ['local/linux/systemd/muhkuh_webui.service'] = '${install_base}/systemd/',
-
   ['${report_path}']                     = '${install_base}/.jonchki/'
 }
-for strSrc, strDst in pairs(atScripts) do
-  t:install(strSrc, strDst)
-end
 
 
 -- Install the CLI init script.
@@ -47,45 +38,28 @@ if strDistId=='ubuntu' then
 end
 
 
--- Create the package file.
-local strPackageText = t:replace_template([[PACKAGE_NAME=${root_artifact_artifact}
-PACKAGE_VERSION=${root_artifact_version}
-PACKAGE_VCS_ID=${root_artifact_vcs_id}
-HOST_DISTRIBUTION_ID=${platform_distribution_id}
-HOST_DISTRIBUTION_VERSION=${platform_distribution_version}
-HOST_CPU_ARCHITECTURE=${platform_cpu_architecture}
-]])
-local strPackagePath = t:replace_template('${install_base}/.jonchki/package.txt')
-local tFileError, strError = pl.utils.writefile(strPackagePath, strPackageText, false)
+-- Filter the service file.
+local strFileSourcePath = 'local/linux/systemd/muhkuh_webui.service'
+local strFileDestinationPath = '${install_base}/systemd/'
+
+local strSrcAbs = pl.path.abspath(strFileSourcePath, t.strCwd)
+local strFileDestinationPathExpanded = t:replace_template(strFileDestinationPath)
+local strFile, strError = pl.utils.readfile(strSrcAbs, false)
+if strFile==nil then
+  tLog.error('Failed to read the file "%s": %s', strSrcAbs, strError)
+  error('Failed to read the file.')
+end
+local strFilteredFile = t:replace_template(strFile)
+pl.dir.makepath(strFileDestinationPathExpanded)
+local tFileError, strError = pl.utils.writefile(pl.path.join(strFileDestinationPathExpanded, 'ready_led.service'), strFilteredFile, false)
 if tFileError==nil then
-  tLog.error('Failed to write the package file "%s": %s', strPackagePath, strError)
-else
-  local Archive = archives(cLog)
-
-  -- Create a ZIP archive for Windows platforms. Build a "tar.gz" for Linux.
-  local strArchiveExtension
-  local tFormat
-  local atFilter
-  if strDistId=='windows' then
-    strArchiveExtension = 'zip'
-    tFormat = Archive.archive.ARCHIVE_FORMAT_ZIP
-    atFilter = {}
-  else
-    strArchiveExtension = 'tar.gz'
-    tFormat = Archive.archive.ARCHIVE_FORMAT_TAR_GNUTAR
-    atFilter = { Archive.archive.ARCHIVE_FILTER_GZIP }
-  end
-
-  local strArtifactVersion = t:replace_template('${root_artifact_artifact}-${root_artifact_version}')
-  local strDV = '-' .. strDistVersion
-  if strDistVersion=='' then
-    strDV = ''
-  end
-  local strArchive = t:replace_template(string.format('${install_base}/../../../%s-%s%s_%s.%s', strArtifactVersion, strDistId, strDV, strCpuArch, strArchiveExtension))
-  local strDiskPath = t:replace_template('${install_base}')
-  local strArchiveMemberPrefix = strArtifactVersion
-
-  tResult = Archive:pack_archive(strArchive, tFormat, atFilter, strDiskPath, strArchiveMemberPrefix)
+  tLog.error('Failed to write the file "%s": %s', strFileDestinationPathExpanded, strError)
+  error('Failed to write the file.')
 end
 
-return tResult
+
+t:createPackageFile()
+t:createHashFile()
+t:createArchive('${install_base}/../../../${default_archive_name}', 'native')
+
+return true
