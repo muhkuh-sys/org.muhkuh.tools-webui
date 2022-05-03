@@ -23,7 +23,7 @@
 		<dependency group="org.muhkuh.lua" module="archive" artifact="lua5.4-archive" version="0.0.2.2"/>
 		<dependency group="org.muhkuh.lua" module="kafka" artifact="lua5.4-kafka" version="0.0.3.2"/>
 		<dependency group="org.muhkuh.lua" module="mhash" artifact="lua5.4-mhash" version="0.9.9.9.8"/>
-		<dependency group="org.muhkuh.tools" module="webui" artifact="webui" version="0.0.4"/>
+		<dependency group="org.muhkuh.tools" module="webui" artifact="webui" version="0.0.5"/>
 	</dependencies>
 	<build-dependencies>
 	</build-dependencies>
