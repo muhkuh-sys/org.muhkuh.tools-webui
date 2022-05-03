@@ -41,6 +41,7 @@ end
 -- Filter the service file.
 local strFileSourcePath = 'local/linux/systemd/muhkuh_webui.service'
 local strFileDestinationPath = '${install_base}/systemd/'
+local strFileDestinationName = 'muhkuh_webui.service'
 
 local strSrcAbs = pl.path.abspath(strFileSourcePath, t.strCwd)
 local strFileDestinationPathExpanded = t:replace_template(strFileDestinationPath)
@@ -51,7 +52,7 @@ if strFile==nil then
 end
 local strFilteredFile = t:replace_template(strFile)
 pl.dir.makepath(strFileDestinationPathExpanded)
-local tFileError, strError = pl.utils.writefile(pl.path.join(strFileDestinationPathExpanded, 'ready_led.service'), strFilteredFile, false)
+local tFileError, strError = pl.utils.writefile(pl.path.join(strFileDestinationPathExpanded, strFileDestinationName), strFilteredFile, false)
 if tFileError==nil then
   tLog.error('Failed to write the file "%s": %s', strFileDestinationPathExpanded, strError)
   error('Failed to write the file.')
