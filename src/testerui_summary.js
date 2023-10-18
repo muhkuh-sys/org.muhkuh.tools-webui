@@ -1,9 +1,8 @@
-import React from "react";
-import ReactDOM from "react-dom";
+import React from 'react';
 
-import CircularProgress from '@material-ui/core/CircularProgress';
-import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 
 import ImgCowOk from './images/muhkuh_test_ok.svg';
 import ImgCowErr from './images/muhkuh_test_failed.svg';

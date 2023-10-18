@@ -1,7 +1,6 @@
-import React from "react";
-import ReactDOM from "react-dom";
+import React from 'react';
 
-import Typography from '@material-ui/core/Typography';
+import Typography from '@mui/material/Typography';
 
 class TesterUIHeader extends React.Component {
   constructor(props) {

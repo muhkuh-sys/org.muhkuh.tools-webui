@@ -1,5 +1,4 @@
-import React from "react";
-import ReactDOM from "react-dom";
+import React from 'react';
 
 import css from './style.css';
 import 'typeface-roboto';
@@ -10,63 +9,63 @@ const muhkuh_package_vcsversion = require("./get_vcsversion");
 
 import { transform, registerPlugin, availablePlugins } from '@babel/standalone';
 
-import Button from '@material-ui/core/Button';
-import Checkbox from '@material-ui/core/Checkbox';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import Collapse from '@material-ui/core/Collapse';
-import CssBaseline from '@material-ui/core/CssBaseline';
-import Divider from '@material-ui/core/Divider';
-import Drawer from '@material-ui/core/Drawer';
-import ExpansionPanel from '@material-ui/core/ExpansionPanel';
-import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
-import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
-import FilledInput from '@material-ui/core/FilledInput';
-import FormControl from '@material-ui/core/FormControl';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormGroup from '@material-ui/core/FormGroup';
-import FormHelperText from '@material-ui/core/FormHelperText';
-import FormLabel from '@material-ui/core/FormLabel';
-import Grid from '@material-ui/core/Grid';
-import IconButton from '@material-ui/core/IconButton';
-import Input from '@material-ui/core/Input';
-import InputLabel from '@material-ui/core/InputLabel';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import MenuItem from '@material-ui/core/MenuItem';
-import MuiThemeProvider from '@material-ui/core/styles/MuiThemeProvider';
-import OutlinedInput from '@material-ui/core/OutlinedInput';
-import Paper from '@material-ui/core/Paper';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
-import Select from '@material-ui/core/Select';
-import SvgIcon from '@material-ui/core/SvgIcon';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
-import TextField from '@material-ui/core/TextField';
-import TreeView from '@material-ui/lab/TreeView';
-import TreeItem from '@material-ui/lab/TreeItem';
-import Typography from '@material-ui/core/Typography';
+import { createRoot } from 'react-dom/client';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import CircularProgress from '@mui/material/CircularProgress';
+import Collapse from '@mui/material/Collapse';
+import CssBaseline from '@mui/material/CssBaseline';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
+import FilledInput from '@mui/material/FilledInput';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormLabel from '@mui/material/FormLabel';
+import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
+import Input from '@mui/material/Input';
+import InputLabel from '@mui/material/InputLabel';
+import LinearProgress from '@mui/material/LinearProgress';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import MenuItem from '@mui/material/MenuItem';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import Paper from '@mui/material/Paper';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import Select from '@mui/material/Select';
+import SvgIcon from '@mui/material/SvgIcon';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import TextField from '@mui/material/TextField';
+import { TreeView } from '@mui/x-tree-view/TreeView';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
+import Typography from '@mui/material/Typography';
 
 import Ajv from "ajv";
 import ReactImageZoom from 'react-image-zoom';
 
-import CancelIcon from '@material-ui/icons/Cancel';
-import DescriptionIcon from '@material-ui/icons/Description';
-import ExpandLess from '@material-ui/icons/ExpandLess';
-import ExpandMore from '@material-ui/icons/ExpandMore';
-import MenuIcon from '@material-ui/icons/Menu';
-import PowerIcon from '@material-ui/icons/Power';
-import PowerOffIcon from '@material-ui/icons/PowerOff';
+import CancelIcon from '@mui/icons-material/Cancel';
+import DescriptionIcon from '@mui/icons-material/Description';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import MenuIcon from '@mui/icons-material/Menu';
+import PowerIcon from '@mui/icons-material/Power';
+import PowerOffIcon from '@mui/icons-material/PowerOff';
 
 import { Terminal } from "xterm";
 import { FitAddon } from 'xterm-addon-fit';
 
 import TesterUIHeader from './testerui_header';
 import TesterUISummary from './testerui_summary';
-import TesterUITheme from './testerui_theme';
 
 
 const TesterAppState_Idle = 0;
@@ -101,6 +100,12 @@ class TesterApp extends React.Component {
     if( typeof g_CFG_strServerURL === 'string' ) {
       _strServerURL = g_CFG_strServerURL;
     }
+
+    this.tTheme = createTheme({
+      palette: {
+        mode: 'dark',
+      }
+    });
 
     this.state = {
       tState: _tState,
@@ -145,13 +150,15 @@ class TesterApp extends React.Component {
       'fnSetTestState': this.setTestState,
       'fnSetAllTestStati': this.setAllTestStati,
       'React': React,
-      'ReactDOM': ReactDOM,
       'Button': Button,
       'Checkbox': Checkbox,
       'CircularProgress': CircularProgress,
-      'ExpansionPanel': ExpansionPanel,
-      'ExpansionPanelSummary': ExpansionPanelSummary,
-      'ExpansionPanelDetails': ExpansionPanelDetails,
+      'ExpansionPanel': Accordion,
+      'ExpansionPanelSummary': AccordionSummary,
+      'ExpansionPanelDetails': AccordionDetails,
+      'Accordion': Accordion,
+      'AccordionSummary': AccordionSummary,
+      'AccordionDetails': AccordionDetails,
       'FilledInput': FilledInput,
       'FormControl': FormControl,
       'FormControlLabel': FormControlLabel,
@@ -806,12 +813,12 @@ console.log(this.strJsxHeaderCode);
     );
 
     return (
-      <MuiThemeProvider theme={TesterUITheme}>
+      <ThemeProvider theme={this.tTheme}>
         <CssBaseline>
           <div id='TesterApp'>
             <div id='TesterHeader'>
               <div id='TesterUIHoverButtons'>
-                <Button variant="extendedFab" aria-label="Cancel test" onClick={this.doCancelTest}>
+                <Button variant="contained" color="warning" aria-label="Cancel test" onClick={this.doCancelTest}>
                   <CancelIcon/>
                   Cancel test
                 </Button>
@@ -825,14 +832,14 @@ console.log(this.strJsxHeaderCode);
                 </div>
               </Drawer>
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} />
-              <TesterUISummary astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={TesterUITheme} handleCowClick={this.handleCowClick} />
+              <TesterUISummary astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={this.tTheme} handleCowClick={this.handleCowClick} />
             </div>
             <div id='TesterTabContents'>
               {tTabContentsInteraction}
             </div>
           </div>
         </CssBaseline>
-      </MuiThemeProvider>
+      </ThemeProvider>
     );
   }
 }
@@ -910,4 +917,7 @@ function initializeLogOverlay() {
 }
 
 initializeLogOverlay();
-ReactDOM.render(<TesterApp />, document.getElementById("index"));
+
+const container = document.getElementById('index');
+const root = createRoot(container);
+root.render(<TesterApp />);
