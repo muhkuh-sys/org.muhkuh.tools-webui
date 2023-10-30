@@ -91,6 +91,16 @@ const ConnectionState_Ok2 = 3;
 const ConnectionState_Ok3 = 4;
 const ConnectionState_Ok4 = 5;
 
+const LOG_EMERG = 1;
+const LOG_ALERT = 2;
+const LOG_FATAL = 3;
+const LOG_ERROR = 4;
+const LOG_WARNING = 5;
+const LOG_NOTICE = 6;
+const LOG_INFO = 7;
+const LOG_DEBUG = 8;
+const LOG_TRACE = 9;
+
 let TesterLog_terminal;
 let TesterLog_terminal_fit;
 
@@ -227,6 +237,18 @@ class TesterApp extends React.Component {
     this.tTesterLog_terminal = TesterLog_terminal;
     this.tTesterLog_terminal_fit = TesterLog_terminal_fit;
 
+    this.astrLogLevel = [
+      '',
+      'EMERG',
+      'ALERT',
+      'FATAL',
+      'ERROR',
+      'WARNING',
+      'NOTICE',
+      'INFO',
+      'DEBUG',
+      'TRACE'
+    ];
     const atLogLevelAnsiColors = [
       '',              /* Log level 0 does not exist. */
       '\x1B[37;101m',  /* Log level 1: EMERG (FG: white, BG: light red) */
@@ -262,6 +284,44 @@ class TesterApp extends React.Component {
     this.regexpLogLine = new RegExp('(\\d+),');
 
     registerPlugin('@babel/plugin-proposal-class-properties')
+  }
+
+
+  getTimestamp() {
+    const tNow = new Date();
+    return tNow.getFullYear() + '-' +
+           ('0' + (tNow.getMonth() + 1)).slice(-2) + '-' +
+           ('0' + tNow.getDate()).slice(-2) + ' ' +
+           ('0' + tNow.getHours()).slice(-2) + ':' +
+           ('0' + tNow.getMinutes()).slice(-2) + ':' +
+           ('0' + tNow.getSeconds()).slice(-2);
+  }
+
+
+  // Write a log message to the terminal or the console.
+  // This routine adds the current time stamp and the name of the log level to
+  // the start of the message in the form "[LEVEL] Message", for example
+  // "[WARNING] Something strange happened.".
+  // The message is passed to the "message" method to do the logging.
+  log(uiLevel, strMessage) {
+    let strLevel = '';
+    if( uiLevel in this.astrLogLevel) {
+      strLevel = this.astrLogLevel[uiLevel];
+    }
+    const strTimestamp = this.getTimestamp();
+    this.message(uiLevel, strTimestamp + ' ['+strLevel+'] '+strMessage);
+  }
+
+
+  // Log a message.
+  // If the terminal is available, add ANSI colors depending on the level and print it there.
+  // Otherwise pass the message to "console.log".
+  message(uiLevel, strMessage) {
+    let strLevelColor = '';
+    if( uiLevel in this.atLogLevelAnsiColors) {
+      strLevelColor = this.atLogLevelAnsiColors[uiLevel];
+    }
+    this.tTesterLog_terminal.write(strLevelColor+strMessage+'\x1B[0m\n');
   }
 
 
@@ -503,20 +563,7 @@ class TesterApp extends React.Component {
         const uiLevel = parseInt(astrLine[1]);
         if( uiLevel<=uiLogFilterLevel ) {
           const strNewLine = strLine.substring(astrLine[0].length);
-
-          /* Get the color for the log level. */
-          let strColor = '';
-          /* Only process valid log levels. */
-          if( uiLevel>0 && uiLevel<10 ) {
-            /* Set the new style if it differs from the last one. */
-            if( this.uiLastLogLevel!=uiLevel ) {
-              strColor = this.atLogLevelAnsiColors[uiLevel];
-              this.uiLastLogLevel = uiLevel;
-            }
-          }
-
-          /* Combine the color codes with the lines. */
-          this.tTesterLog_terminal.write(strColor + strNewLine);
+          this.message(uiLevel, strNewLine);
         }
       }
     }, this);
