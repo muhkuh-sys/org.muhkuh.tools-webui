@@ -1,47 +1,38 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="220mm" height="220mm" version="1.1" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
- <title>Muhkuh Logo</title>
- <defs>
-  <clipPath id="f">
-   <rect transform="rotate(26.627)" x="-3.5527e-15" y="77.018" width="220" height="220" stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8222"/>
-  </clipPath>
-  <clipPath id="e">
-   <rect transform="matrix(.94013 -.34082 .41756 .90865 0 0)" x="7.1054e-15" y="80.663" width="212.23" height="230.41" stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8367"/>
-  </clipPath>
-  <clipPath id="a">
-   <rect y="77.018" width="220" height="220" stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8222"/>
-  </clipPath>
-  <clipPath id="n">
-   <rect transform="rotate(8.7043)" y="77.018" width="220" height="220" stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8222"/>
-  </clipPath>
-  <clipPath id="l">
-   <rect transform="rotate(11.115)" x="-1.7764e-15" y="77.018" width="220" height="220" stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8222"/>
-  </clipPath>
- </defs>
- <g transform="translate(0,-77)">
-  <g>
-   <g fill-rule="evenodd">
-    <path d="m75.331 319.79 9.4494-51.783h64.256l9.6384 49.515z" clip-path="url(#a)" fill="#e3e3e3" stroke="#aeaeae" stroke-width="2.8222"/>
-    <path d="m144.03 274.36c0 0.10161 25.535 2.0319 32.405-2.5676 15.621-10.458 0.85165-16.673-3.0238-16.442l-30.026 1.2217c-18.888 0.0566-32.814 5.6863-40.341 7.7524-7.8316 2.9702-15.497 4.8778-25.261 7.2788-5.9185 1.9879-11.56 16.055 6.6146 16.064 0.0223-0.0223 5.9005 0.32951 28.915-7.9375 15.497-5.8586 30.717-5.37 30.717-5.37z" clip-path="url(#a)" fill="#e3e3e3" stroke="#aeaeae" stroke-width="2.8222"/>
-    <path d="m79.262 113.58c-13.501-39.322 10.87-16.11 11.654-15.061z" clip-path="url(#a)" fill="#cecece" stroke="#aeaeae" stroke-width="1.4111"/>
-    <path d="m105.59 96.43c19.087-29.26 14.805 11.605 15.891 9.2887z" clip-path="url(#a)" fill="#cecece" stroke="#aeaeae" stroke-width="1.4111"/>
-   </g>
-   <g stroke="#aeaeae" stroke-linecap="round">
-    <path d="m57.145 205.1s17.626 0.72353 21.101-40.169c3.4745-40.892-12.562-39.289-12.562-39.289s-9.3544-2.4054-28.598 15.769l-7.7508 8.0181s-8.3699 9.271-10.29-3.4745c-4.2511-28.221 27.17-25.119 34.344-25.257 22.693 0.047 24.455-9.7554 24.455-9.7554s4.1307-12.117 18.843-14.032c19.895-2.5888 19.166 0.73135 31.371 14.053 9.0714 1.5119 35.152-16.064 35.152-16.064s15.875-5.2917 16.82 9.8274c-0.53733 0.806 6.9213 13.242-49.132 12.897 0 0 7.9319 68.163 40.676 72.933l-58.316 44.399z" clip-path="url(#a)" fill="#e3e3e3" stroke-linejoin="round" stroke-width="2.822"/>
-    <path transform="rotate(-11.115)" d="m57.316 173.4a28.116 16.722 0 0 1-32.006-14.004 28.116 16.722 0 0 1 23.502-19.055 28.116 16.722 0 0 1 32.071 13.952 28.116 16.722 0 0 1-23.414 19.093" clip-path="url(#l)" fill="#e3e3e3" stroke-width="1.4743"/>
-    <path d="m92.151 146.38a3.8668 3.6781 0 0 1-4.4019-3.0802 3.8668 3.6781 0 0 1 3.2323-4.1912 3.8668 3.6781 0 0 1 4.4107 3.0688 3.8668 3.6781 0 0 1-3.2202 4.1996" clip-path="url(#m)" stroke-width="1.2344" fill="#aeaeae"/>
-    <path transform="rotate(-8.7043)" d="m108.05 165.09a16.8 11.651 0 0 1-19.125-9.7571 16.8 11.651 0 0 1 14.043-13.276 16.8 11.651 0 0 1 19.163 9.7208 16.8 11.651 0 0 1-13.991 13.303" clip-path="url(#n)" fill="#e3e3e3" stroke-width="1.3265"/>
-    <path d="m124.57 140.37a3.8668 3.6781 0 0 1-4.4019-3.0802 3.8668 3.6781 0 0 1 3.2323-4.1912 3.8668 3.6781 0 0 1 4.4107 3.0688 3.8668 3.6781 0 0 1-3.2202 4.1996" clip-path="url(#a)" stroke-width="1.2344" fill="#aeaeae"/>
-   </g>
-  </g>
-  <path d="m152.02 108.09c13.465-8.499 17.552-9.0717 17.958-3.2448" clip-path="url(#a)" fill="none" stroke="#aeaeae" stroke-linecap="round" stroke-width="2.1167"/>
-  <path d="m46.04 127.11c-24.162 1.0563-19.72 13.067-20.045 13.23" clip-path="url(#a)" fill="none" stroke="#aeaeae" stroke-linecap="round" stroke-width="2.1167"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="220mm" height="220mm" viewBox="0 0 220 220">
+  <defs>
+    <clipPath id="ee">
+      <path stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" d="m-35 69 197 98-98 197-197-98z"/>
+    </clipPath>
+    <clipPath id="ed">
+      <path stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" d="M0 81h212v230H0z" transform="rotate(-20) skewX(5)"/>
+    </clipPath>
+    <clipPath id="ea">
+      <path stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" d="M0 77h220v220H0z"/>
+    </clipPath>
+    <clipPath id="ec">
+      <path stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" d="m-12 76 218 33-33 218-218-33z"/>
+    </clipPath>
+    <clipPath id="eb">
+      <path stroke="#aeaeae" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" d="m-15 76 216 42-42 216-216-43z"/>
+    </clipPath>
+  </defs>
   <g stroke="#aeaeae">
-   <path d="m197.72 236.02s18.976-42.496-19.511-45.169c-23.787-3.7418-37.709 16.49-63.343 18.442-24.323 1.8515-22.743-14.929-62.541-2.7395-44.81 18.012-9.6217 56.193-9.6217 56.193s19.068 18.239 56.928 2.94c24.856-13.363 51.316-9.0872 51.316-9.0872 39.289 0.8018 46.772-20.58 46.772-20.58z" clip-path="url(#a)" fill="#e3e3e3" fill-rule="evenodd" stroke-width="2.8222"/>
-   <path transform="matrix(.94518 .32655 -.43435 .90074 0 0)" d="m255.42 139.85a10.312 4.9966 0 0 1-11.739-4.1845 10.312 4.9966 0 0 1 8.6197-5.6938 10.312 4.9966 0 0 1 11.762 4.1689 10.312 4.9966 0 0 1-8.5876 5.7052" clip-path="url(#e)" fill="#d6d6d6" stroke-linecap="round" stroke-width="2.1239"/>
-   <path transform="rotate(-26.627)" d="m-48.942 234.33a11.884 7.1669 0 0 1-13.529-6.002 11.884 7.1669 0 0 1 9.934-8.1669 11.884 7.1669 0 0 1 13.556 5.9797 11.884 7.1669 0 0 1-9.897 8.1832" clip-path="url(#f)" fill="#d6d6d6" stroke-linecap="round" stroke-width="2.1167"/>
+    <g fill-rule="evenodd">
+      <path fill="#e3e3e3" stroke-width="2.8" d="m75 320 10-52h64l10 50z" clip-path="url(#ea)" transform="translate(0 -77)"/>
+      <path fill="#e3e3e3" stroke-width="2.8" d="M144 274s26 2 32-2c16-11 1-17-3-17l-30 2c-19 0-32 5-40 7l-25 8c-6 2-12 16 6 16 0 0 6 0 29-8 16-6 31-6 31-6z" clip-path="url(#ea)" transform="translate(0 -77)"/>
+      <path fill="#cecece" stroke-width="1.4" d="M79 114C66 74 90 97 91 99zm27-18c19-29 14 12 15 10z" clip-path="url(#ea)" transform="translate(0 -77)"/>
+    </g>
+    <g stroke-linecap="round">
+      <path fill="#e3e3e3" stroke-linejoin="round" stroke-width="2.8" d="M57 205s18 1 21-40c4-41-12-39-12-39s-10-3-29 15l-8 8s-8 10-10-3c-4-28 27-25 34-25 23 0 25-10 25-10s4-12 19-14c20-3 19 1 31 14 9 1 35-16 35-16s16-5 17 10c-1 1 7 13-49 13 0 0 8 68 41 73l-59 44z" clip-path="url(#ea)" transform="translate(0 -77)"/>
+      <path fill="#e3e3e3" stroke-width="1.5" d="M57 173a28 17 0 0 1-32-14 28 17 0 0 1 24-19 28 17 0 0 1 32 14 28 17 0 0 1-24 19" clip-path="url(#eb)" transform="rotate(-11 -396 -38)"/>
+      <path fill="#aeaeae" stroke-width="1.2" d="M92 146a4 4 0 0 1-4-3 4 4 0 0 1 3-4 4 4 0 0 1 4 3 4 4 0 0 1-3 4" clip-path="url(#em)" transform="translate(0 -77)"/>
+      <path fill="#e3e3e3" stroke-width="1.5" d="M108 165a17 12 0 0 1-19-10 17 12 0 0 1 14-13 17 12 0 0 1 19 10 17 12 0 0 1-14 13" clip-path="url(#ec)" transform="rotate(-8.7 -506 -37)"/>
+      <path fill="#aeaeae" stroke-width="1.2" d="M125 140a4 4 0 0 1-5-3 4 4 0 0 1 3-4 4 4 0 0 1 5 3 4 4 0 0 1-3 4" clip-path="url(#ea)" transform="translate(0 -77)"/>
+    </g>
+    <path fill="none" stroke-linecap="round" stroke-width="2.1" d="M152 108c13-8 18-9 18-3M46 127c-24 1-20 13-20 13" clip-path="url(#ea)" transform="translate(0 -77)"/>
+    <path fill="#e3e3e3" fill-rule="evenodd" stroke-width="2.8" d="M198 236s19-42-20-45c-24-4-37 16-63 18-24 2-23-15-63-2-44 18-9 56-9 56s19 18 57 3c24-14 51-9 51-9 39 0 47-21 47-21z" clip-path="url(#ea)" transform="translate(0 -77)"/>
+    <path fill="#d6d6d6" stroke-linecap="round" stroke-width="2.1" d="M255 140a10 5 0 0 1-11-4 10 5 0 0 1 8-6 10 5 0 0 1 12 4 10 5 0 0 1-9 6" clip-path="url(#ed)" transform="matrix(.95 .33 -.43 .9 0 -77)"/>
+    <path fill="#d6d6d6" stroke-linecap="round" stroke-width="2.1" d="M-49 234a12 7 0 0 1-13-6 12 7 0 0 1 9-8 12 7 0 0 1 14 6 12 7 0 0 1-10 8" clip-path="url(#ee)" transform="rotate(-27 -163 -39)"/>
   </g>
- </g>
- <path d="M 48,32 32,32,32,192 48,192" fill="none" stroke="#ff8080" stroke-width="8" stroke-linecap="round"/>
- <path d="M 176,32 192,32 192,192 176,192" fill="none" stroke="#ff8080" stroke-width="8" stroke-linecap="round"/>
+  <path fill="none" stroke="#ff8080" stroke-linecap="round" stroke-width="8" d="M48 32H32v160h16M176 32h16v160h-16"/>
 </svg>
