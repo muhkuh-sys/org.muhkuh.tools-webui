@@ -1,13 +1,14 @@
 module.exports = (options, loaderContext) => {
   let strVersion = 'unknown';
 
-  const parser = require('fast-xml-parser');
   const fs = require('fs');
 
   try {
     const strPackageXml = fs.readFileSync('muhkuh_webui.xml', 'utf8')
 
-    const tPackageJson = parser.parse(strPackageXml, { ignoreAttributes: false });
+    const fxparser = require('fast-xml-parser');
+    const parser = new fxparser.XMLParser({ ignoreAttributes: false });
+    const tPackageJson = parser.parse(strPackageXml);
     if( 'jonchki-artifact' in tPackageJson ) {
       const tJonchkiArtifact = tPackageJson['jonchki-artifact'];
       if( 'info' in tJonchkiArtifact ) {
