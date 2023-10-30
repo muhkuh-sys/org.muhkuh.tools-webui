@@ -34,6 +34,7 @@ import InputLabel from '@mui/material/InputLabel';
 import LinearProgress from '@mui/material/LinearProgress';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
@@ -880,9 +881,9 @@ class TesterApp extends React.Component {
     this.state.tTest_atDocuments.forEach(function(tAttr, uiIndex) {
       if(('name' in tAttr) && ('url' in tAttr)) {
         atDocumentLinks.push(
-          <ListItem button key={`Document_${uiIndex}`} onClick={() => this.doShowDocument(uiIndex)}>
+          <ListItemButton key={`Document_${uiIndex}`} onClick={() => this.doShowDocument(uiIndex)}>
             <ListItemText inset primary={tAttr.name}/>
-          </ListItem>
+          </ListItemButton>
         );
       }
     }, this);
@@ -897,32 +898,33 @@ class TesterApp extends React.Component {
     /* Create the application menu. */
     let tAppMenu = (
       <List>
-        <ListItem button key='Cancel test' onClick={this.doCancelTest}>
+        <ListItemButton key='Cancel test' onClick={this.doCancelTest}>
           <ListItemIcon><CancelIcon/></ListItemIcon>
           <ListItemText primary='Cancel test'/>
-        </ListItem>
+        </ListItemButton>
         <Divider/>
-        <ListItem button key='Connect' disabled={this.state.tState===TesterAppState_Connected || this.state.tState===TesterAppState_FatalError} onClick={this.doConnect}>
+        <ListItemButton key='Connect' disabled={this.state.tState===TesterAppState_Connected || this.state.tState===TesterAppState_FatalError} onClick={this.doConnect}>
           <ListItemIcon><PowerIcon/></ListItemIcon>
           <ListItemText primary='Connect'/>
-        </ListItem>
-        <ListItem button key='Disconnect' disabled={this.state.tState!==TesterAppState_Connected} onClick={this.doDisconnect}>
+        </ListItemButton>
+        <ListItemButton key='Disconnect' disabled={this.state.tState!==TesterAppState_Connected} onClick={this.doDisconnect}>
           <ListItemIcon><PowerOffIcon/></ListItemIcon>
           <ListItemText primary='Disconnect'/>
-        </ListItem>
+        </ListItemButton>
         <Divider/>
-        <ListItem button key='Documents' onClick={this.doToggleDocuments}>
+        <ListItemButton key='Documents' onClick={this.doToggleDocuments}>
           <ListItemIcon><DescriptionIcon/></ListItemIcon>
           <ListItemText primary='Documents'/>
           {this.state.fMenuDocumentsOpen ? <ExpandLess /> : <ExpandMore />}
-        </ListItem>
+        </ListItemButton>
         <Collapse in={this.state.fMenuDocumentsOpen} timeout="auto" unmountOnExit>
           {atDocumentLinks}
         </Collapse>
         <Divider/>
-        <ListItem button key='Toggle Log' onClick={this.doToggleLog}>
+        <ListItemButton key='Toggle Log' onClick={this.doToggleLog}>
           <ListItemIcon><DescriptionIcon/></ListItemIcon>
           <ListItemText primary='Toggle Log'/>
+        </ListItemButton>
         </ListItem>
       </List>
     );
