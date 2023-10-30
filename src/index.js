@@ -44,6 +44,7 @@ import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import Select from '@mui/material/Select';
 import SvgIcon from '@mui/material/SvgIcon';
+import Switch from '@mui/material/Switch';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import TextField from '@mui/material/TextField';
@@ -54,6 +55,7 @@ import Typography from '@mui/material/Typography';
 import Ajv from "ajv";
 import ReactImageZoom from 'react-image-zoom';
 
+import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ExpandLess from '@mui/icons-material/ExpandLess';
@@ -125,6 +127,7 @@ class TesterApp extends React.Component {
       tErrorMessage: _tErrorMessage,
       fMenuIsOpen: false,
       fMenuDocumentsOpen: false,
+      enricoMode: false,
 
       strServerURL: _strServerURL,
       strServerProtocol: 'muhkuh-tester',
@@ -167,6 +170,7 @@ class TesterApp extends React.Component {
       'fnGetTestStati': this.getTestStati,
       'fnSetTestState': this.setTestState,
       'fnSetAllTestStati': this.setAllTestStati,
+      'fnGetEnricoMode': this.getEnricoMode,
       'React': React,
       'Button': Button,
       'Checkbox': Checkbox,
@@ -644,6 +648,12 @@ class TesterApp extends React.Component {
     });
   };
 
+
+  getEnricoMode = () => {
+    return this.state.enricoMode;
+  }
+
+
   componentDidMount() {
     /* Create the websocket if it does not exist yet. */
     if( this.state.tState===TesterAppState_Idle )
@@ -805,6 +815,20 @@ class TesterApp extends React.Component {
   }
 
 
+  handleToggleEnricoMode = () => {
+    const bEnricoMode = !this.state.enricoMode;
+    if( bEnricoMode ) {
+      this.log(LOG_WARNING, 'Oha, Enrico Mode ist an. Nu aber nicht zu dolle machen. ;-)');
+    } else {
+      this.log(LOG_INFO, 'Enrico Mode ist aus.');
+    }
+
+    this.setState({
+      enricoMode: bEnricoMode
+    });
+  }
+
+
   doShowDocument = (uiIndex) => {
     if(uiIndex in this.state.tTest_atDocuments) {
       const tAttr = this.state.tTest_atDocuments[uiIndex];
@@ -925,6 +949,17 @@ class TesterApp extends React.Component {
           <ListItemIcon><DescriptionIcon/></ListItemIcon>
           <ListItemText primary='Toggle Log'/>
         </ListItemButton>
+        <ListItem>
+          <ListItemIcon><BuildCircleIcon/></ListItemIcon>
+          <ListItemText id='list-item-enrico-mode' primary='Enrico mode'/>
+          <Switch
+            edge="end"
+            onChange={this.handleToggleEnricoMode}
+            checked={this.state.enricoMode}
+            inputProps={{
+              'aria-labelledby': 'list-item-enrico-mode',
+            }}
+          />
         </ListItem>
       </List>
     );
