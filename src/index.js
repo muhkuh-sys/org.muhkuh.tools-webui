@@ -60,6 +60,12 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
 import PowerIcon from '@mui/icons-material/Power';
 import PowerOffIcon from '@mui/icons-material/PowerOff';
+import SignalWifi0BarIcon from '@mui/icons-material/SignalWifi0Bar';
+import SignalWifi1BarIcon from '@mui/icons-material/SignalWifi1Bar';
+import SignalWifi2BarIcon from '@mui/icons-material/SignalWifi2Bar';
+import SignalWifi3BarIcon from '@mui/icons-material/SignalWifi3Bar';
+import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
+import SignalWifiConnectedNoInternet4Icon from '@mui/icons-material/SignalWifiConnectedNoInternet4';
 
 import { Terminal } from "xterm";
 import { FitAddon } from 'xterm-addon-fit';
@@ -75,6 +81,12 @@ const TesterAppState_ConnectionClosed = 3;
 const TesterAppState_FatalError = 4;
 const TesterAppState_SoftError = 5;
 
+const ConnectionState_Lost = 0;
+const ConnectionState_Ok0 = 1;
+const ConnectionState_Ok1 = 2;
+const ConnectionState_Ok2 = 3;
+const ConnectionState_Ok3 = 4;
+const ConnectionState_Ok4 = 5;
 
 let TesterLog_terminal;
 let TesterLog_terminal_fit;
@@ -127,11 +139,16 @@ class TesterApp extends React.Component {
       tRunningTest_uiRunningTest: null,
 
       tUI_CowIconSize: '5em',
-      tUI_tInteraction: null
+      tUI_tInteraction: null,
+
+      tConnectionState: ConnectionState_Lost
     };
 
     /* All log lines combined in one string. */
     this.uiLogFilterLevel = 8;
+
+    this.atHeartbeats = [];
+    this.tHeartbeatTimer = null;
 
     /* No socket created yet. */
     this.tSocket = null;
@@ -197,7 +214,6 @@ class TesterApp extends React.Component {
       astrCode.push('const ' + strName + ' = atComponents.' + strName + ';');
     }
     this.strJsxHeaderCode = astrCode.join('\n') + '\n';
-console.log(this.strJsxHeaderCode);
 
     /* This is a reference to the interaction element. */
     this.tTesterInteraction = React.createRef();
@@ -243,10 +259,14 @@ console.log(this.strJsxHeaderCode);
     registerPlugin('@babel/plugin-proposal-class-properties')
   }
 
+
   socketClosed(tEvent) {
     console.log("WebSocket is closed now.");
     if( this.state.tState==TesterAppState_Connected ) {
-      this.setState({ tState: TesterAppState_ConnectionClosed });
+      this.setState({
+        tState: TesterAppState_ConnectionClosed,
+        tConnectionState: ConnectionState_Lost
+      });
     }
     else
     {
@@ -262,16 +282,31 @@ console.log(this.strJsxHeaderCode);
     }
   }
 
+
   socketError(tEvent) {
     console.error("WebSocket error observed:", tEvent);
   }
+
 
   socketOpen(tEvent) {
     console.log("WebSocket is open now.");
     const strJson = JSON.stringify({id: 'ReqInit'});
     this.tSocket.send(strJson);
-    this.setState({ tState: TesterAppState_Connected });
+
+    // Assume an excellent connection and fake the last 4 heartbeats.
+    // The timestamp is in milliseconds. Convert it to seconds.
+    const ulTimestampS = Date.now() / 1000;
+    this.atHeartbeats.push(ulTimestampS-6);
+    this.atHeartbeats.push(ulTimestampS-4);
+    this.atHeartbeats.push(ulTimestampS-2);
+    this.atHeartbeats.push(ulTimestampS);
+
+    this.setState({
+      tState: TesterAppState_Connected,
+      tConnectionState: ConnectionState_Ok4
+    });
   }
+
 
   socketMessage(tEvent) {
     console.debug("WebSocket message received:", tEvent.data);
@@ -320,6 +355,10 @@ console.log(this.strJsxHeaderCode);
         this.onMessage_SetDocs(tJson)
         break;
 
+      case 'Heartbeat':
+        this.onMessage_Heartbeat();
+        break;
+
       default:
         console.error('Received unknown message id:', strId);
       }
@@ -327,6 +366,7 @@ console.log(this.strJsxHeaderCode);
       console.error("Received malformed JSON:", error, tEvent.data);
     }
   }
+
 
   onMessage_SetTitle(tJson) {
     let strTitle = null;
@@ -351,6 +391,7 @@ console.log(this.strJsxHeaderCode);
     });
   }
 
+
   onMessage_setTestNames(tJson) {
     /* Check the JSON. The test names must be an array. */
     if('testNames' in tJson) {
@@ -374,6 +415,7 @@ console.log(this.strJsxHeaderCode);
     }
   }
 
+
   onMessage_setTestStati(tJson) {
     /* Check the JSON. The test stati must be an array. */
     if('testStati' in tJson) {
@@ -383,6 +425,7 @@ console.log(this.strJsxHeaderCode);
       }
     }
   }
+
 
   onMessage_SetInteraction(tJson) {
     /* Translate the received code with babel. */
@@ -429,6 +472,7 @@ console.log(this.strJsxHeaderCode);
     }
   }
 
+
   onMessage_SetInteractionData(tJson) {
     const strData = tJson.data;
 
@@ -440,6 +484,7 @@ console.log(this.strJsxHeaderCode);
       }
     }
   }
+
 
   onMessage_Log(tJson) {
     const uiLogFilterLevel = this.uiLogFilterLevel;
@@ -472,12 +517,14 @@ console.log(this.strJsxHeaderCode);
     }, this);
   }
 
+
   onMessage_SetCurrentSerial(tJson) {
     const uiCurrentSerial = tJson.currentSerial;
     this.setState({
       tRunningTest_uiCurrentSerial: uiCurrentSerial
     });
   }
+
 
   onMessage_SetRunningTest(tJson) {
     let uiRunningTest = null;
@@ -489,10 +536,12 @@ console.log(this.strJsxHeaderCode);
     });
   }
 
+
   onMessage_SetTestState(tJson) {
     const strTestState = tJson.testState;
     this.setTestState(strTestState);
   }
+
 
   onMessage_SetDocs(tJson) {
     if('docs' in tJson) {
@@ -508,6 +557,17 @@ console.log(this.strJsxHeaderCode);
     }
   }
 
+
+  onMessage_Heartbeat() {
+    // Add the heartbeat to the list.
+    // The timestamp is in milliseconds. Convert it to seconds.
+    const ulTimestampS = Date.now() / 1000;
+    this.atHeartbeats.push(ulTimestampS);
+
+    this.weedOutOldHeartbeats();
+  }
+
+
   sendInteractionMessage = (atObject) => {
     /* TODO: The argument must be an object. */
 
@@ -521,9 +581,11 @@ console.log(this.strJsxHeaderCode);
     }
   };
 
+
   getCurrentSerial = () => {
     return this.state.tRunningTest_uiCurrentSerial;
   };
+
 
   getRunningTest = () => {
     return this.state.tRunningTest_uiRunningTest;
@@ -587,15 +649,68 @@ console.log(this.strJsxHeaderCode);
     {
       this.doConnect();
     }
+
+    // Create a timer for the connection state.
+    if( this.tHeartbeatTimer==null ) {
+      this.tHeartbeatTimer = setInterval(this.onHeartbeatTimer, 1000);
+    }
   }
 
   componentWillUnmount() {
+    // Stop the timer for the connection state.
+    if( this.tHeartbeatTimer!=null ) {
+      clearInterval(this.tHeartbeatTimer);
+      this.tHeartbeatTimer = null;
+    }
+
     /* Close the websocket. */
     if( this.tSocket!==null )
     {
       this.tSocket.close();
     }
   }
+
+  weedOutOldHeartbeats() {
+    // The timestamp is in milliseconds. Convert it to seconds.
+    const ulTimestampS = Date.now() / 1000;
+    // Keep only the last 10 seconds.
+    const ulBorder = ulTimestampS - 10;
+    const atFiltered = this.atHeartbeats.filter(ulTimestamp => ulTimestamp > ulBorder);
+    this.atHeartbeats = atFiltered;
+  }
+
+
+  onHeartbeatTimer = () => {
+    // Remove old heartbeats.
+    this.weedOutOldHeartbeats();
+
+    // Count the remaining heartbeats if the connection is still alive.
+    if( this.state.tState==TesterAppState_Connected ) {
+      const sizHeartbeats = this.atHeartbeats.length;
+      let tNewState = null;
+      switch(sizHeartbeats) {
+        case 0:
+          tNewState = ConnectionState_Ok0;
+          break;
+        case 1:
+          tNewState = ConnectionState_Ok1;
+          break;
+        case 2:
+          tNewState = ConnectionState_Ok2;
+          break;
+        case 3:
+          tNewState = ConnectionState_Ok3;
+          break;
+        default:
+          tNewState = ConnectionState_Ok4;
+          break;
+      }
+      this.setState({
+        tConnectionState: tNewState
+      });
+    }
+  }
+
 
   handleCowClick = (uiIndex) => {
 //    this.interval = setInterval(() => this.appendDemoLogLine(), 100);
@@ -812,6 +927,21 @@ console.log(this.strJsxHeaderCode);
       </List>
     );
 
+    let tConnectionIcon = null;
+    if( this.state.tConnectionState==ConnectionState_Ok0 ) {
+      tConnectionIcon = <SignalWifi0BarIcon />;
+    } else if( this.state.tConnectionState==ConnectionState_Ok1 ) {
+      tConnectionIcon = <SignalWifi1BarIcon />;
+    } else if( this.state.tConnectionState==ConnectionState_Ok2 ) {
+      tConnectionIcon = <SignalWifi2BarIcon />;
+    } else if( this.state.tConnectionState==ConnectionState_Ok3 ) {
+      tConnectionIcon = <SignalWifi3BarIcon />;
+    } else if( this.state.tConnectionState==ConnectionState_Ok4 ) {
+      tConnectionIcon = <SignalWifi4BarIcon />;
+    } else {
+      tConnectionIcon = <SignalWifiConnectedNoInternet4Icon color="error" />;
+    }
+
     return (
       <ThemeProvider theme={this.tTheme}>
         <CssBaseline>
@@ -822,6 +952,9 @@ console.log(this.strJsxHeaderCode);
                   <CancelIcon/>
                   Cancel test
                 </Button>
+                <div style={{display: 'inline', margin: '1em'}}>
+                  {tConnectionIcon}
+                </div>
                 <IconButton aria-label="Menu" aria-owns={this.state.fMenuIsOpen ? 'TesterUIAppMenu' : undefined} aria-haspopup="true" onClick={this.handleOpenAppMenu}>
                   <MenuIcon/>
                 </IconButton>

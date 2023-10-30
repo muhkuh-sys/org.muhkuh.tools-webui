@@ -54,6 +54,9 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
 
   self.tLogTimer = uv.timer()
   self.uiLogTimerMs = 500
+
+  self.tHeartbeatTimer = uv.timer()
+  self.uiHeartbeatIntervalMs = 2000
 end
 
 
@@ -86,6 +89,22 @@ function WebUiBuffer:__toUtf8(strMsg)
   end
 
   return strMsg
+end
+
+
+
+function WebUiBuffer:__onHeartbeatTimer(tTimer)
+  local tConnection = self.tActiveConnection
+  if tConnection~=nil then
+    -- Send a heartbeat message.
+    local tMessage = {
+      id = 'Heartbeat'
+    }
+    local strJson = self.json.encode(tMessage)
+    tConnection:write(strJson)
+
+    tTimer:again(self.uiHeartbeatIntervalMs)
+  end
 end
 
 
@@ -473,6 +492,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
     self.tActiveConnection = nil
     self.uiSyncedLogIndex = 0
     self.tLogTimer:stop()
+    self.tHeartbeatTimer:stop()
     self:__sendCurrentPeerName()
     return tConnection:close()
   else
@@ -526,6 +546,7 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
     self.tActiveConnection = nil
     self.uiSyncedLogIndex = 0
     self.tLogTimer:stop()
+    self.tHeartbeatTimer:stop()
     return tConnection:close()
 
   elseif self.tActiveConnection~=nil then
@@ -540,6 +561,14 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
 
     local this = self
     self.tLogTimer:start(self.uiLogTimerMs, function(tTimer) this:__onLogTimer(tTimer) end)
+
+    self.tHeartbeatTimer:start(
+      self.uiHeartbeatIntervalMs,
+      function(tTimer)
+        this:__onHeartbeatTimer(tTimer)
+      end
+    )
+
     tConnection:start_read(function(tConnection, err, strMessage, opcode) this:__connectionOnReceive(tConnection, err, strMessage, opcode) end)
   end
 end
@@ -581,7 +610,11 @@ end
 
 
 function WebUiBuffer:start()
-  self.tServer = self.ws.new()
+  self.tServer = self.ws.new(
+    {
+      auto_ping_response = true
+    }
+  )
 
   local this = self
   self.tServer:bind(self.strWebsocketURL, self.strWebsocketProtocol, function(tSomething, tError) this:__onCreate(tSomething, tError) end)
