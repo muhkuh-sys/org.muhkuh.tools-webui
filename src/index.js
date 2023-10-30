@@ -880,7 +880,7 @@ class TesterApp extends React.Component {
     this.state.tTest_atDocuments.forEach(function(tAttr, uiIndex) {
       if(('name' in tAttr) && ('url' in tAttr)) {
         atDocumentLinks.push(
-          <ListItem button key="Document_{uiIndex}" onClick={() => this.doShowDocument(uiIndex)}>
+          <ListItem button key={`Document_${uiIndex}`} onClick={() => this.doShowDocument(uiIndex)}>
             <ListItemText inset primary={tAttr.name}/>
           </ListItem>
         );
