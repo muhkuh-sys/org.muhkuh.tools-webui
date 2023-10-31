@@ -32,7 +32,6 @@ class TesterUISummary extends React.Component {
   }
 
   render() {
-    console.log('Here');
     let atCows = []
     const uiRunningTest = this.props.uiRunningTest;
     this.props.astrTestNames.forEach(function(strName, uiIndex) {
