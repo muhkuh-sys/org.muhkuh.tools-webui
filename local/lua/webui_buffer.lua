@@ -43,6 +43,8 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
 
   self.atDocuments = {}
 
+  self.atPersistence = {}
+
   self.tTester = nil
 
   -- Create a new log target for the test output.
@@ -389,7 +391,8 @@ function WebUiBuffer:__sendState()
       interaction_data = self.strInteractionData,
       currentSerial = self.uiCurrentSerial,
       runningTest = tRunningTest,
-      tests = atTests
+      tests = atTests,
+      persistence = self.atPersistence
     }
     local strJson = self.json.encode(tMessage)
     tConnection:write(strJson)
@@ -425,7 +428,6 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
       else
         if strId=='ReqInit' then
           self:__sendState()
-          -- TODO: send the running test and all test states.
 
         elseif strId=='RspInteraction' then
           if tTester~=nil then
@@ -436,6 +438,9 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
           if tTester~=nil then
             tTester:onCancel()
           end
+
+        elseif strId=='Persist' then
+          self.atPersistence = tJson.data
 
         else
           print('Unknown message ID received.')

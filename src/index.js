@@ -160,6 +160,9 @@ class TesterApp extends React.Component {
 
     this.m_tUI_strInteractionData = null;
 
+    this.m_strPersistanceState = null;
+    this.m_tInitialPersistanceState = null;
+
     /* All log lines combined in one string. */
     this.uiLogFilterLevel = 8;
 
@@ -183,6 +186,8 @@ class TesterApp extends React.Component {
       'fnSetTestState': this.setTestState,
       'fnSetAllTestStati': this.setAllTestStati,
       'fnGetEnricoMode': this.getEnricoMode,
+      'fnPersistState': this.callbackSetState_SendStateToServer,
+      'fnGetPersistentState': this.getPersistentState,
       'React': React,
       'Button': Button,
       'Checkbox': Checkbox,
@@ -273,7 +278,7 @@ class TesterApp extends React.Component {
   }
 
 
-  compareArrays(a, b) {
+  equalsFlatArrays(a, b) {
     return (
       Array.isArray(a) &&
       Array.isArray(b) &&
@@ -501,8 +506,8 @@ class TesterApp extends React.Component {
         atTestStati.push(tAttr.state);
       }, this);
       const fIsEqual = (
-        this.compareArrays(astrTestNames, this.state.astrTestNames) &&
-        this.compareArrays(atTestStati, this.state.atTestStati)
+        this.equalsFlatArrays(astrTestNames, this.state.astrTestNames) &&
+        this.equalsFlatArrays(atTestStati, this.state.atTestStati)
       );
       if( !fIsEqual ) {
         tStateNew.tTest_astrTestNames = astrTestNames;
@@ -559,7 +564,7 @@ class TesterApp extends React.Component {
     }
     // Was the interaction created in this call?
     if('tUI_strInteraction' in tStateNew) {
-      // The interaction did not mount yet. Always update it.
+      // The interaction did not mount yet.
       this.m_tUI_strInteractionData = strInteractionData;
       fInteractionDataChanged = true;
 
@@ -567,6 +572,29 @@ class TesterApp extends React.Component {
     } else if(strInteractionData!==this.m_tUI_strInteractionData) {
       this.m_tUI_strInteractionData = strInteractionData;
       fInteractionDataChanged = true;
+    }
+
+
+    if('persistence' in tJson) {
+      // Only accept incoming persistence data if the local instance has no persistance data yet.
+      if( this.m_strPersistanceState===null ) {
+        const tPeristence = tJson.persistence;
+        if('enricoMode' in tPeristence) {
+          const fEnricoMode = tPeristence.enricoMode;
+          if( fEnricoMode!==this.state.enricoMode ) {
+            tStateNew.enricoMode = fEnricoMode;
+            fStateChanged = true;
+          }
+        }
+
+        if('interactionState' in tPeristence) {
+          this.m_tInitialPersistanceState = tPeristence.interactionState;
+
+          fStateChanged = true;
+        }
+
+        this.m_strPersistanceState = this.generatePersistenceData();
+      }
     }
 
 
@@ -628,8 +656,41 @@ class TesterApp extends React.Component {
   }
 
 
-  callbackSetState_SendStateToServer = () => {
+  generatePersistenceData() {
+    let tMessage = {
+      id: 'Persist',
+      data: {
+        enricoMode: this.state.enricoMode
+      }
+    };
 
+    /* Add the interaction state if it exists. */
+    const tElement = this.tTesterInteraction.current;
+    if( tElement!==null ) {
+      console.log("Interaction state:", tElement.state);
+      tMessage.data.interactionState = tElement.state;
+    }
+
+    return JSON.stringify(tMessage);
+  }
+
+
+  callbackSetState_SendStateToServer = () => {
+    const tSocket = this.tSocket;
+    if( tSocket!==null ) {
+      const strJson = this.generatePersistenceData();
+      if( strJson!==this.m_strPersistanceState ) {
+        tSocket.send(strJson);
+        this.m_strPersistanceState = strJson;
+      }
+    }
+  }
+
+
+  getPersistentState = () => {
+    const tInitialPersistanceState = this.m_tInitialPersistanceState;
+    this.m_tInitialPersistanceState = null;
+    return tInitialPersistanceState;
   }
 
 
