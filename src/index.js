@@ -125,6 +125,8 @@ class TesterApp extends React.Component {
     if( typeof g_CFG_strServerURL === 'string' ) {
       _strServerURL = g_CFG_strServerURL;
     }
+    this.m_strServerURL = _strServerURL;
+    this.m_strServerProtocol = 'muhkuh-tester';
 
     this.tTheme = createTheme({
       palette: {
@@ -138,9 +140,6 @@ class TesterApp extends React.Component {
       fMenuIsOpen: false,
       fMenuDocumentsOpen: false,
       enricoMode: false,
-
-      strServerURL: _strServerURL,
-      strServerProtocol: 'muhkuh-tester',
 
       tTest_Title: null,
       tTest_Subtitle: null,
@@ -795,7 +794,7 @@ class TesterApp extends React.Component {
   }
 
   doConnect = () => {
-    if( this.state.strServerURL===null ) {
+    if( this.m_strServerURL===null ) {
       const tMsg = (
         <div>
           <Typography align="center" variant="h2" gutterBottom>Failed to locate the server!</Typography>
@@ -806,7 +805,7 @@ class TesterApp extends React.Component {
         tErrorMessage: tMsg
       });
     } else {
-      var _socket = new WebSocket(this.state.strServerURL, this.state.strServerProtocol);
+      var _socket = new WebSocket(this.m_strServerURL, this.m_strServerProtocol);
       if( _socket===null ) {
         const tMsg = (
           <div>
