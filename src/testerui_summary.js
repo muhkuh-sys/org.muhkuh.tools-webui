@@ -18,11 +18,11 @@ class TesterUISummary extends React.Component {
     this.state = {};
 
     let astrImages = {
-      0: ImgCowOk,
-      1: ImgCowErr,
-      2: ImgCowIdle,
-      3: ImgCowDisabled,
-      4: ImgCowExcluded
+      ok: ImgCowOk,
+      error: ImgCowErr,
+      idle: ImgCowIdle,
+      disabled: ImgCowDisabled,
+      excluded: ImgCowExcluded
     };
     this.astrImages = astrImages;
   }
@@ -32,11 +32,12 @@ class TesterUISummary extends React.Component {
   }
 
   render() {
+    console.log('Here');
     let atCows = []
     const uiRunningTest = this.props.uiRunningTest;
     this.props.astrTestNames.forEach(function(strName, uiIndex) {
-      const tResult = this.props.atTestStati[uiIndex];
-      const strImg = this.astrImages[tResult];
+      const strState = this.props.atTestStati[uiIndex];
+      const strImg = this.astrImages[strState];
 
       let tProgress = null;
       /* Is this the running test? */

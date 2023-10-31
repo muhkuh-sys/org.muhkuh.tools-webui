@@ -25,6 +25,7 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
 
   self.tActiveConnection = nil
   self.strInteractionJsx = nil
+  self.strInteractionData = nil
   self.tServer = nil
 
   self.strTitle = ''
@@ -181,7 +182,7 @@ function WebUiBuffer:setTitle(strTitle, strSubTitle)
     self.strSubTitle = strSubTitle
 
     -- Push the new values to the UI if there is a connection.
-    self:__sendTitle()
+    self:__sendState()
   end
 end
 
@@ -205,7 +206,7 @@ function WebUiBuffer:setTestNames(astrTestNames)
     self.astrTestStati = astrStati
 
     -- Push the new values to the UI if there is a connection.
-    self:__sendTestNames()
+    self:__sendState()
   end
 end
 
@@ -228,7 +229,7 @@ function WebUiBuffer:setDocuments(atDocuments)
 
     self.atDocuments = atDocs
 
-    self:__sendDocuments()
+    self:__sendState()
   end
 end
 
@@ -246,7 +247,7 @@ function WebUiBuffer:setTestStati(astrTestStati)
     for uiCnt = 1, #astrOldTestStati do
       astrOldTestStati[uiCnt] = astrTestStati[uiCnt]
     end
-    self:__sendTestStati()
+    self:__sendState()
   end
 end
 
@@ -268,7 +269,7 @@ function WebUiBuffer:setInteraction(strJsx)
     self.strInteractionJsx = strJsx
 
     -- Push the code to the UI if there is a connection.
-    self:__sendInteraction()
+    self:__sendState()
   end
 end
 
@@ -281,8 +282,15 @@ function WebUiBuffer:setInteractionData(strData)
     strData = tostring(strData)
   end
 
-  -- Push the code to the UI if there is a connection.
-  self:__sendInteractionData(strData)
+  -- Did the interaction data change?
+  local fChanged = (self.strInteractionData~=strData)
+  if fChanged then
+    -- Yes, it changed.
+    self.strInteractionData = strData
+
+    -- Push the code to the UI if there is a connection.
+    self:__sendState()
+  end
 end
 
 
@@ -295,7 +303,7 @@ function WebUiBuffer:setCurrentSerial(uiCurrentSerial)
     if fChanged==true then
       self.uiCurrentSerial = uiCurrentSerial
 
-      self:__sendCurrentSerial()
+      self:__sendState()
     end
   end
 end
@@ -310,7 +318,7 @@ function WebUiBuffer:setRunningTest(uiRunningTest)
     if fChanged==true then
       self.uiRunningTest = uiRunningTest
 
-      self:__sendRunningTest()
+      self:__sendState()
     end
   end
 end
@@ -328,7 +336,7 @@ function WebUiBuffer:setTestState(strTestState)
       local fChanged = (strOldState~=strTestState)
       if fChanged==true then
         self.astrTestStati[uiRunningTest] = strTestState
-        self:__sendTestState()
+        self:__sendState()
       end
     end
   end
@@ -344,141 +352,47 @@ end
 
 
 
-function WebUiBuffer:__sendTitle()
+function WebUiBuffer:__sendState()
   -- Push the values to the UI if there is a connection.
-  local tConnection = self.tActiveConnection
-  if tConnection~=nil then
-    local tMessage = {
-      id = 'SetTitle',
-      title = self.strTitle,
-      subtitle = self.strSubTitle,
-      hasSerial = self.fHasSerial
-    }
-    local strJson = self.json.encode(tMessage)
-    tConnection:write(strJson)
-  end
-end
-
-
-
-function WebUiBuffer:__sendTestNames()
-  -- Push the values to the UI if there is a connection.
-  local tConnection = self.tActiveConnection
-  if tConnection~=nil then
-    local tMessage = {
-      id = 'SetTestNames',
-      testNames = self.astrTestNames
-    }
-    local strJson = self.json.encode(tMessage)
-    tConnection:write(strJson)
-  end
-end
-
-
-
-function WebUiBuffer:__sendDocuments()
-  -- Push the values to the UI if there is a connection.
-  local tConnection = self.tActiveConnection
-  if tConnection~=nil then
-    local tMessage = {
-      id = 'SetDocs',
-      docs = self.atDocuments
-    }
-    local strJson = self.json.encode(tMessage)
-    tConnection:write(strJson)
-  end
-end
-
-
-
-function WebUiBuffer:__sendTestStati()
-  -- Push the values to the UI if there is a connection.
-  local tConnection = self.tActiveConnection
-  if tConnection~=nil then
-    local tMessage = {
-      id = 'SetTestStati',
-      testStati = self.astrTestStati
-    }
-    local strJson = self.json.encode(tMessage)
-    tConnection:write(strJson)
-  end
-end
-
-
-
-function WebUiBuffer:__sendInteraction()
-  local tConnection = self.tActiveConnection
-  if tConnection~=nil then
-    local tMessage = {
-      id = 'SetInteraction',
-      jsx = self.strInteractionJsx
-    }
-    local strJson = self.json.encode(tMessage)
-    tConnection:write(strJson)
-  end
-end
-
-
-
-function WebUiBuffer:__sendInteractionData(strData)
-  local tConnection = self.tActiveConnection
-  if tConnection~=nil then
-    local tMessage = {
-      id = 'SetInteractionData',
-      data = strData
-    }
-    local strJson = self.json.encode(tMessage)
-    tConnection:write(strJson)
-  end
-end
-
-
-
-function WebUiBuffer:__sendCurrentSerial()
-  local tConnection = self.tActiveConnection
-  if tConnection~=nil then
-    local tMessage = {
-      id = 'SetCurrentSerial',
-      currentSerial = self.uiCurrentSerial
-    }
-    local strJson = self.json.encode(tMessage)
-    tConnection:write(strJson)
-  end
-end
-
-
-
-function WebUiBuffer:__sendRunningTest()
   local tConnection = self.tActiveConnection
   if tConnection~=nil then
     local tRunningTest = self.uiRunningTest
     if tRunningTest~=nil then
       tRunningTest = tRunningTest - 1
     end
+
+    local atTests = {}
+    for uiIdx, strName in ipairs(self.astrTestNames) do
+      local tAttr = atTests[uiIdx]
+      if tAttr==nil then
+        tAttr = {}
+        atTests[uiIdx] = tAttr
+      end
+      tAttr.name = strName
+    end
+    for uiIdx, strState in ipairs(self.astrTestStati) do
+      local tAttr = atTests[uiIdx]
+      if tAttr==nil then
+        tAttr = {}
+        atTests[uiIdx] = tAttr
+      end
+      tAttr.state = strState
+    end
+
     local tMessage = {
-      id = 'SetRunningTest',
-      runningTest = tRunningTest
+      id = 'State',
+      title = self.strTitle,
+      subtitle = self.strSubTitle,
+      hasSerial = self.fHasSerial,
+      docs = self.atDocuments,
+      interaction = self.strInteractionJsx,
+      interaction_data = self.strInteractionData,
+      currentSerial = self.uiCurrentSerial,
+      runningTest = tRunningTest,
+      tests = atTests
     }
     local strJson = self.json.encode(tMessage)
     tConnection:write(strJson)
-  end
-end
-
-
-
-function WebUiBuffer:__sendTestState()
-  local uiRunningTest = self.uiRunningTest
-  if uiRunningTest~=nil then
-    -- Push the values to the UI if there is a connection.
-    local tConnection = self.tActiveConnection
-    if tConnection~=nil then
-      local tMessage = {
-        id = 'SetTestState',
-        testState = self.astrTestStati[uiRunningTest]
-      }
-      local strJson = self.json.encode(tMessage)
-      tConnection:write(strJson)
-    end
   end
 end
 
@@ -510,11 +424,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
         tLog.error('Ignoring invalid message without "id".')
       else
         if strId=='ReqInit' then
-          self:__sendTitle()
-          self:__sendTestNames()
-          self:__sendDocuments()
-          self:__sendInteraction()
-          self:__sendCurrentSerial()
+          self:__sendState()
           -- TODO: send the running test and all test states.
 
         elseif strId=='RspInteraction' then

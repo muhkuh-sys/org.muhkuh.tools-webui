@@ -152,10 +152,13 @@ class TesterApp extends React.Component {
       tRunningTest_uiRunningTest: null,
 
       tUI_CowIconSize: '5em',
+      tUI_strInteraction: null,
       tUI_tInteraction: null,
 
       tConnectionState: ConnectionState_Lost
     };
+
+    this.m_tUI_strInteractionData = null;
 
     /* All log lines combined in one string. */
     this.uiLogFilterLevel = 8;
@@ -263,26 +266,20 @@ class TesterApp extends React.Component {
     this.atLogLevelAnsiColors = atLogLevelAnsiColors;
     this.uiLastLogLevel = null;
 
-    const atResultNameToId = new Map([
-      ['ok', 0],
-      ['error', 1],
-      ['idle', 2],
-      ['disabled', 3],
-      ['excluded', 4]
-    ]);
-    this.atResultNameToId = atResultNameToId;
-    /* Generate a reverse mapping. */
-    let atResultIdToName = new Map();
-    atResultNameToId.forEach(function(uiIndex, strName) {
-      const uiId = atResultNameToId.get(strName);
-      atResultIdToName.set(uiId, strName);
-    }, this);
-    this.atResultIdToName = atResultIdToName;
-
     /* This is a regexp for matching log lines. */
     this.regexpLogLine = new RegExp('(\\d+),');
 
     registerPlugin('@babel/plugin-proposal-class-properties')
+  }
+
+
+  compareArrays(a, b) {
+    return (
+      Array.isArray(a) &&
+      Array.isArray(b) &&
+      (a.length === b.length) &&
+      a.every((element, index) => element === b[index])
+    );
   }
 
 
@@ -379,44 +376,12 @@ class TesterApp extends React.Component {
       let tJson = JSON.parse(tEvent.data);
       let strId = tJson.id;
       switch(strId) {
-      case 'SetTitle':
-        this.onMessage_SetTitle(tJson);
-        break;
-
-      case 'SetTestNames':
-        this.onMessage_setTestNames(tJson);
-        break;
-
-      case 'SetTestStati':
-        this.onMessage_setTestStati(tJson);
-        break;
-
-      case 'SetInteraction':
-        this.onMessage_SetInteraction(tJson);
-        break;
-
-      case 'SetInteractionData':
-        this.onMessage_SetInteractionData(tJson);
+      case 'State':
+        this.onMessage_State(tJson);
         break;
 
       case 'Log':
         this.onMessage_Log(tJson);
-        break;
-
-      case 'SetCurrentSerial':
-        this.onMessage_SetCurrentSerial(tJson)
-        break;
-
-      case 'SetRunningTest':
-        this.onMessage_SetRunningTest(tJson)
-        break;
-
-      case 'SetTestState':
-        this.onMessage_SetTestState(tJson)
-        break;
-
-      case 'SetDocs':
-        this.onMessage_SetDocs(tJson)
         break;
 
       case 'Heartbeat':
@@ -432,119 +397,203 @@ class TesterApp extends React.Component {
   }
 
 
-  onMessage_SetTitle(tJson) {
+  createInteraction(strJSX) {
+    let tElement = null;
+
+    let tBabel = null;
+    try {
+      tBabel = transform(
+        strJSX,
+        {
+          filename: 'dynamic_loaded.jsx',
+          presets: ['env', 'react'],
+          plugins: [
+            [ availablePlugins["proposal-class-properties"], { decoratorsBeforeExport: true } ]
+          ]
+        }
+      );
+    } catch(error) {
+      console.error('Failed to translate JSX code:', error, strJSX);
+    }
+
+    /* NOTE: this will go into a callback once babel-standalone is updated to @babel/standalone. */
+    if( tBabel!==null ) {
+      const tCode = this.strJsxHeaderCode + tBabel.code + "\nreturn Interaction;\n";
+      try {
+        const tFn = new Function('atComponents', tCode);
+
+        try {
+          tElement = tFn(this.atComponents);
+        } catch(error) {
+          console.error('Failed to create the interaction element:', error, tCode);
+        }
+      } catch(error) {
+        console.error('Failed to parse the received code:', error, tCode);
+      }
+    }
+
+    return tElement;
+  }
+
+
+  onMessage_State(tJson) {
+    // TODO: Validate the incoming JSON.
+
+    // Track state changes in this variable. Only set a new state if one or more elements differ.
+    let fStateChanged = false;
+    // Track changes of the interaction data.
+    let fInteractionDataChanged = false;
+
+    // Create a new state with default values.
+    let tStateNew = {};
+
     let strTitle = null;
     if('title' in tJson) {
       strTitle = tJson.title;
+    }
+    if( strTitle!==this.state.tTest_Title ) {
+      tStateNew.tTest_Title = strTitle;
+      fStateChanged = true;
     }
 
     let strSubtitle = null;
     if('subtitle' in tJson) {
       strSubtitle = tJson.subtitle;
     }
+    if( strSubtitle!==this.state.tTest_Subtitle ) {
+      tStateNew.tTest_Subtitle = strSubtitle;
+      fStateChanged = true;
+    }
 
     let fHasSerial = false;
     if('hasSerial' in tJson) {
       fHasSerial = tJson.hasSerial;
     }
+    if( fHasSerial!==this.state.tTest_fHasSerial ) {
+      tStateNew.tTest_fHasSerial = fHasSerial;
+      fStateChanged = true;
+    }
 
-    this.setState({
-      tTest_Title: strTitle,
-      tTest_Subtitle: strSubtitle,
-      tTest_fHasSerial: fHasSerial
-    });
-  }
+    let uiCurrentSerial = null;
+    if('currentSerial' in tJson) {
+      uiCurrentSerial = tJson.currentSerial;
+    }
+    if( uiCurrentSerial!==this.state.tRunningTest_uiCurrentSerial ) {
+      tStateNew.tRunningTest_uiCurrentSerial = uiCurrentSerial;
+      fStateChanged = true;
+    }
 
+    let uiRunningTest = null;
+    if('runningTest' in tJson) {
+      uiRunningTest = tJson.runningTest;
+    }
+    if( uiRunningTest!==this.state.tRunningTest_uiRunningTest ) {
+      tStateNew.tRunningTest_uiRunningTest = uiRunningTest;
+      fStateChanged = true;
+    }
 
-  onMessage_setTestNames(tJson) {
-    /* Check the JSON. The test names must be an array. */
-    if('testNames' in tJson) {
-      const astrNames = tJson.testNames;
-      if( Array.isArray(astrNames)==true ) {
-        /* Copy all names and set the state to "idle". */
-        let astrTestNames = [];
-        let atTestStati = [];
-        const tDefaultState = 2;
-
-        astrNames.forEach(function(strName, uiIndex) {
-          astrTestNames.push(strName);
-          atTestStati.push(tDefaultState);
-        }, this);
-
-        this.setState({
-          tTest_astrTestNames: astrTestNames,
-          tTest_atTestStati: atTestStati
-        });
+    // Compare all test names and states.
+    let astrTestNames = [];
+    let atTestStati = [];
+    if('tests' in tJson) {
+      tJson.tests.forEach(function(tAttr, uiIndex) {
+        astrTestNames.push(tAttr.name);
+        atTestStati.push(tAttr.state);
+      }, this);
+      const fIsEqual = (
+        this.compareArrays(astrTestNames, this.state.astrTestNames) &&
+        this.compareArrays(atTestStati, this.state.atTestStati)
+      );
+      if( !fIsEqual ) {
+        tStateNew.tTest_astrTestNames = astrTestNames;
+        tStateNew.tTest_atTestStati = atTestStati;
+        fStateChanged = true;
       }
     }
-  }
 
-
-  onMessage_setTestStati(tJson) {
-    /* Check the JSON. The test stati must be an array. */
-    if('testStati' in tJson) {
-      const astrStati = tJson.testStati;
-      if( Array.isArray(astrStati)==true ) {
-        this.setAllTestStati(astrStati)
-      }
-    }
-  }
-
-
-  onMessage_SetInteraction(tJson) {
-    /* Translate the received code with babel. */
-    const strJSX = tJson.jsx;
-    if( strJSX=='' ) {
-      this.setState({
-        tUI_tInteraction: null
-      });
-    } else {
-      let tBabel = null;
-      try {
-        tBabel = transform(
-          strJSX,
-          {
-            filename: 'dynamic_loaded.jsx',
-            presets: ['env', 'react'],
-            plugins: [
-              [ availablePlugins["proposal-class-properties"], { decoratorsBeforeExport: true } ]
-            ]
-          }
-        );
-      } catch(error) {
-        console.error('Failed to translate JSX code:', error, strJSX);
-      }
-
-      /* NOTE: this will go into a callback once babel-standalone is updated to @babel/standalone. */
-      if( tBabel!==null ) {
-        let tCode = this.strJsxHeaderCode + tBabel.code + "\nreturn Interaction;\n";
-        try {
-          const tFn = new Function('atComponents', tCode);
-
-          try {
-            const tElement = tFn(this.atComponents);
-            this.setState({
-              tUI_tInteraction: tElement
-            });
-          } catch(error) {
-            console.error('Failed to create the interaction element:', error, tCode);
-          }
-        } catch(error) {
-          console.error('Failed to parse the received code:', error, tCode);
+    let atDocs = []
+    if('docs' in tJson) {
+      tJson.docs.forEach(function(tAttr, uiIndex) {
+        if(('name' in tAttr) && ('url' in tAttr)) {
+          atDocs.push({name: tAttr.name, url: tAttr.url});
         }
+      }, this);
+    }
+    const fIsEqual = (
+      (atDocs.length == this.state.tTest_atDocuments) &&
+      atDocs.every((tAttr, uiIndex) => (
+        ('name' in tAttr) &&
+        ('url' in tAttr) &&
+        ('name' in this.state.tTest_atDocuments[uiIndex]) &&
+        ('url' in this.state.tTest_atDocuments[uiIndex]) &&
+        (tAttr.name === this.state.tTest_atDocuments[uiIndex].name ) &&
+        (tAttr.url === this.state.tTest_atDocuments[uiIndex].url )
+      ))
+    );
+    if( !fIsEqual ) {
+      tStateNew.tTest_atDocuments = atDocs;
+      fStateChanged = true;
+    }
+
+    // Check for an interaction. If the JSON message does not contain one, clear it.
+    let strInteraction = null;
+    if('interaction' in tJson) {
+      strInteraction = tJson.interaction;
+    }
+    if( strInteraction!==this.state.tUI_strInteraction ) {
+      let tInteraction = null;
+      if( strInteraction!==null && strInteraction!=='' ) {
+        tInteraction = this.createInteraction(strInteraction);
       }
+      tStateNew.tUI_strInteraction = strInteraction;
+      tStateNew.tUI_tInteraction = tInteraction;
+      fStateChanged = true;
+
+      // Clear old interaction data.
+      this.m_tUI_strInteractionData = null;
+    }
+
+    let strInteractionData = null;
+    if('interaction_data' in tJson) {
+      strInteractionData = tJson.interaction_data;
+    }
+    // Was the interaction created in this call?
+    if('tUI_strInteraction' in tStateNew) {
+      // The interaction did not mount yet. Always update it.
+      this.m_tUI_strInteractionData = strInteractionData;
+      fInteractionDataChanged = true;
+
+    // The interaction exists already. Only update it if there are changes.
+    } else if(strInteractionData!==this.m_tUI_strInteractionData) {
+      this.m_tUI_strInteractionData = strInteractionData;
+      fInteractionDataChanged = true;
+    }
+
+
+    // Update the state if something changed.
+    if( fStateChanged ) {
+      // Did the interaction data change also?
+      if( fInteractionDataChanged ) {
+        // The state and the interaction data changed at once.
+        // First apply the new state, then update the interaction data.
+        this.setState(tStateNew, this.callbackSetState_UpdateInteractionData);
+      } else {
+        // Only the state changed.
+        this.setState(tStateNew);
+      }
+    } else if( fInteractionDataChanged ) {
+      // Only the interaction data changed.
+      this.callbackSetState_UpdateInteractionData();
     }
   }
 
 
-  onMessage_SetInteractionData(tJson) {
-    const strData = tJson.data;
-
+  callbackSetState_UpdateInteractionData = () => {
     /* Does an interaction exist? */
     let tElement = this.tTesterInteraction.current;
     if( tElement!==null ) {
       if( typeof(tElement.onInteractionData)=="function" ) {
-        tElement.onInteractionData(strData);
+        tElement.onInteractionData(this.m_tUI_strInteractionData);
       }
     }
   }
@@ -569,46 +618,6 @@ class TesterApp extends React.Component {
   }
 
 
-  onMessage_SetCurrentSerial(tJson) {
-    const uiCurrentSerial = tJson.currentSerial;
-    this.setState({
-      tRunningTest_uiCurrentSerial: uiCurrentSerial
-    });
-  }
-
-
-  onMessage_SetRunningTest(tJson) {
-    let uiRunningTest = null;
-    if('runningTest' in tJson) {
-      uiRunningTest = tJson.runningTest;
-    }
-    this.setState({
-      tRunningTest_uiRunningTest: uiRunningTest
-    });
-  }
-
-
-  onMessage_SetTestState(tJson) {
-    const strTestState = tJson.testState;
-    this.setTestState(strTestState);
-  }
-
-
-  onMessage_SetDocs(tJson) {
-    if('docs' in tJson) {
-      let atDocs = []
-      tJson.docs.forEach(function(tAttr, uiIndex) {
-        if(('name' in tAttr) && ('url' in tAttr)) {
-          atDocs.push({name: tAttr.name, url: tAttr.url});
-        }
-      }, this);
-      this.setState({
-        tTest_atDocuments: atDocs
-      });
-    }
-  }
-
-
   onMessage_Heartbeat() {
     // Add the heartbeat to the list.
     // The timestamp is in milliseconds. Convert it to seconds.
@@ -616,6 +625,11 @@ class TesterApp extends React.Component {
     this.atHeartbeats.push(ulTimestampS);
 
     this.weedOutOldHeartbeats();
+  }
+
+
+  callbackSetState_SendStateToServer = () => {
+
   }
 
 
@@ -647,51 +661,8 @@ class TesterApp extends React.Component {
   };
 
   getTestStati = () => {
-    let astrStati = [];
-    this.state.tTest_atTestStati.forEach(function(uiState, uiIndex) {
-      console.debug(uiState, uiIndex);
-      astrStati[uiIndex] = this.atResultIdToName.get(uiState);
-    }, this);
-    return astrStati;
-  };
-
-  setTestState = (strState) => {
-    /* Is a test running? */
-    const uiRunningTest = this.state.tRunningTest_uiRunningTest;
-    if( uiRunningTest!=null ) {
-      /* Translate the state to an ID. */
-      if( this.atResultNameToId.has(strState) ) {
-        const uiState = this.atResultNameToId.get(strState);
-
-        /* Clone the array. Do not modify the state contents directly. */
-        let atStati = this.state.tTest_atTestStati.slice();
-
-        /* Set the state. */
-        atStati[uiRunningTest] = uiState;
-
-        this.setState({
-          tTest_atTestStati: atStati
-        });
-      }
-    }
-  };
-
-  setAllTestStati = (astrStates) => {
-    /* Clone the array. Do not modify the state contents directly. */
-    let atStati = this.state.tTest_atTestStati.slice();
-
-    /* Loop over all elements in the argument. */
-    astrStates.forEach(function(strState, uiIndex) {
-      /* Translate the state to an ID. */
-      if( this.atResultNameToId.has(strState) ) {
-        const uiState = this.atResultNameToId.get(strState);
-        atStati[uiIndex] = uiState;
-      }
-    }, this);
-
-    this.setState({
-      tTest_atTestStati: atStati
-    });
+    // Return a copy of the states.
+    return this.state.tTest_atTestStati.slice();
   };
 
 
@@ -848,10 +819,6 @@ class TesterApp extends React.Component {
       const strJson = JSON.stringify({id: 'Cancel'});
       tSocket.send(strJson);
     }
-
-    this.setState({
-      tRunningTest_uiRunningTest: null
-    });
   }
 
 
@@ -873,9 +840,13 @@ class TesterApp extends React.Component {
       this.log(LOG_INFO, 'Enrico Mode ist aus.');
     }
 
-    this.setState({
-      enricoMode: bEnricoMode
-    });
+    // Update the state and send it to the server.
+    this.setState(
+      {
+        enricoMode: bEnricoMode
+      },
+      this.callbackSetState_SendStateToServer
+    );
   }
 
 
