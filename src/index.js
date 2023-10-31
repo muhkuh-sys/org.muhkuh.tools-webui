@@ -763,9 +763,13 @@ class TesterApp extends React.Component {
           tNewState = ConnectionState_Ok4;
           break;
       }
-      this.setState({
-        tConnectionState: tNewState
-      });
+
+      // Only update a changed state to prevent needless redraws.
+      if( tNewState!=this.state.tConnectionState) {
+        this.setState({
+          tConnectionState: tNewState
+        });
+      }
     }
   }
 
