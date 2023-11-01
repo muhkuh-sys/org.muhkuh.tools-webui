@@ -160,8 +160,10 @@ class TesterApp extends React.Component {
 
     this.m_tUI_strInteractionData = null;
 
-    this.m_strPersistanceState = null;
-    this.m_tInitialPersistanceState = null;
+    // A received persisence state is stored here.
+    // The constructor in the interaction component accesses it with
+    // the function "fnGetPersistentState".
+    this.m_tInitialPersistenceState = null;
 
     /* All log lines combined in one string. */
     this.uiLogFilterLevel = 8;
@@ -186,7 +188,7 @@ class TesterApp extends React.Component {
       'fnSetTestState': this.setTestState,
       'fnSetAllTestStati': this.setAllTestStati,
       'fnGetEnricoMode': this.getEnricoMode,
-      'fnPersistState': this.callbackSetState_SendStateToServer,
+      'fnPersistState': this.setPersietenceState,
       'fnGetPersistentState': this.getPersistentState,
       'React': React,
       'Button': Button,
@@ -556,6 +558,8 @@ class TesterApp extends React.Component {
 
       // Clear old interaction data.
       this.m_tUI_strInteractionData = null;
+      // Clear any old peristance states.
+      this.m_tInitialPersistenceState = null;
     }
 
     let strInteractionData = null;
@@ -576,24 +580,21 @@ class TesterApp extends React.Component {
 
 
     if('persistence' in tJson) {
-      // Only accept incoming persistence data if the local instance has no persistance data yet.
-      if( this.m_strPersistanceState===null ) {
-        const tPeristence = tJson.persistence;
-        if('enricoMode' in tPeristence) {
-          const fEnricoMode = tPeristence.enricoMode;
+      const tPeristence = tJson.persistence;
+      if('app' in tPeristence) {
+        const tPeristenceApp = tPeristence.app;
+        if('enricoMode' in tPeristenceApp) {
+          const fEnricoMode = tPeristenceApp.enricoMode;
           if( fEnricoMode!==this.state.enricoMode ) {
             tStateNew.enricoMode = fEnricoMode;
             fStateChanged = true;
           }
         }
+      }
 
-        if('interactionState' in tPeristence) {
-          this.m_tInitialPersistanceState = tPeristence.interactionState;
-
-          fStateChanged = true;
-        }
-
-        this.m_strPersistanceState = this.generatePersistenceData();
+      if('interaction' in tPeristence) {
+        this.m_tInitialPersistenceState = tPeristence.interaction;
+        fStateChanged = true;
       }
     }
 
@@ -656,41 +657,49 @@ class TesterApp extends React.Component {
   }
 
 
-  generatePersistenceData() {
-    let tMessage = {
-      id: 'Persist',
-      data: {
-        enricoMode: this.state.enricoMode
-      }
-    };
-
-    /* Add the interaction state if it exists. */
-    const tElement = this.tTesterInteraction.current;
-    if( tElement!==null ) {
-      console.log("Interaction state:", tElement.state);
-      tMessage.data.interactionState = tElement.state;
-    }
-
-    return JSON.stringify(tMessage);
-  }
-
-
   callbackSetState_SendStateToServer = () => {
     const tSocket = this.tSocket;
     if( tSocket!==null ) {
-      const strJson = this.generatePersistenceData();
-      if( strJson!==this.m_strPersistanceState ) {
+      const strJson = JSON.stringify({
+        id: 'Persist',
+        data: {
+          enricoMode: this.state.enricoMode
+        }
+      });
+      tSocket.send(strJson);
+    }
+  }
+
+
+  // Set the persistence state.
+  // If "tState" is not set or "null", get the default state
+  // of the interaction.
+  setPersietenceState = (tState=null) => {
+    if( tState===null ) {
+      /* Get the interaction state if it exists. */
+      const tElement = this.tTesterInteraction.current;
+      if( tElement!==null ) {
+        tState = tElement.state;
+      }
+    }
+    if( tState!==null ) {
+      const strJson = JSON.stringify({
+        id: 'Persist',
+        data: {
+          interaction: tState
+        }
+      });
+      const tSocket = this.tSocket;
+      if( tSocket!==null ) {
         tSocket.send(strJson);
-        this.m_strPersistanceState = strJson;
       }
     }
   }
 
 
   getPersistentState = () => {
-    const tInitialPersistanceState = this.m_tInitialPersistanceState;
-    this.m_tInitialPersistanceState = null;
-    return tInitialPersistanceState;
+    // Return the initial persistence state.
+    return this.m_tInitialPersistenceState;
   }
 
 

@@ -43,7 +43,8 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
 
   self.atDocuments = {}
 
-  self.atPersistence = {}
+  self.tPersistenceApp = nil
+  self.tPersistenceInteraction = nil
 
   self.tTester = nil
 
@@ -269,6 +270,8 @@ function WebUiBuffer:setInteraction(strJsx)
 
     -- Accept the new code.
     self.strInteractionJsx = strJsx
+    -- Clear the persistent state of the old interaction.
+    self.tPersistenceInteraction = nil
 
     -- Push the code to the UI if there is a connection.
     self:__sendState()
@@ -381,6 +384,11 @@ function WebUiBuffer:__sendState()
       tAttr.state = strState
     end
 
+    local tPersistence = {
+      app = self.tPersistenceApp,
+      interaction = self.tPersistenceInteraction
+    }
+
     local tMessage = {
       id = 'State',
       title = self.strTitle,
@@ -392,10 +400,28 @@ function WebUiBuffer:__sendState()
       currentSerial = self.uiCurrentSerial,
       runningTest = tRunningTest,
       tests = atTests,
-      persistence = self.atPersistence
+      persistence = tPersistence
     }
     local strJson = self.json.encode(tMessage)
     tConnection:write(strJson)
+  end
+end
+
+
+
+--- Set the persistence data.
+-- The incoming data can have an "app" and an "interaction" part.
+-- Both are optional, as the application and the interaction send their persistence data individually without adding
+-- the other part. This means that a missing "app" or "interaction" part must not clear the stored persistence data.
+function WebUiBuffer:__setPersistenceData(tPersistence)
+  local tPersistenceApp = tPersistence.app
+  if tPersistenceApp~=nil then
+    self.tPersistenceApp = tPersistenceApp
+  end
+
+  local tPersistenceInteraction = tPersistence.interaction
+  if tPersistenceInteraction~=nil then
+    self.tPersistenceInteraction = tPersistenceInteraction
   end
 end
 
@@ -440,7 +466,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
           end
 
         elseif strId=='Persist' then
-          self.atPersistence = tJson.data
+          self:__setPersistenceData(tJson.data)
 
         else
           print('Unknown message ID received.')
