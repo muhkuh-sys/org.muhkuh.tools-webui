@@ -63,6 +63,7 @@ function LogKafka:_init(tLog, fActivateDebugging)
   self.tTopic_teststations = nil
   self.tTopic_logs = nil
   self.tTopic_events = nil
+  self.fDisableLogging = false
   if fActivateDebugging==true then
     self.tTopic_teststations_cnt = 0
     self.tTopic_logs_cnt = 0
@@ -252,7 +253,7 @@ function LogKafka:__sendMessageBuffer()
 
     -- Send the message to the Kafka topic.
     local tTopic = self.tTopic_logs
-    if tTopic~=nil then
+    if tTopic~=nil and self.fDisableLogging~=true then
       self:__sendMessage(tTopic, strJson)
     end
 
@@ -284,7 +285,7 @@ function LogKafka:__sendEvent(strEventId, atAttributes)
 
   -- Send the event to the Kafka topic.
   local tTopic = self.tTopic_events
-  if tTopic~=nil then
+  if tTopic~=nil and self.fDisableLogging~=true then
     self:__sendMessage(tTopic, strJson)
   end
 
@@ -295,6 +296,15 @@ function LogKafka:__sendEvent(strEventId, atAttributes)
     tFile:close()
     self.tTopic_events_cnt = self.tTopic_events_cnt + 1
   end
+end
+
+
+
+function LogKafka:disableLogging(fDisableLogging)
+  -- Convert the parameter to boolean.
+  fDisableLogging = (fDisableLogging == true)
+  -- Store the parameter.
+  self.fDisableLogging = fDisableLogging
 end
 
 

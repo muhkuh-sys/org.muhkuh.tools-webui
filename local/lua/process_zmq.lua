@@ -40,7 +40,8 @@ function ProcessZmq:_init(tLog, tLogTest, strCommand, astrArguments, strWorkingP
     TDS = self.__onZmqReceiveTds,
     TDF = self.__onZmqReceiveTdf,
     GPN = self.__onZmqReceiveGpn,
-    LEV = self.__onZmqReceiveLev
+    LEV = self.__onZmqReceiveLev,  -- Log an event with an ID and attributes.
+    DLO = self.__onZmqReceiveDlo,  -- Disable or Enable logging.
   }
 end
 
@@ -295,6 +296,32 @@ function ProcessZmq:__onZmqReceiveLev(tHandle, strMessage)
     local tLogConsumer = self.m_logConsumer
     if tLogConsumer~=nil then
       tLogConsumer:onEvent(strEventId, atAttributes)
+    end
+  end
+end
+
+
+
+function ProcessZmq:__onZmqReceiveDlo(tHandle, strMessage)
+  local tLog = self.tLog
+  local strResponseRaw = string.match(strMessage, '^DLO(.*)')
+  local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
+  if tJson==nil then
+    tLog.error('JSON Error: %d %s', uiPos, strJsonErr)
+  else
+    local fDisableLogging = tJson.fDisableLogging
+    fDisableLogging = (fDisableLogging == true)
+
+    if fDisableLogging then
+      tLog.info('Enable logging.')
+    else
+      tLog.info('Disable logging.')
+    end
+
+    -- Enable or disable logging.
+    local tLogConsumer = self.m_logConsumer
+    if tLogConsumer~=nil then
+      tLogConsumer:disableLogging(fDisableLogging)
     end
   end
 end
