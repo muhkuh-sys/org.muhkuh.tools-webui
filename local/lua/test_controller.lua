@@ -165,4 +165,13 @@ end
 
 
 
+function TestController:shutdown()
+  local testProcess = self.m_testProcess
+  if testProcess~=nil then
+    testProcess:shutdown()
+    self.m_testProcess = nil
+  end
+end
+
+
 return TestController

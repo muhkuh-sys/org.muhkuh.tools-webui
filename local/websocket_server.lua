@@ -819,10 +819,13 @@ tServerProc:run()
 tTestController:run(bHaveValidTestDescription, bInstallPossible, strErrorMessage)
 
 
-local function OnCancelAll()
+local function OnCancelAll(tSignal)
   print('Cancel pressed!')
   tServerProc:shutdown()
-  tTestProc:shutdown()
+  tTestController:shutdown()
+  webui_buffer:shutdown()
+  tSignal:close()
+  uv.stop()
 end
 uv.signal():start(uv.SIGINT, OnCancelAll)
 

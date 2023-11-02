@@ -432,12 +432,9 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
 
   if err then
     tLog.error('Server read error, closing the connection: %s', tostring(err))
-    self.tActiveConnection = nil
     self.uiSyncedLogIndex = 0
-    self.tLogTimer:stop()
-    self.tHeartbeatTimer:stop()
     self:__sendCurrentPeerName()
-    return tConnection:close()
+    self:shutdown()
   else
     tLog.debug('__connectionOnReceive: %s %s', tostring(tConnection), tostring(self.tActiveConnection))
     tLog.debug('JSON: "%s"', strMessage)
@@ -484,11 +481,8 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
 
   if err then
     tLog.error('Server handshake error: %s', tostring(err))
-    self.tActiveConnection = nil
     self.uiSyncedLogIndex = 0
-    self.tLogTimer:stop()
-    self.tHeartbeatTimer:stop()
-    return tConnection:close()
+    self:shutdown()
 
   elseif self.tActiveConnection~=nil then
     tLog.notice('Not accepting a second conncetion.')
@@ -561,6 +555,33 @@ function WebUiBuffer:start()
   self.tServer:bind(self.strWebsocketURL, self.strWebsocketProtocol, function(tSomething, tError) this:__onCreate(tSomething, tError) end)
 end
 
+
+
+function WebUiBuffer:shutdown()
+  local tLogTimer = self.tLogTimer
+  if tLogTimer~=nil then
+    tLogTimer:stop()
+    self.tLogTimer = nil
+  end
+
+  local tHeartbeatTimer = self.tHeartbeatTimer
+  if tHeartbeatTimer~=nil then
+    tHeartbeatTimer:stop()
+    self.tHeartbeatTimer = nil
+  end
+
+  local tActiveConnection = self.tActiveConnection
+  if tActiveConnection~=nil then
+    tActiveConnection:close()
+    self.tActiveConnection = nil
+  end
+
+  local tServer = self.tServer
+  if tServer~=nil then
+    tServer:close()
+    self.tServer = nil
+  end
+end
 
 
 return WebUiBuffer
