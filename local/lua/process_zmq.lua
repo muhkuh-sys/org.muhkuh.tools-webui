@@ -313,9 +313,9 @@ function ProcessZmq:__onZmqReceiveDlo(tHandle, strMessage)
     fDisableLogging = (fDisableLogging == true)
 
     if fDisableLogging then
-      tLog.info('Enable logging.')
-    else
       tLog.info('Disable logging.')
+    else
+      tLog.info('Enable logging.')
     end
 
     -- Enable or disable logging.
