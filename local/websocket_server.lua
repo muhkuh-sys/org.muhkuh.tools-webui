@@ -796,17 +796,22 @@ local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()
 
 -- Create the server process.
-local strLuaInterpreter = uv.exepath()
-tLog.debug('LUA interpreter: %s', strLuaInterpreter)
-local ProcessKeepalive = require 'process_keepalive'
-local astrServerArgs = {
-  'server.lua',
-  pl.path.join(strTestBasePath, 'www'),
-  strSSDP_UUID,
-  '--webserver-address',
-  strInterfaceAddress
-}
-local tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, astrServerArgs, 3)
+local tServerProc
+if tConfiguration.webserver_embedded~=true then
+  tLogSystem.info('Not starting the embedded web server as requested in the config.')
+else
+  local strLuaInterpreter = uv.exepath()
+  tLog.debug('LUA interpreter: %s', strLuaInterpreter)
+  local ProcessKeepalive = require 'process_keepalive'
+  local astrServerArgs = {
+    'server.lua',
+    pl.path.join(strTestBasePath, 'www'),
+    strSSDP_UUID,
+    '--webserver-address',
+    strInterfaceAddress
+  }
+  tServerProc = ProcessKeepalive(tLog, strLuaInterpreter, astrServerArgs, 3)
+end
 
 -- Create a new test controller.
 local TestController = require 'test_controller'
@@ -815,13 +820,17 @@ tTestController:setBuffer(webui_buffer)
 tTestController:setLogConsumer(tLogKafka)
 
 
-tServerProc:run()
+if tServerProc~=nil then
+  tServerProc:run()
+end
 tTestController:run(bHaveValidTestDescription, bInstallPossible, strErrorMessage)
 
 
 local function OnCancelAll(tSignal)
   print('Cancel pressed!')
-  tServerProc:shutdown()
+  if tServerProc~=nil then
+    tServerProc:shutdown()
+  end
   tTestController:shutdown()
   webui_buffer:shutdown()
   tSignal:close()

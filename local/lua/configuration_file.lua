@@ -88,8 +88,14 @@ function ConfigurationFile:read()
     -- The name of the ethernet interface o use. If none specified, take the first non-local.
     interface = '',
 
+    -- Start the embedded webserver. Set this to false if an external webserver is used.
+    webserver_embedded = true,
+
     -- The port of the webserver. Must be >1024 if the server is starting with non-root rights.
     webserver_port = 9090,
+
+    -- The path to the web application.
+    webserver_path = '/webui/index.html',
 
     -- The port number for the websocket. This is a regular port on the teststation server.
     -- It can be changed if it colliges with something else.
@@ -128,15 +134,21 @@ function ConfigurationFile:read()
   -- Merge the local configuration.
   local tMergedConfig = self:__merge(nil, tMergedConfig0, 'local config', tLocalConfig)
 
-  -- Convert the "kafka_debugging" entry to a boolean.
-  local tValue = tMergedConfig.kafka_debugging
-  local fValue = false
-  if type(tValue)=='boolean' then
-    fValue = tValue
-  elseif type(tValue)=='string' and string.lower(tValue)=='true' then
-    fValue = true
+  -- Convert the boolean entries to a proper value
+  local astrBooleanKeys = {
+    'webserver_embedded',
+    'kafka_debugging'
+  }
+  for _, strKey in ipairs(astrBooleanKeys) do
+    local tValue = tMergedConfig[strKey]
+    local fValue = false
+    if type(tValue)=='boolean' then
+      fValue = tValue
+    elseif type(tValue)=='string' and string.lower(tValue)=='true' then
+      fValue = true
+    end
+    tMergedConfig[strKey] = fValue
   end
-  tMergedConfig.kafka_debugging = fValue
 
   return tMergedConfig
 end

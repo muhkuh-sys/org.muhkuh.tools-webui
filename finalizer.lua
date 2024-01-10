@@ -5,7 +5,7 @@ local pl = require'pl.import_into'()
 
 -- Copy all additional files.
 t:install{
-  ['targets/www']                        = '${install_base}/www/',
+  ['targets/www']                        = '${install_base}/www/webui/',
 
   ['local/server.lua']                   = '${install_base}/',
   ['local/websocket_server.lua']         = '${install_base}/',
