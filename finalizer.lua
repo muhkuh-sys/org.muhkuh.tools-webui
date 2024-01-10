@@ -28,6 +28,8 @@ t:install{
   ['local/jsx/test_error_serious.jsx']   = '${install_base}/jsx/',
   ['local/jsx/test_start.jsx']           = '${install_base}/jsx/',
 
+  ['local/nginx/http-50-webui.conf']     = '${install_base}/openresty/nginx/conf.d/',
+
   ['${report_path}']                     = '${install_base}/.jonchki/'
 }
 
@@ -38,24 +40,24 @@ if strDistId=='ubuntu' then
 end
 
 
--- Filter the service file.
-local strFileSourcePath = 'local/linux/systemd/muhkuh_webui.service'
-local strFileDestinationPath = '${install_base}/systemd/'
-local strFileDestinationName = 'muhkuh_webui.service'
-
-local strSrcAbs = pl.path.abspath(strFileSourcePath, t.strCwd)
-local strFileDestinationPathExpanded = t:replace_template(strFileDestinationPath)
-local strFile, strError = pl.utils.readfile(strSrcAbs, false)
-if strFile==nil then
-  tLog.error('Failed to read the file "%s": %s', strSrcAbs, strError)
-  error('Failed to read the file.')
-end
-local strFilteredFile = t:replace_template(strFile)
-pl.dir.makepath(strFileDestinationPathExpanded)
-local tFileError, strError = pl.utils.writefile(pl.path.join(strFileDestinationPathExpanded, strFileDestinationName), strFilteredFile, false)
-if tFileError==nil then
-  tLog.error('Failed to write the file "%s": %s', strFileDestinationPathExpanded, strError)
-  error('Failed to write the file.')
+-- Filter files.
+local atFilterFiles = {
+  ['local/linux/systemd/muhkuh_webui.service']  = '${install_base}/systemd/muhkuh_webui.service',
+  ['local/nginx/server-50-webui.conf']   = '${install_base}/openresty/nginx/conf.d/server-50-webui.conf'
+}
+for strFileSourcePath, strFileDestinationPath in pairs(atFilterFiles) do
+  local strSrcAbs = pl.path.abspath(strFileSourcePath, t.strCwd)
+  local strFileDestinationPathExpanded = t:replace_template(strFileDestinationPath)
+  local strFileData, strReadError = pl.utils.readfile(strSrcAbs, false)
+  if strFileData==nil then
+    error(string.format('Failed to read the file "%s": %s', strSrcAbs, strReadError))
+  end
+  local strFilteredFile = t:replace_template(strFileData)
+  pl.dir.makepath(pl.path.dirname(strFileDestinationPathExpanded))
+  local tFileError, strError = pl.utils.writefile(strFileDestinationPathExpanded, strFilteredFile, false)
+  if tFileError==nil then
+    error(string.format('Failed to write the file "%s": %s', strFileDestinationPathExpanded, strError))
+  end
 end
 
 
