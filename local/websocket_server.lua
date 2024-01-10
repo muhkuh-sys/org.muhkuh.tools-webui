@@ -773,7 +773,8 @@ end
 -- The interval can be set in seconds with the "announce_interval" item in the configuration.
 local tAnnounceData = {
   ip = strInterfaceAddress,
-  port = tConfiguration.webserver_port
+  port = tConfiguration.webserver_port,
+  path = tConfiguration.webserver_path
 }
 local uiAnnounceInterval = tConfiguration.announce_interval
 local uiCheckInterval = 10000
