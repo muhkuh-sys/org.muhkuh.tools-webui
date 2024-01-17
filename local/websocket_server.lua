@@ -5,7 +5,6 @@ uv.poll_zmq = require 'lluv.poll_zmq'
 
 local function __prepareFolder(tLog, strPath, strName)
   local tResult = true
-  local bInstallPossible = false
   local strErrorMessage
 
   -- Refuse to work with a relative folder.
@@ -34,16 +33,15 @@ local function __prepareFolder(tLog, strPath, strName)
     end
   end
 
-  return tResult, bInstallPossible, strErrorMessage
+  return tResult, strErrorMessage
 end
 
 
 local function __prepareAndCleanFolder(tLog, strPath, strName)
   local tResult = true
-  local bInstallPossible = false
   local strErrorMessage
 
-  local tResult, bInstallPossible, strErrorMessage = __prepareFolder(tLog, strPath, strName)
+  local tResult, strErrorMessage = __prepareFolder(tLog, strPath, strName)
   if tResult==true then
     -- Remove all files in the depack folder.
     local astrObsoleteFiles = pl.dir.getallfiles(strPath)
@@ -58,7 +56,7 @@ local function __prepareAndCleanFolder(tLog, strPath, strName)
     end
   end
 
-  return tResult, bInstallPossible, strErrorMessage
+  return tResult, strErrorMessage
 end
 
 
@@ -66,7 +64,6 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
   local archive = require 'archive'
   local lfs = require 'lfs'
   local tResult = true
-  local bInstallPossible = false
   local strTestBasePath = ''
   local strErrorMessage
 
@@ -93,7 +90,6 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
     if r~=0 then
       strErrorMessage = string.format('Failed to open the archive "%s": %s', strTestArchivePath, tArcRead:error_string())
       tLog.error(strErrorMessage)
-      bInstallPossible = true
       tResult = false
     else
       local iResult = 0
@@ -156,12 +152,10 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
       if sizTestsXmlPaths==0 then
         strErrorMessage = string.format('No "tests.xml" found in path "%s".', strDepackPath)
         tLog.error(strErrorMessage)
-        bInstallPossible = true
         tResult = false
       elseif sizTestsXmlPaths~=1 then
         strErrorMessage = string.format('More than 1 "tests.xml" found in path "%s".', strDepackPath)
         tLog.error(strErrorMessage)
-        bInstallPossible = true
         tResult = false
       else
         -- Get the path to the tests.xml path. The dirname is the test base path.
@@ -172,7 +166,7 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
     end
   end
 
-  return tResult, bInstallPossible, strTestBasePath, strErrorMessage
+  return tResult, strTestBasePath, strErrorMessage
 end
 
 
@@ -365,7 +359,6 @@ end
 
 local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder, strRemoteListDepackPath)
   local tResult = true
-  local bInstallPossible = false
   local strTestBasePath = ''
   local strErrorMessage
 
@@ -383,9 +376,9 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
     tResult = false
 
   else
-    tResult, bInstallPossible, strErrorMessage = __prepareFolder(tLog, strRemoteDownloadFolder, 'download')
+    tResult, strErrorMessage = __prepareFolder(tLog, strRemoteDownloadFolder, 'download')
     if tResult==true then
-      tResult, bInstallPossible, strErrorMessage = __prepareAndCleanFolder(tLog, strRemoteListDepackPath, 'depack')
+      tResult, strErrorMessage = __prepareAndCleanFolder(tLog, strRemoteListDepackPath, 'depack')
       if tResult==true then
 
         tLog.debug('Downloading test list from %s .', strRemoteListUrl)
@@ -502,7 +495,7 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
               end
 
               if tResult==true then
-                tResult, bInstallPossible, strTestBasePath, strErrorMessage = __extractArchive(tLog, strLocalArchive, strRemoteListDepackPath)
+                tResult, strTestBasePath, strErrorMessage = __extractArchive(tLog, strLocalArchive, strRemoteListDepackPath)
               end
             end
           end
@@ -511,7 +504,7 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
     end
   end
 
-  return tResult, bInstallPossible, strTestBasePath, strErrorMessage
+  return tResult, strTestBasePath, strErrorMessage
 end
 
 
@@ -601,7 +594,6 @@ tSsdp:run()
 local tTestDescription = require 'test_description'(tLog)
 
 local tResult = true
-local bInstallPossible = false
 local bHaveValidTestDescription = false
 local strErrorMessage
 local strTestBasePath = ''
@@ -629,7 +621,7 @@ elseif strTestStorage=='LOCAL_ARCHIVE' then
   -- Config option "test_path" is not set -> depack an archive.
 
   local strDepackPath = tConfiguration.depack_path
-  tResult, bInstallPossible, strErrorMessage = __prepareAndCleanFolder(tLog, strDepackPath, 'depack')
+  tResult, strErrorMessage = __prepareAndCleanFolder(tLog, strDepackPath, 'depack')
   if tResult==true then
     local strArchivePath = tConfiguration.archive_path
     if tResult==true then
@@ -653,7 +645,6 @@ elseif strTestStorage=='LOCAL_ARCHIVE' then
       if strTestArchive=='' then
         strErrorMessage = string.format('The test archive is not set.')
         tLog.error(strErrorMessage)
-        bInstallPossible = true
         tResult = false
       end
     end
@@ -664,10 +655,9 @@ elseif strTestStorage=='LOCAL_ARCHIVE' then
       if pl.path.isfile(strTestArchivePath)~=true then
         strErrorMessage = string.format('The archive "%s" does not exist.', strTestArchivePath)
         tLog.error(strErrorMessage)
-        bInstallPossible = true
         tResult = false
       else
-        tResult, bInstallPossible, strTestBasePath, strErrorMessage = __extractArchive(tLog, strTestArchivePath, strDepackPath)
+        tResult, strTestBasePath, strErrorMessage = __extractArchive(tLog, strTestArchivePath, strDepackPath)
       end
     end
   end
@@ -678,7 +668,7 @@ elseif strTestStorage=='REMOTE_LIST' then
   local strRemoteListStationId = tConfiguration.remote_list_station_id
   local strRemoteDownloadFolder = tConfiguration.remote_list_download_folder
   local strRemoteListDepackPath = tConfiguration.remote_list_depack_path
-  tResult, bInstallPossible, strTestBasePath, strErrorMessage = __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder, strRemoteListDepackPath)
+  tResult, strTestBasePath, strErrorMessage = __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder, strRemoteListDepackPath)
 
 else
   strErrorMessage = string.format('The configuration option "test_storage" defines an invalid type: %s', strTestStorage)
@@ -711,7 +701,6 @@ if tResult==true then
       if bHaveValidTestDescription~=true then
         strErrorMessage = 'Failed to parse the test description.'
         tLog.error(strErrorMessage)
-        bInstallPossible = true
         tResult = false
       end
     end
@@ -824,7 +813,7 @@ tTestController:setLogConsumer(tLogKafka)
 if tServerProc~=nil then
   tServerProc:run()
 end
-tTestController:run(bHaveValidTestDescription, bInstallPossible, strErrorMessage)
+tTestController:run(bHaveValidTestDescription, strErrorMessage)
 
 
 local function OnCancelAll(tSignal)

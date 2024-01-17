@@ -20,7 +20,6 @@ function TestController:_init(tLog, tLogTest, strLuaInterpreter, strTestPath)
 
   self.m_strStartPageOk = 'jsx/test_start.jsx'
   self.m_strStartPageSeriousError = 'jsx/test_error_serious.jsx'
-  self.m_strStartPageInstallPossible = 'jsx/test_error_install_possible.jsx'
 end
 
 
@@ -65,17 +64,12 @@ end
 
 
 
-function TestController:run(bHaveValidTestDescription, bInstallPossible, strErrorMessage)
+function TestController:run(bHaveValidTestDescription, strErrorMessage)
   local strFilename = self.m_strStartPageOk
   local atReplace = {}
   if bHaveValidTestDescription~=true then
-    if bInstallPossible~=true then
-      strFilename = self.m_strStartPageSeriousError
-      atReplace['ERROR_MESSAGE'] = strErrorMessage
-    else
-      strFilename = self.m_strStartPageInstallPossible
-      atReplace['ERROR_MESSAGE'] = strErrorMessage
-    end
+    strFilename = self.m_strStartPageSeriousError
+    atReplace['ERROR_MESSAGE'] = strErrorMessage
   end
 
   self:__setStartPage(strFilename, atReplace)
