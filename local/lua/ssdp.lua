@@ -21,42 +21,66 @@ function SSDP:_init(tLog, strDescriptionUrl, strMuhkuhVersion)
 
   self:__generateTypeLookup()
 
-  local astrData = {
-    'NOTIFY * HTTP/1.1',
-    'Host: %SSDP_IPV4%:%SSDP_PORT%',
-    'Server: Muhkuh/%MUHKUH_VERSION% UPnP/1.0 ssdpd/1.5',
-    'Location: %LOCATION%',
-    'NT: %NT%',
-    'NTS: ssdp:alive',
-    'USN: %USN%',
-    'Cache-Control: max-age=%MAX_AGE%',
-    '',
-    ''
-  }
-  self.strTemplateSsdpNotify = table.concat(astrData, '\r\n')
+  self.strTemplateSsdpNotify = table.concat(
+    {
+      'NOTIFY * HTTP/1.1',
+      'Host: %SSDP_IPV4%:%SSDP_PORT%',
+      'Server: Muhkuh/%MUHKUH_VERSION% UPnP/1.0 ssdpd/1.5',
+      'Location: %LOCATION%',
+      'NT: %NT%',
+      'NTS: ssdp:alive',
+      'USN: %USN%',
+      'Cache-Control: max-age=%MAX_AGE%',
+      '',
+      ''
+    },
+    '\r\n'
+  )
 
-  local astrData = {
-    'HTTP/1.1 200 OK',
-    'Server: Muhkuh/%MUHKUH_VERSION% UPnP/1.0 ssdpd/1.5',
-    'Location: %LOCATION%',
-    'ST: %ST%',
-    'EXT: ',
-    'USN: %USN%',
-    'Cache-Control: max-age=%MAX_AGE%',
-    '',
-    ''
-  }
-  self.strTemplateSsdpResponse = table.concat(astrData, '\r\n')
+  self.strTemplateSsdpResponse = table.concat(
+    {
+      'HTTP/1.1 200 OK',
+      'Server: Muhkuh/%MUHKUH_VERSION% UPnP/1.0 ssdpd/1.5',
+      'Location: %LOCATION%',
+      'ST: %ST%',
+      'EXT: ',
+      'USN: %USN%',
+      'Cache-Control: max-age=%MAX_AGE%',
+      '',
+      ''
+    },
+    '\r\n'
+  )
 end
 
 
 
 function SSDP:__generateTypeLookup()
   self.m_atSsdpTypes = {
-    { type='ssdp', data='all',                                             fIncludeInNotifyAll=false, fSendOnlyUUID=true },
-    { type='upnp', data='rootdevice',                                      fIncludeInNotifyAll=true,  fSendOnlyUUID=false },
-    { type='urn',  data='schemas-upnp-org:device:InternetGatewayDevice:1', fIncludeInNotifyAll=true,  fSendOnlyUUID=false },
-    { type='uuid', data=self.m_strSystemUuid,                              fIncludeInNotifyAll=true,  fSendOnlyUUID=true }
+    {
+      type='ssdp',
+      data='all',
+      fIncludeInNotifyAll=false,
+      fSendOnlyUUID=true
+    },
+    {
+      type='upnp',
+      data='rootdevice',
+      fIncludeInNotifyAll=true,
+      fSendOnlyUUID=false
+    },
+    {
+      type='urn',
+      data='schemas-upnp-org:device:InternetGatewayDevice:1',
+      fIncludeInNotifyAll=true,
+      fSendOnlyUUID=false
+    },
+    {
+      type='uuid',
+      data=self.m_strSystemUuid,
+      fIncludeInNotifyAll=true,
+      fSendOnlyUUID=true
+    }
   }
 end
 
@@ -73,9 +97,16 @@ function SSDP:setSystemUuid()
     tLog.error('Failed to read the system UUID from "%s": %s', strSystemUUIDFile, strError)
 
   else
-    local strU1, strU2, strU3, strU4, strU5 = string.match(strSystemUUID, '(%x%x%x%x%x%x%x%x)(%x%x%x%x)(%x%x%x%x)(%x%x%x%x)(%x%x%x%x%x%x%x%x%x%x%x%x)')
+    local strU1, strU2, strU3, strU4, strU5 = string.match(
+      strSystemUUID,
+      '(%x%x%x%x%x%x%x%x)(%x%x%x%x)(%x%x%x%x)(%x%x%x%x)(%x%x%x%x%x%x%x%x%x%x%x%x)'
+    )
     if strU1==nil then
-    tLog.error('The UUID in "%s" does not match the expected format of 32 hex digits: "%s"', strSystemUUIDFile, strSystemUUID)
+    tLog.error(
+      'The UUID in "%s" does not match the expected format of 32 hex digits: "%s"',
+      strSystemUUIDFile,
+      strSystemUUID
+    )
 
     else
       -- Combine all elements of the UUID with dashes.
@@ -136,7 +167,7 @@ end
 
 
 
-function SSDP:__onReceive(tSocket, tError, strData, tFlags, strHost, uiPort)
+function SSDP:__onReceive(tSocket, tError, strData, _, strHost, uiPort)
   if tError then
     return
   end

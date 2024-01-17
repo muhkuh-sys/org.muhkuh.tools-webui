@@ -101,7 +101,7 @@ function Process:_onTerminate(tHandle, err, exit_status, term_signal)
   if tHandle==self.tProc then
     tHandle:close()
 
-    -- Stop 
+    -- Stop.
     local tShutdownTimer = self.tShutdownTimer
     if tShutdownTimer~=nil then
       tShutdownTimer:close()
@@ -120,7 +120,7 @@ end
 
 
 
-function Process:onClose(strError, iExitStatus, uiTermSignal)
+function Process.onClose()
   -- Do nothing by default.
 end
 
@@ -158,13 +158,13 @@ end
 
 
 
-function Process:onStdOut(strData)
+function Process.onStdOut()
   -- Do nothing by default.
 end
 
 
 
-function Process:onStdErr(strData)
+function Process.onStdErr()
   -- Do nothing by default.
 end
 

@@ -67,7 +67,8 @@ function ConfigurationFile:read()
     -- Only for test_storage="LOCAL_ARCHIVE": The folder where test archives are stored.
     archive_path = '',
 
-    -- Only for test_storage="LOCAL_ARCHIVE": The file name of the test archive. It will be combined with the "archive_path" to form a complete path.
+    -- Only for test_storage="LOCAL_ARCHIVE": The file name of the test archive. It will be combined with the
+    -- "archive_path" to form a complete path.
     test_archive = '',
 
     -- Only for test_storage="LOCAL_ARCHIVE": A working folder. Here the test archive will be extracted.

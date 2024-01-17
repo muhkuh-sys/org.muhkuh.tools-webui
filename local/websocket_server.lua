@@ -38,9 +38,6 @@ end
 
 
 local function __prepareAndCleanFolder(tLog, strPath, strName)
-  local tResult = true
-  local strErrorMessage
-
   local tResult, strErrorMessage = __prepareFolder(tLog, strPath, strName)
   if tResult==true then
     -- Remove all files in the depack folder.
@@ -72,7 +69,12 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
   tArcRead:support_format_all()
 
   local tArcWrite = archive.ArchiveWriteDisk()
-  local iExtractFlags = archive.ARCHIVE_EXTRACT_NO_OVERWRITE + archive.ARCHIVE_EXTRACT_SECURE_SYMLINKS + archive.ARCHIVE_EXTRACT_SECURE_NODOTDOT + archive.ARCHIVE_EXTRACT_SECURE_NOABSOLUTEPATHS
+  local iExtractFlags = (
+    archive.ARCHIVE_EXTRACT_NO_OVERWRITE +
+    archive.ARCHIVE_EXTRACT_SECURE_SYMLINKS +
+    archive.ARCHIVE_EXTRACT_SECURE_NODOTDOT +
+    archive.ARCHIVE_EXTRACT_SECURE_NOABSOLUTEPATHS
+  )
   tArcWrite:set_options(iExtractFlags)
   tArcWrite:set_standard_lookup()
 
@@ -88,11 +90,14 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
     tLog.debug('Extracting archive "%s".', strTestArchivePath)
     local r = tArcRead:open_filename(strTestArchivePath, 262144)
     if r~=0 then
-      strErrorMessage = string.format('Failed to open the archive "%s": %s', strTestArchivePath, tArcRead:error_string())
+      strErrorMessage = string.format(
+        'Failed to open the archive "%s": %s',
+        strTestArchivePath,
+        tArcRead:error_string()
+      )
       tLog.error(strErrorMessage)
       tResult = false
     else
-      local iResult = 0
       for tEntry in tArcRead:iter_header() do
         local strPathName = tEntry:pathname()
         tLog.debug('Processing entry "%s".', strPathName)
@@ -132,9 +137,13 @@ local function __extractArchive(tLog, strTestArchivePath, strDepackPath)
     end
 
     -- Restore the old working directory.
-    local tLfsResult, strError = lfs.chdir(strOldWorkingDir)
-    if tLfsResult~=true then
-      strErrorMessage = string.format('Failed to restore the working directory "%s" after depacking: %s', strOldWorkingDir, strError)
+    local tResultChdir, strErrorChdir = lfs.chdir(strOldWorkingDir)
+    if tResultChdir~=true then
+      strErrorMessage = string.format(
+        'Failed to restore the working directory "%s" after depacking: %s',
+        strOldWorkingDir,
+        strErrorChdir
+      )
       tLog.error(strErrorMessage)
       tResult = false
     end
@@ -182,7 +191,6 @@ local function __download(tLog, strUrl)
 
   -- Collect the received data in a table.
   local atDownloadData = {}
-  tLastProgressTime = 0
 
   -- Allow redirects. This is important for all big hosters which use cloud
   -- services in the background.
@@ -196,22 +204,27 @@ local function __download(tLog, strUrl)
   tCURL:setopt_writefunction(table.insert, atDownloadData)
 
   -- Show progress information.
-  local tLastProgressTime = 0
   tCURL:setopt_noprogress(false)
-  tCURL:setopt_progressfunction(function(tDummy, ulTotal, ulNow)
-    tNow = os.time()
-    if os.difftime(tNow, tLastProgressTime)>=2 then
-      tLastProgressTime = tNow
-      if ulTotal~=nil and ulNow~=nil then
-        if ulTotal~=0 then
-          local ulPercent = math.floor(0.5 + (ulNow * 100.0 / ulTotal))
-          tLog.debug('Downloading % 3d%% (% 8d/% 8d bytes)', ulPercent, ulNow, ulTotal)
-        else
-          tLog.debug('Downloading %d bytes', ulNow)
+  tCURL:setopt_progressfunction(
+    function(tProgressInfo, ulTotal, ulNow)
+      local tNow = os.time()
+      if os.difftime(tNow, tProgressInfo.tLastProgressTime)>=tProgressInfo.uiDisplayIntervalInSeconds then
+        tProgressInfo.tLastProgressTime = tNow
+        if ulTotal~=nil and ulNow~=nil then
+          if ulTotal~=0 then
+            local ulPercent = math.floor(0.5 + (ulNow * 100.0 / ulTotal))
+            tLog.debug('Downloading % 3d%% (% 8d/% 8d bytes)', ulPercent, ulNow, ulTotal)
+          else
+            tLog.debug('Downloading %d bytes', ulNow)
+          end
         end
       end
-    end
-  end, 1234)
+    end,
+    {
+      uiDisplayIntervalInSeconds = 2,
+      tLastProgressTime = 0
+    }
+  )
 
   local tCallResult, strError = pcall(tCURL.perform, tCURL)
   if tCallResult~=true then
@@ -272,8 +285,10 @@ local function __downloadBestHash(tLog, strBaseUrl)
     local strUrl = strBaseUrl .. '.' .. strName
     tLog.debug('Looking for a %s hash in %s.', strName, strUrl)
     -- Try to download the hash file.
-    local strData, strError = __download(tLog, strUrl)
-    if strData~=nil then
+    local strData, strErrorDownload = __download(tLog, strUrl)
+    if strData==nil then
+      tLog.debug('Failed to download the %s hash: %s', strName, strErrorDownload)
+    else
       tLog.debug('Downloaded %s hash.', strName)
       -- Try to parse the hash.
       local strHex = string.match(pl.stringx.strip(strData), '^([0-9a-fA-F]+)')
@@ -329,7 +344,9 @@ local function __findBestHash(tLog, strBaseFile)
     -- Try to read the hash file.
     if pl.path.isfile(strFile)==true then
       local strData, strError = pl.utils.readfile(strFile)
-      if strData~=nil then
+      if strData==nil then
+        tLog.debug('No %s hash found: %s', strName, strError)
+      else
         tLog.debug('Found %s hash.', strName)
         -- Try to parse the hash.
         local strHex = string.match(pl.stringx.strip(strData), '^([0-9a-fA-F]+)')
@@ -357,10 +374,13 @@ local function __findBestHash(tLog, strBaseFile)
 end
 
 
-local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder, strRemoteListDepackPath)
-  local tResult = true
+local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder,
+                         strRemoteListDepackPath)
+  local tResult
   local strTestBasePath = ''
   local strErrorMessage
+
+  local mhash = require 'mhash'
 
   if strRemoteListUrl==nil or strRemoteListUrl=='' then
     strErrorMessage = 'Test storage "REMOTE_LIST" selected, but no "remote_list_url" found.'
@@ -390,7 +410,11 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
           local dkjson = require 'dkjson'
           local tList, strJsonError = dkjson.decode(strList)
           if tList==nil then
-            strErrorMessage = string.format('Failed to parse the downloaded list from "%s" as JSON: %s', strRemoteListUrl, strJsonError)
+            strErrorMessage = string.format(
+              'Failed to parse the downloaded list from "%s" as JSON: %s',
+              strRemoteListUrl,
+              strJsonError
+            )
             tResult = false
           else
             -- TODO: Schema test?
@@ -407,7 +431,11 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
             end
 
             if strMatchingUrl==nil then
-              strErrorMessage = string.format('The station ID "%s" was not found in the list "%s".', strRemoteListStationId, strRemoteListUrl)
+              strErrorMessage = string.format(
+                'The station ID "%s" was not found in the list "%s".',
+                strRemoteListStationId,
+                strRemoteListUrl
+              )
               tResult = false
             else
               -- Get the optional base URL.
@@ -425,7 +453,10 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
               local strLocalArchive = pl.path.join(strRemoteDownloadFolder, pl.path.basename(strUrl))
               if pl.path.exists(strLocalArchive)==strLocalArchive then
                 if pl.path.isfile(strLocalArchive)==false then
-                  strErrorMessage = string.format('The download folder contains a directory with the name of the archive: %s', strLocalArchive)
+                  strErrorMessage = string.format(
+                    'The download folder contains a directory with the name of the archive: %s',
+                    strLocalArchive
+                  )
                   tResult = false
                 else
                   -- Search the best hash for the file.
@@ -433,6 +464,7 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
                   if tHashID==nil then
                     tLog.debug('No valid hash file found for "%s".', strLocalArchive)
                   else
+                    tLog.debug('Using hash "%s".', strHashName)
                     -- Check the hash.
                     local tState = mhash.mhash_state()
                     tState:init(tHashID)
@@ -495,7 +527,11 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
               end
 
               if tResult==true then
-                tResult, strTestBasePath, strErrorMessage = __extractArchive(tLog, strLocalArchive, strRemoteListDepackPath)
+                tResult, strTestBasePath, strErrorMessage = __extractArchive(
+                  tLog,
+                  strLocalArchive,
+                  strRemoteListDepackPath
+                )
               end
             end
           end
@@ -530,7 +566,7 @@ tLog.info('Start')
 -- Try to read the package file.
 --
 local cPackageFile = require 'package_file'
-local strVersion, strVcsVersion = cPackageFile.read(tLog)
+local strVersion = cPackageFile.read(tLog)
 
 
 ------------------------------------------------------------------------------
@@ -554,7 +590,7 @@ end
 local strInterfaceAddress = nil
 local strInterfaceName = tConfiguration.interface
 if strInterfaceName==nil or strInterfaceName=='' then
-  for uiCnt, tIf in ipairs(tInterfaces) do
+  for _, tIf in ipairs(tInterfaces) do
     -- Select the first interface of the type "inet" which is not internal.
     if tIf.family=='inet' and tIf.internal==false then
       strInterfaceAddress = tIf.address
@@ -567,7 +603,7 @@ if strInterfaceName==nil or strInterfaceName=='' then
   end
 else
   -- Search the requested interface.
-  for uiCnt, tIf in ipairs(tInterfaces) do
+  for _, tIf in ipairs(tInterfaces) do
     if tIf.name==strInterfaceName then
       strInterfaceAddress = tIf.address
       tLog.info('Using interface "%s" with address %s.', tIf.name, strInterfaceAddress)
@@ -584,7 +620,11 @@ end
 --
 -- Start the SSDP server.
 --
-local strDescriptionLocation = string.format('http://%s:%s/description.xml', strInterfaceAddress, tConfiguration.webserver_port)
+local strDescriptionLocation = string.format(
+  'http://%s:%s/description.xml',
+  strInterfaceAddress,
+  tConfiguration.webserver_port
+)
 local SSDP = require 'ssdp'
 local tSsdp = SSDP(tLog, strDescriptionLocation, strVersion)
 local strSSDP_UUID = tSsdp:setSystemUuid()
@@ -668,7 +708,13 @@ elseif strTestStorage=='REMOTE_LIST' then
   local strRemoteListStationId = tConfiguration.remote_list_station_id
   local strRemoteDownloadFolder = tConfiguration.remote_list_download_folder
   local strRemoteListDepackPath = tConfiguration.remote_list_depack_path
-  tResult, strTestBasePath, strErrorMessage = __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemoteDownloadFolder, strRemoteListDepackPath)
+  tResult, strTestBasePath, strErrorMessage = __getList(
+    tLog,
+    strRemoteListUrl,
+    strRemoteListStationId,
+    strRemoteDownloadFolder,
+    strRemoteListDepackPath
+  )
 
 else
   strErrorMessage = string.format('The configuration option "test_storage" defines an invalid type: %s', strTestStorage)
@@ -682,18 +728,23 @@ if tResult==true then
   local tLocalPackageInfo = pl.config.read('.jonchki/package.txt', {convert_numbers=false})
   -- At least the host distribution ID and the host CPU architecture must match.
   if tPackageInfo.HOST_DISTRIBUTION_ID~=tLocalPackageInfo.HOST_DISTRIBUTION_ID then
-    strErrorMessage = string.format('The distribution ID "%s" of the test station does not match the test archive: "%s"', tLocalPackageInfo.HOST_DISTRIBUTION_ID, tPackageInfo.HOST_DISTRIBUTION_ID)
-    tResult = false
+    strErrorMessage = string.format(
+      'The distribution ID "%s" of the test station does not match the test archive: "%s"',
+      tLocalPackageInfo.HOST_DISTRIBUTION_ID,
+      tPackageInfo.HOST_DISTRIBUTION_ID
+    )
   elseif tPackageInfo.HOST_CPU_ARCHITECTURE~=tLocalPackageInfo.HOST_CPU_ARCHITECTURE then
-    strErrorMessage = string.format('The CPU architecture "%s" of the test station does not match the test archive: %s', tLocalPackageInfo.HOST_CPU_ARCHITECTURE, tPackageInfo.HOST_CPU_ARCHITECTURE)
-    tResult = false
+    strErrorMessage = string.format(
+      'The CPU architecture "%s" of the test station does not match the test archive: %s',
+      tLocalPackageInfo.HOST_CPU_ARCHITECTURE,
+      tPackageInfo.HOST_CPU_ARCHITECTURE
+    )
   else
     -- Does the "tests.xml" file exist?
     local strTestXmlFile = pl.path.join(strTestBasePath, 'tests.xml')
     if pl.path.exists(strTestXmlFile)~=strTestXmlFile then
       strErrorMessage =string.format('No "tests.xml" found in the test path "%s".', strTestBasePath)
       tLog.error(strErrorMessage)
-      tResult = false
     else
       tLog.debug('Found "tests.xml" in path "%s".', strTestBasePath)
 
@@ -701,7 +752,6 @@ if tResult==true then
       if bHaveValidTestDescription~=true then
         strErrorMessage = 'Failed to parse the test description.'
         tLog.error(strErrorMessage)
-        tResult = false
       end
     end
   end
@@ -741,7 +791,12 @@ if strKafkaBroker~=nil and strKafkaBroker~='' then
         if strKey=='sasl.password' then
           tLog.warning('Not overwriting Kafka option "%s".', strKey)
         else
-          tLog.warning('Not overwriting Kafka option "%s" with the value "%s". Keeping the value "%s".', strKey, strValue, strOldValue)
+          tLog.warning(
+            'Not overwriting Kafka option "%s" with the value "%s". Keeping the value "%s".',
+            strKey,
+            strValue,
+            strOldValue
+          )
         end
       else
         if strKey=='sasl.password' then
@@ -785,13 +840,14 @@ webui_buffer:setDocuments(tTestDescription:getDocuments())
 local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()
 
+local strLuaInterpreter = uv.exepath()
+tLog.debug('LUA interpreter: %s', strLuaInterpreter)
+
 -- Create the server process.
 local tServerProc
 if tConfiguration.webserver_embedded~=true then
-  tLogSystem.info('Not starting the embedded web server as requested in the config.')
+  tLog.info('Not starting the embedded web server as requested in the config.')
 else
-  local strLuaInterpreter = uv.exepath()
-  tLog.debug('LUA interpreter: %s', strLuaInterpreter)
   local ProcessKeepalive = require 'process_keepalive'
   local astrServerArgs = {
     'server.lua',
@@ -816,17 +872,38 @@ end
 tTestController:run(bHaveValidTestDescription, strErrorMessage)
 
 
-local function OnCancelAll(tSignal)
+local tSignalHandler
+local function OnCancelAll()
   print('Cancel pressed!')
+
+  -- Stop the announce timer.
+  if tAnnounceTimer~=nil then
+    tAnnounceTimer:stop()
+    tAnnounceTimer = nil
+  end
+
+  -- Shutdown the server.
   if tServerProc~=nil then
     tServerProc:shutdown()
+    tServerProc= nil
   end
-  tTestController:shutdown()
-  webui_buffer:shutdown()
-  tSignal:close()
-  uv.stop()
+
+  -- Shutdown the test controller.
+  if tTestController~=nil then
+    tTestController:shutdown()
+    tTestController = nil
+  end
+
+  -- Shutdown the webUI buffer.
+  if webui_buffer~=nil then
+    webui_buffer:shutdown()
+    webui_buffer = nil
+  end
+
+  -- Stop the signal handler.
+  tSignalHandler:stop()
 end
-uv.signal():start(uv.SIGINT, OnCancelAll)
+tSignalHandler = uv.signal():start(uv.SIGINT, OnCancelAll)
 
 
 uv.run(debug.traceback)

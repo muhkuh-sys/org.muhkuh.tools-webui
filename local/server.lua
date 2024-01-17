@@ -90,7 +90,11 @@ tLog.info('  WWW path:         "%s"', strPathTestWww)
 --
 -- Generate the javacript configuration file.
 --
-local strJavacriptCfg = string.format("var g_CFG_strServerURL = 'ws://%s:%s';\n", tArgs.strWebserverAddress, tConfiguration.websocket_port)
+local strJavacriptCfg = string.format(
+  "var g_CFG_strServerURL = 'ws://%s:%s';\n",
+  tArgs.strWebserverAddress,
+  tConfiguration.websocket_port
+)
 
 ------------------------------------------------------------------------------
 --

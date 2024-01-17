@@ -17,7 +17,7 @@ function WebUiBuffer:_init(tLog, usWebsocketPort)
   -- Create a new converter from ISO-8859-1 to UTF-8.
   local iconv = require 'iconv'
   self.iconv = iconv
-  tIConvUtf8 = iconv.new('UTF-8//TRANSLIT', 'ISO-8859-1')
+  local tIConvUtf8 = iconv.new('UTF-8//TRANSLIT', 'ISO-8859-1')
   if tIConvUtf8==nil then
     tLog.error('Failed to create a new converter from ISO-8859-1 to UTF-8.')
   end
@@ -75,6 +75,7 @@ function WebUiBuffer:__toUtf8(strMsg)
     -- Convert the data from ISO-8859-1 to UTF-8.
     local strMsgConv, tError = tIConvUtf8:iconv(strMsg)
     if strMsgConv==nil then
+      local strError
       if tError==iconv.ERROR_NO_MEMORY then
         strError = 'Failed to allocate enough memory in the conversion process.'
       elseif tError==iconv.ERROR_INVALID then
@@ -82,7 +83,8 @@ function WebUiBuffer:__toUtf8(strMsg)
       elseif tError==iconv.ERROR_INCOMPLETE then
         strError = 'An incomplete character was found in the input sequence.'
       elseif tError==iconv.iconv.ERROR_FINALIZED then
-        strError = 'Trying to use an already-finalized converter. This usually means that the user was tweaking the garbage collector private methods.'
+        strError = 'Trying to use an already-finalized converter. ' ..
+                   'This usually means that the user was tweaking the garbage collector private methods.'
       else
         strError = 'Unknown error.'
       end
@@ -427,7 +429,7 @@ end
 
 
 
-function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage, opcode)
+function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage)
   local tLog = self.tLog
 
   if err then
@@ -495,7 +497,12 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
     self:__sendCurrentPeerName()
 
     local this = self
-    self.tLogTimer:start(self.uiLogTimerMs, function(tTimer) this:__onLogTimer(tTimer) end)
+    self.tLogTimer:start(
+      self.uiLogTimerMs,
+      function(tTimer)
+        this:__onLogTimer(tTimer)
+      end
+    )
 
     self.tHeartbeatTimer:start(
       self.uiHeartbeatIntervalMs,
@@ -504,13 +511,17 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
       end
     )
 
-    tConnection:start_read(function(tConnection, err, strMessage, opcode) this:__connectionOnReceive(tConnection, err, strMessage, opcode) end)
+    tConnection:start_read(
+      function(tConnectionArg, tErrArg, strMessage, opcode)
+        this:__connectionOnReceive(tConnectionArg, tErrArg, strMessage, opcode)
+      end
+    )
   end
 end
 
 
 
-function WebUiBuffer:__onAccept(tSomething, tError)
+function WebUiBuffer:__onAccept(_, tError)
   if tError then
     self.tLog.error("Server listen: %s", tError)
     self.tActiveConnection = nil
@@ -524,7 +535,7 @@ end
 
 
 
-function WebUiBuffer:__onCreate(tSomething, tError)
+function WebUiBuffer:__onCreate(_, tError)
   if tError then
     self.tLog.error("Server error: %s", tostring(tError))
     self.tActiveConnection = nil
@@ -532,7 +543,11 @@ function WebUiBuffer:__onCreate(tSomething, tError)
     return self.tServer:close()
   else
     local this = self
-    self.tServer:listen(function(tSomething, tError) this:__onAccept(tSomething, tError) end)
+    self.tServer:listen(
+      function(tSomething, tErrorArg)
+        this:__onAccept(tSomething, tErrorArg)
+      end
+    )
   end
 end
 
@@ -552,7 +567,13 @@ function WebUiBuffer:start()
   )
 
   local this = self
-  self.tServer:bind(self.strWebsocketURL, self.strWebsocketProtocol, function(tSomething, tError) this:__onCreate(tSomething, tError) end)
+  self.tServer:bind(
+    self.strWebsocketURL,
+    self.strWebsocketProtocol,
+    function(tSomething, tError)
+      this:__onCreate(tSomething, tError)
+    end
+  )
 end
 
 

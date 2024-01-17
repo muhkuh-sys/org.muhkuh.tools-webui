@@ -26,7 +26,13 @@ function ProcessKeepalive:onClose(strError, iExitStatus, uiTermSignal)
   if self.fRequestedShutdown==false then
     -- No -> restart the process.
     local fCrashDelayInS = self.fCrashDelayInS
-    self.tLog.warning('The keepalive process terminated. Sleeping for %fms.', fCrashDelayInS)
+    self.tLog.warning(
+      'The keepalive process terminated with error "%s", exit status %s and termination signal %s.',
+      tostring(strError),
+      tostring(iExitStatus),
+      tostring(uiTermSignal)
+    )
+    self.tLog.warning('Sleeping for %fms.', fCrashDelayInS)
     self.socket.sleep(fCrashDelayInS)
     self.tLog.warning('Restarting keepalive process.')
     self:run_process(self.strCommand, self.astrArguments)

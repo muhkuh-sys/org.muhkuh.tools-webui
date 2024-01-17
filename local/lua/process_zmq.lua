@@ -56,17 +56,17 @@ function ProcessZmq:__zmq_init()
   end
   self.m_zmqContext = tZContext
 
-  local tZSocket, strError = tZContext:socket(zmq.PAIR)
+  local tZSocket, strErrorSocket = tZContext:socket(zmq.PAIR)
   if tZSocket==nil then
-    error('Failed to create ZMQ socket: ' .. tostring(strError))
+    error('Failed to create ZMQ socket: ' .. tostring(strErrorSocket))
   end
   self.m_zmqSocket = tZSocket
 
-  local tServerPort, strError = tZSocket:bind_to_random_port('tcp://127.0.0.1')
+  local tServerPort, strErrorBind = tZSocket:bind_to_random_port('tcp://127.0.0.1')
   if tServerPort==nil then
-    error('Failed to bind the socket: ' .. tostring(strError))
+    error('Failed to bind the socket: ' .. tostring(strErrorBind))
   end
-  strServerAddress = string.format('tcp://127.0.0.1:%d', tServerPort)
+  local strServerAddress = string.format('tcp://127.0.0.1:%d', tServerPort)
   self.tLog.debug('0MQ listening on %s', strServerAddress)
   self.m_zmqPort = tServerPort
   self.m_zmqServerAddress = strServerAddress
@@ -82,7 +82,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveLog(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveLog(_, strMessage)
   local strLogLevel, strLogMessage = string.match(strMessage, '^LOG(%d+),(.*)')
   if strLogLevel~=nil and strLogMessage~=nil then
     -- Add a newline if it is not already there.
@@ -108,7 +108,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveInt(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveInt(_, strMessage)
   local strInteraction = string.match(strMessage, '^INT(.*)')
   if strInteraction~=nil then
     local tBuffer = self.m_buffer
@@ -124,7 +124,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveIda(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveIda(_, strMessage)
   local strInteractionData = string.match(strMessage, '^IDA(.*)')
   if strInteractionData~=nil then
     local tBuffer = self.m_buffer
@@ -140,7 +140,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveTtl(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveTtl(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^TTL(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -155,7 +155,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveNam(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveNam(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^NAM(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -168,7 +168,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveSta(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveSta(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^STA(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -181,7 +181,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveCur(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveCur(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^CUR(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -195,7 +195,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveTss(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveTss(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^TSS(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -220,7 +220,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveTsf(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveTsf(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^TSF(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -242,7 +242,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveTds(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveTds(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^TDS(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -261,7 +261,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveTdf(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveTdf()
   -- Send the log consumer a test device finished event.
   local tLogConsumer = self.m_logConsumer
   if tLogConsumer~=nil then
@@ -271,7 +271,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveGpn(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveGpn()
   local strPeerName = self.m_strPeerName
   if strPeerName==nil then
     strPeerName = ''
@@ -282,7 +282,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveLev(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveLev(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^LEV(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -302,7 +302,7 @@ end
 
 
 
-function ProcessZmq:__onZmqReceiveDlo(tHandle, strMessage)
+function ProcessZmq:__onZmqReceiveDlo(_, strMessage)
   local tLog = self.tLog
   local strResponseRaw = string.match(strMessage, '^DLO(.*)')
   local tJson, uiPos, strJsonErr = self.json.decode(strResponseRaw)
@@ -459,7 +459,8 @@ function ProcessZmq:onCancel()
   local tLog = self.tLog
 
   tLog.info('Cancel: stop the running test.')
-  -- TODO: this kills only the process, which is the LUA test. Any subprocesses started by the LUA test will keep running.
+  -- TODO: this kills only the process, which is the LUA test.
+  --       Any subprocesses started by the LUA test will keep running.
   self:shutdown()
 end
 

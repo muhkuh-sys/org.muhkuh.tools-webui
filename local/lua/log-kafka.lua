@@ -23,7 +23,7 @@ function LogKafka:_init(tLog, fActivateDebugging)
   -- Create a new converter from ISO-8859-1 to UTF-8.
   local iconv = require 'iconv'
   self.iconv = iconv
-  tIConvUtf8 = iconv.new('UTF-8//TRANSLIT', 'ISO-8859-1')
+  local tIConvUtf8 = iconv.new('UTF-8//TRANSLIT', 'ISO-8859-1')
   if tIConvUtf8==nil then
     tLog.error('Failed to create a new converter from ISO-8859-1 to UTF-8.')
   end
@@ -94,6 +94,7 @@ function LogKafka:__toUtf8(strMsg)
     -- Convert the data from ISO-8859-1 to UTF-8.
     local strMsgConv, tError = tIConvUtf8:iconv(strMsg)
     if strMsgConv==nil then
+      local strError
       if tError==iconv.ERROR_NO_MEMORY then
         strError = 'Failed to allocate enough memory in the conversion process.'
       elseif tError==iconv.ERROR_INVALID then
@@ -101,7 +102,8 @@ function LogKafka:__toUtf8(strMsg)
       elseif tError==iconv.ERROR_INCOMPLETE then
         strError = 'An incomplete character was found in the input sequence.'
       elseif tError==iconv.iconv.ERROR_FINALIZED then
-        strError = 'Trying to use an already-finalized converter. This usually means that the user was tweaking the garbage collector private methods.'
+        strError = 'Trying to use an already-finalized converter. ' ..
+                   'This usually means that the user was tweaking the garbage collector private methods.'
       else
         strError = 'Unknown error.'
       end

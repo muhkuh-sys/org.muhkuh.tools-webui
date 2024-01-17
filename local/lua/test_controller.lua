@@ -124,7 +124,13 @@ function TestController:setInteractionResponse(strMessage)
       end
       if strInterpreterPath~=nil then
         -- Create a new ZMQ process.
-        local tTestProc = self.ProcessZmq(tLog, self.tLogTest, strInterpreterPath, {'test_system.lua', '${ZMQPORT}'}, self.strTestPath)
+        local tTestProc = self.ProcessZmq(
+          tLog,
+          self.tLogTest,
+          strInterpreterPath,
+          {'test_system.lua', '${ZMQPORT}'},
+          self.strTestPath
+        )
         -- Connect the buffer to the test process.
         tTestProc:setBuffer(tBuffer)
         -- Register the test process as the new consumer of interaction responses.
