@@ -24,7 +24,6 @@ t:install{
   ['local/lua/test_description.lua']     = '${install_lua_path}/',
   ['local/lua/webui_buffer.lua']         = '${install_lua_path}/',
 
-  ['local/jsx/test_error_install_possible.jsx'] = '${install_base}/jsx/',
   ['local/jsx/test_error_serious.jsx']   = '${install_base}/jsx/',
   ['local/jsx/test_start.jsx']           = '${install_base}/jsx/',
 
