@@ -74,6 +74,7 @@ class TesterUIStepMap extends React.Component {
                   r={uiBackgroundCircleRadiusPx}
                   fill="#fff"
                   style={{stroke: '#000', strokeWidth: 6}}
+                  key={'backgroundcircle'+uiStepIndex}
           />
         );
 
@@ -83,6 +84,7 @@ class TesterUIStepMap extends React.Component {
           <use href={strImgId}
                x={uiStepIndex*uiCowHeadSizeXPx}
                y={0}
+               key={'cow'+uiStepIndex}
           />
         );
 
@@ -91,6 +93,7 @@ class TesterUIStepMap extends React.Component {
             <use href="#progress"
                  x={uiStepIndex*uiCowHeadSizeXPx + uiProgressIndicatorOffsetXPx}
                  y={uiProgressIndicatorOffsetYPx}
+                 key={'progress'+uiStepIndex}
             />
           );
         }
@@ -101,6 +104,7 @@ class TesterUIStepMap extends React.Component {
                   r={uiBackgroundCircleRadiusPx}
                   fill="#0000"
                   style={{stroke: '#0000'}}
+                  key={'progress'+uiStepIndex}
           >
             <title>{strStepTitle}</title>
           </circle>
