@@ -871,14 +871,29 @@ if tServerProc~=nil then
 end
 tTestController:run(bHaveValidTestDescription, strErrorMessage)
 
+--[[
+local function dumpUvHandles()
+  local atHandles = uv.handles()
+  if #atHandles==0 then
+    print('No UV handles.')
+  else
+    print('UV handles:')
+    for uiIndex, tHandle in ipairs(atHandles) do
+      print(string.format('%03d: %s', uiIndex, tostring(tHandle)))
+    end
+  end
+end
+--]]
 
 local tSignalHandler
 local function OnCancelAll()
   print('Cancel pressed!')
+--  dumpUvHandles()
 
   -- Stop the announce timer.
   if tAnnounceTimer~=nil then
     tAnnounceTimer:stop()
+    tAnnounceTimer:close()
     tAnnounceTimer = nil
   end
 
@@ -898,6 +913,12 @@ local function OnCancelAll()
   if webui_buffer~=nil then
     webui_buffer:shutdown()
     webui_buffer = nil
+  end
+
+  -- Shutdown the SSDP announcer.
+  if tSsdp~=nil then
+    tSsdp:shutdown()
+    tSsdp = nil
   end
 
   -- Stop the signal handler.

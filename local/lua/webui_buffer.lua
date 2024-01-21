@@ -582,12 +582,14 @@ function WebUiBuffer:shutdown()
   local tLogTimer = self.tLogTimer
   if tLogTimer~=nil then
     tLogTimer:stop()
+    tLogTimer:close()
     self.tLogTimer = nil
   end
 
   local tHeartbeatTimer = self.tHeartbeatTimer
   if tHeartbeatTimer~=nil then
     tHeartbeatTimer:stop()
+    tHeartbeatTimer:close()
     self.tHeartbeatTimer = nil
   end
 

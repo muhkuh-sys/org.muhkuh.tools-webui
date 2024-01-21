@@ -219,11 +219,29 @@ function SSDP:run()
     end
   )
 
-  self.m_tAnnounceTimer = lluv.timer():start(self.m_uiAnnounceIntervalInMs, function(tTimer)
+  local tAnnounceTimer = lluv.timer()
+  tAnnounceTimer:start(self.m_uiAnnounceIntervalInMs, function(tTimer)
     this:__notifyAll()
     tTimer:again(this.m_uiAnnounceIntervalInMs)
   end)
+  self.m_tAnnounceTimer = tAnnounceTimer
 end
 
+
+function SSDP:shutdown()
+  local tSsdpSocket = self.m_tSsdpSocket
+  if tSsdpSocket~=nil then
+    tSsdpSocket:close()
+    self.m_tSsdpSocket = nil
+  end
+
+  local tAnnounceTimer = self.m_tAnnounceTimer
+  print('tAnnounceTimer: ', tAnnounceTimer)
+  if tAnnounceTimer~=nil then
+    tAnnounceTimer:stop()
+    tAnnounceTimer:close()
+    self.m_tAnnounceTimer = nil
+  end
+end
 
 return SSDP

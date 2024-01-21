@@ -1,7 +1,4 @@
 # TODOs
- * Path to cfg.js is always in root
-
- * Wenn die WebUI mit Ctrl-C abgebrochen wird, beendet sich die UV Loop nicht. Da sind also noch Elemente drin.
 
  * Vielleicht eine "Reboot" Möglichkeit? Das waere praktisch für Remote Stations.
    Vielleicht mit einem Kommando aus der Config? Dann kann das auf einem Laptop deaktiviert werden.
@@ -19,6 +16,10 @@
 
 
 # DONE
+
+ * When the WebUI is cancelled with Ctrl-C, the UV loop does not terminate.
+
+ * Path to cfg.js is served in root, but requested in the path configured in "webserver_path".
 
 * Deselected tests are still deselected in the cow heads for the next board, but they are really active.
 
