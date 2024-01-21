@@ -74,7 +74,7 @@ import { Terminal } from "xterm";
 import { FitAddon } from 'xterm-addon-fit';
 
 import TesterUIHeader from './testerui_header';
-import TesterUISummary from './testerui_summary';
+import TesterUIStepMap from './testerui_stepmap';
 
 
 const TesterAppState_Idle = 0;
@@ -1085,7 +1085,7 @@ class TesterApp extends React.Component {
                 </div>
               </Drawer>
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} />
-              <TesterUISummary astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={this.tTheme} />
+              <TesterUIStepMap astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={this.tTheme} />
             </div>
             <div id='TesterTabContents'>
               {tTabContentsInteraction}

@@ -2,7 +2,7 @@ import React from 'react';
 
 
 
-class TesterUISummary extends React.Component {
+class TesterUIStepMap extends React.Component {
   constructor(props) {
     super(props);
 
@@ -348,4 +348,4 @@ class TesterUISummary extends React.Component {
   }
 }
 
-export default TesterUISummary
+export default TesterUIStepMap
