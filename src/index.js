@@ -151,7 +151,7 @@ class TesterApp extends React.Component {
       tRunningTest_uiCurrentSerial: null,
       tRunningTest_uiRunningTest: null,
 
-      tUI_CowIconSize: '5em',
+      tUI_CowIconSize: '8em',
       tUI_strInteraction: null,
       tUI_tInteraction: null,
 
@@ -814,14 +814,6 @@ class TesterApp extends React.Component {
   }
 
 
-  handleCowClick = (uiIndex) => {
-//    this.interval = setInterval(() => this.appendDemoLogLine(), 100);
-//
-//    this.setState({
-//      tRunningTest_uiRunningTest: uiIndex
-//    });
-  }
-
   handleOpenAppMenu = () => {
     this.setState({
       fMenuIsOpen: true
@@ -1093,7 +1085,7 @@ class TesterApp extends React.Component {
                 </div>
               </Drawer>
               <TesterUIHeader strTitle={this.state.tTest_Title} strSubtitle={this.state.tTest_Subtitle} fHasSerial={this.state.tTest_fHasSerial} uiCurrentSerial={this.state.tRunningTest_uiCurrentSerial} />
-              <TesterUISummary astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={this.tTheme} handleCowClick={this.handleCowClick} />
+              <TesterUISummary astrTestNames={this.state.tTest_astrTestNames} atTestStati={this.state.tTest_atTestStati} fHasSerial={this.state.tTest_fHasSerial} uiRunningTest={this.state.tRunningTest_uiRunningTest} strIconSize={this.state.tUI_CowIconSize} theme={this.tTheme} />
             </div>
             <div id='TesterTabContents'>
               {tTabContentsInteraction}
