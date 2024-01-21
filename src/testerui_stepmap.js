@@ -200,7 +200,7 @@ class TesterUIStepMap extends React.Component {
             </clipPath>
           </defs>
 
-          <symbol id="cow_untested" width="240px" height="240px" viewBox="0 0 240px 240px">
+          <symbol id="cow_untested" width="240px" height="240px" viewBox="0 0 240 240">
             <g fillRule="evenodd">
               <path fill="#fff" stroke="#000" strokeWidth="2.8" d="m75 320 10-52h64l10 50z" clipPath="url(#ua)" transform="translate(0 -77)"/>
               <path fill="#dbdbdb" stroke="#000" strokeWidth="2.8" d="M144 274s26 2 32-2c16-11 1-17-3-17l-30 2c-19 0-32 5-40 7l-25 8c-6 2-12 16 6 16 0 0 6 0 29-8 16-6 31-6 31-6z" clipPath="url(#ua)" transform="translate(0 -77)"/>
@@ -225,7 +225,7 @@ class TesterUIStepMap extends React.Component {
             <path d="M27 205h5v-5h-5zm3-40a25 25 0 1 0 0 50 25 25 0 0 0 0-50zm0 45a20 20 0 1 1 0-40 20 20 0 0 1 0 40zm0-35c-6 0-10 4-10 10h5c0-3 2-5 5-5s5 2 5 5c0 5-8 4-8 13h5c0-6 8-7 8-13s-4-10-10-10z"/>
           </symbol>
 
-          <symbol id="cow_ok" width="240px" height="240px" viewBox="0 0 240px 240px">
+          <symbol id="cow_ok" width="240px" height="240px" viewBox="0 0 240 240">
             <path fill="#7fff7f" fillRule="evenodd" stroke="#000" strokeWidth="2.8" d="m75 320 10-52h64l10 50z" clipPath="url(#oa)" transform="translate(2 -77)"/>
             <path fill="#7fff7f" stroke="#000" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.8" d="M71 179h96v23H71z"/>
             <path fill="none" stroke="#000" strokeWidth="2.8" d="M90 178v26m19-26v26m19-26v26m20-26v26"/>
@@ -257,7 +257,7 @@ class TesterUIStepMap extends React.Component {
             <path d="m41 179-16 16-9-9-4 4 13 13 20-20zm-11-14a25 25 0 1 0 0 50 25 25 0 0 0 0-50zm0 45a20 20 0 1 1 0-40 20 20 0 0 1 0 40z"/>
           </symbol>
 
-          <symbol id="cow_failed" width="240px" height="240px" viewBox="0 0 240px 240px">
+          <symbol id="cow_failed" width="240px" height="240px" viewBox="0 0 240 240">
             <g fillRule="evenodd">
               <path fill="#fa7d7d" stroke="#000" strokeWidth="2.8" d="m75 320 10-52h64l10 50z" clipPath="url(#fa)" transform="translate(-5 -77)"/>
               <path fill="#d96c6c" stroke="#000" strokeWidth="2.8" d="M144 274s26 2 32-2c16-11 1-17-3-17l-30 2c-19 0-32 5-40 7l-25 8c-6 2-12 16 6 16 0 0 6 0 29-8 16-6 31-6 31-6z" clipPath="url(#fa)" transform="rotate(9 585 149)"/>
@@ -283,7 +283,7 @@ class TesterUIStepMap extends React.Component {
             <path d="M27 198h5v5h-5zm0-20h5v15h-5zm3-13a25 25 0 1 0 0 50 25 25 0 0 0 0-50zm0 45a20 20 0 1 1 0-40 20 20 0 0 1 0 40z"/>
           </symbol>
 
-          <symbol id="cow_disabled" width="240px" height="240px" viewBox="0 0 240px 240px">
+          <symbol id="cow_disabled" width="240px" height="240px" viewBox="0 0 240 240">
             <g stroke="#aeaeae">
               <g fillRule="evenodd">
                 <path fill="#e3e3e3" strokeWidth="2.8" d="m75 320 10-52h64l10 50z" clipPath="url(#da)" transform="translate(0 -77)"/>
@@ -305,7 +305,7 @@ class TesterUIStepMap extends React.Component {
             <path fill="none" stroke="#ff8080" strokeLinecap="round" strokeWidth="8" d="M32 192 192 32"/>
           </symbol>
 
-          <symbol id="cow_excluded" width="240px" height="240px" viewBox="0 0 240px 240px">
+          <symbol id="cow_excluded" width="240px" height="240px" viewBox="0 0 240 240">
             <g stroke="#aeaeae">
               <g fillRule="evenodd">
                 <path fill="#e3e3e3" strokeWidth="2.8" d="m75 320 10-52h64l10 50z" clipPath="url(#ea)" transform="translate(0 -77)"/>
@@ -327,7 +327,7 @@ class TesterUIStepMap extends React.Component {
             <path fill="none" stroke="#ff8080" strokeLinecap="round" strokeWidth="8" d="M48 32H32v160h16M176 32h16v160h-16"/>
           </symbol>
 
-          <symbol id="progress" width="200px" height="200px" viewBox="0 0 200px 200px">
+          <symbol id="progress" width="200px" height="200px" viewBox="0 0 200 200">
             <circle className="cow_progress_path" cx="100" cy="100" r="96" fill="none" strokeWidth="7" strokeMiterlimit="50"></circle>
           </symbol>
 
