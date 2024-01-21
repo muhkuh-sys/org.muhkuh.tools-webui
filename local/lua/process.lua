@@ -85,14 +85,20 @@ end
 
 
 function Process:shutdown()
-  self.fRequestedShutdown = true
-  self.tProc:kill(self.uv.SIGHUP)
+  local tState = self.tState
+  if tState==self.STATE_Terminated then
+    self.tLog.warning('Requesting shutdown on an already terminated process.')
 
-  self.tShutdownTimer = self.uv.timer():start(2000, function(tHandle)
-    tHandle:close()
-    self.tShutdownTimer = nil
-    self.tProc:kill(self.uv.SIGKILL)
-  end)
+  else
+    self.fRequestedShutdown = true
+    self.tProc:kill(self.uv.SIGHUP)
+
+    self.tShutdownTimer = self.uv.timer():start(2000, function(tHandle)
+      tHandle:close()
+      self.tShutdownTimer = nil
+      self.tProc:kill(self.uv.SIGKILL)
+    end)
+  end
 end
 
 
