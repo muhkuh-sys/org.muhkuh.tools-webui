@@ -185,7 +185,7 @@ class TesterApp extends React.Component {
       'fnGetRunningTest': this.getRunningTest,
       'fnGetTestNames': this.getTestNames,
       'fnGetTestStati': this.getTestStati,
-      'fnSetTestState': this.setTestState,
+      'fnSetLocalTestState': this.setLocalTestState,
       'fnSetAllTestStati': this.setAllTestStati,
       'fnGetEnricoMode': this.getEnricoMode,
       'fnPersistState': this.setPersietenceState,
@@ -735,6 +735,20 @@ class TesterApp extends React.Component {
     return this.state.tTest_atTestStati.slice();
   };
 
+  setLocalTestState = (uiTestStep, strState) => {
+    /* Is the test step valid? */
+    if(uiTestStep>=this.state.tTest_astrTestNames.lengt) {
+      /* No -> log an error. */
+      this.log(LOG_ERROR, 'The function fnSetLocalTestState was called with an invalid index: ' + uiTestStep.toString())
+    } else {
+      /* Update the local state. This triggers an UI update. */
+      let atNewTestStati = this.state.tTest_atTestStati.slice();
+      atNewTestStati[uiTestStep] = strState;
+      this.setState({
+        tTest_atTestStati: atNewTestStati
+      });
+    }
+  };
 
   getEnricoMode = () => {
     return this.state.enricoMode;
