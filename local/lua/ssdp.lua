@@ -236,7 +236,6 @@ function SSDP:shutdown()
   end
 
   local tAnnounceTimer = self.m_tAnnounceTimer
-  print('tAnnounceTimer: ', tAnnounceTimer)
   if tAnnounceTimer~=nil then
     tAnnounceTimer:stop()
     tAnnounceTimer:close()
