@@ -20,12 +20,7 @@ class TesterUIStepMap extends React.Component {
 
 
   render() {
-    console.log('Test Names: ', this.props.astrTestNames);
-    console.log('Test Names lengt: ', this.props.astrTestNames);
-    console.log('Running Test: ', this.props.uiRunningTest);
-
     const uiNumberOfTests = this.props.astrTestNames.length;
-    console.log('Test Names length: ', uiNumberOfTests);
 
     let tTestStepMap = null;
     if( uiNumberOfTests>0 ) {
