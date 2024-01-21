@@ -12,10 +12,17 @@
 
 * Pegasus was updated!
 
-* "Test running" indicator keeps spinning if a test step fails to validate its parameters.
-
 
 # DONE
+ * If the test process crashed, CTRL-C does not work anymore:
+```
+/home/cthelen/workspace/org.muhkuh.tools-webui/targets/webui-0.0.6/lua5.4: ...g.muhkuh.tools-webui/targets/webui-0.0.6/lua/process.lua:89: calling 'kill' on bad self (Lua-UV Handle closed)
+```
+
+ * If a test step fails to validate te parameters, there is no error message. The test just restarts. Switching to the logs show te error.
+ZMQ Verbindung wird gesclossen. Das kann in test_system.lua mit einer Interaction angezeigt werden.
+
+ * "Test running" indicator keeps spinning if a test step fails to validate its parameters.
 
  * When the WebUI is cancelled with Ctrl-C, the UV loop does not terminate.
 
