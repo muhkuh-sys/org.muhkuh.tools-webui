@@ -96,7 +96,7 @@ function ConfigurationFile:read()
     webserver_port = 9090,
 
     -- The path to the web application.
-    webserver_path = '/webui/index.html',
+    webserver_path = '/webui',
 
     -- The port number for the websocket. This is a regular port on the teststation server.
     -- It can be changed if it colliges with something else.

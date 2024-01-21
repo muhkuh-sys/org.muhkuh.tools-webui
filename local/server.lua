@@ -73,6 +73,9 @@ local strPathTestWww = pl.path.join(tArgs.strWwwPath, '')
 local strSSDP_UUID = tArgs.strUUID
 
 
+-- Get the path to te configuration file.
+local strPathCfgJs = pl.path.join(tConfiguration.webserver_path, 'cfg.js')
+
 ------------------------------------------------------------------------------
 --
 -- Show a summary of the parameters.
@@ -145,7 +148,7 @@ server:start(function(req, tResponse)
   local strPath = req:path()
   local strMethod = req:method()
 
-  if strPath=='/cfg.js' and strMethod=='GET' then
+  if strPath==strPathCfgJs and strMethod=='GET' then
 
     tResponse:contentType('application/javascript')
     tResponse:statusCode(200)
