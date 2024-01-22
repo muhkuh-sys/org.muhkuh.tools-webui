@@ -3,6 +3,8 @@
  * Vielleicht eine "Reboot" Möglichkeit? Das waere praktisch für Remote Stations.
    Vielleicht mit einem Kommando aus der Config? Dann kann das auf einem Laptop deaktiviert werden.
 
+ * Mimetypes von Lunarmodules verwenden.
+   Da ist aber auch kein Mime Type für "woff" oder "woff2" drin.
 
 # Noch aktuell?
 
