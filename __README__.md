@@ -14,6 +14,13 @@
 
 
 # DONE
+ * In Firefox: downloadable font rejected by sanitizer
+ Ist das wegen dem Mime-Type? Muss "font/woff2" sein. Vielleict ein Update für mimetypes? Ja, gibt's ier: https://github.com/lunarmodules/lua-mimetypes
+ Da ist aber auc kein Typ für woff und woff2 drin.
+Das ist es aber nict. Im www/webui Ordner sind nur "woff" und "woff2" Files, die eine Art JS Verweis aben. Die kompletten Files sind unter "www/webui/fonts".
+https://stackoverflow.com/questions/70149253/why-is-webpack-emitting-font-files-that-are-actually-javascript
+-> Wechsel auf Assets.
+
  * If the test process crashed, CTRL-C does not work anymore:
 ```
 /home/cthelen/workspace/org.muhkuh.tools-webui/targets/webui-0.0.6/lua5.4: ...g.muhkuh.tools-webui/targets/webui-0.0.6/lua/process.lua:89: calling 'kill' on bad self (Lua-UV Handle closed)

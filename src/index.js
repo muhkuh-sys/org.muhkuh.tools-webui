@@ -1,8 +1,8 @@
 import React from 'react';
 
 import css from './style.css';
-import 'typeface-roboto';
-import 'typeface-roboto-mono';
+import "@fontsource/roboto";
+import "@fontsource/roboto-mono";
 
 const muhkuh_package_version = require("./get_version");
 const muhkuh_package_vcsversion = require("./get_vcsversion");
