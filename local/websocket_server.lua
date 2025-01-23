@@ -723,8 +723,9 @@ else
 end
 
 
+local tPackageInfo
 if tResult==true then
-  local tPackageInfo = pl.config.read(pl.path.join(strTestBasePath, '.jonchki/package.txt'), {convert_numbers=false})
+  tPackageInfo = pl.config.read(pl.path.join(strTestBasePath, '.jonchki/package.txt'), {convert_numbers=false})
   local tLocalPackageInfo = pl.config.read('.jonchki/package.txt', {convert_numbers=false})
   -- At least the host distribution ID and the host CPU architecture must match.
   if tPackageInfo.HOST_DISTRIBUTION_ID~=tLocalPackageInfo.HOST_DISTRIBUTION_ID then
@@ -769,6 +770,14 @@ local tSystemAttributes = {
     subtitle = tTestDescription:getSubtitle()
   }
 }
+if tPackageInfo~=nil then
+  tSystemAttributes.test.package_name = tPackageInfo.PACKAGE_NAME
+  tSystemAttributes.test.package_version = tPackageInfo.PACKAGE_VERSION
+  tSystemAttributes.test.package_vcs_id = tPackageInfo.PACKAGE_VCS_ID
+  tSystemAttributes.test.host_distribution_id = tPackageInfo.HOST_DISTRIBUTION_ID
+  tSystemAttributes.test.host_distribution_version = tPackageInfo.HOST_DISTRIBUTION_VERSION
+  tSystemAttributes.test.host_cpu_architecture = tPackageInfo.HOST_CPU_ARCHITECTURE
+end
 local tLogKafka = require 'log-kafka'(tLog, tConfiguration.kafka_debugging)
 tLogKafka:setSystemAttributes(tSystemAttributes)
 -- Connect the log consumer to a broker.
