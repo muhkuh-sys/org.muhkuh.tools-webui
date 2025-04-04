@@ -377,7 +377,7 @@ class TesterApp extends React.Component {
 
 
   socketMessage(tEvent) {
-    console.debug("WebSocket message received:", tEvent.data);
+//    console.debug("WebSocket message received:", tEvent.data);
 
     try {
       let tJson = JSON.parse(tEvent.data);
