@@ -13,6 +13,9 @@
   position: absolute;
   z-index: 2;
   right: 1em;
+  background-color: #00000060;
+  padding: 0.4em;
+  border-radius: 0.5em;
 }
 #TesterHeader {
   /* Set a margin of 1em to top, left and right. Set no margin to the bottom. */
