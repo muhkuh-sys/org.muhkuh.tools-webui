@@ -59,9 +59,4 @@ for strFileSourcePath, strFileDestinationPath in pairs(atFilterFiles) do
   end
 end
 
-
-t:createPackageFile()
-t:createHashFile()
-t:createArchive('${install_base}/../../../${default_archive_name}', 'native')
-
 return true

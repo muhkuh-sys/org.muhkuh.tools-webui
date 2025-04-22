@@ -32,4 +32,7 @@
 		<dependency group="org.muhkuh.lua" module="mhash" artifact="lua5.4-mhash" version="0.9"/>
 		<dependency group="com.github.ittner" module="lua-iconv" artifact="lua5.4-lua-iconv" version="0.0"/>
 	</dependencies>
+	<actions>
+		<action name="finalizer" file="${define_finalizer}"/>
+	</actions>
 </jonchki-artifact>
