@@ -544,6 +544,42 @@ local function __getList(tLog, strRemoteListUrl, strRemoteListStationId, strRemo
 end
 
 
+
+local function __readOrderInfo()
+  local tResult
+  local strError
+
+  -- Read the order information.
+  local strOrderInfoPath = '/tmp/muhkuh/orderinfo.json'
+  local utils = require 'pl.utils'
+  local strOrderInfoData, strOrderInfoReadError = utils.readfile(strOrderInfoPath, false)
+  if strOrderInfoData==nil then
+    strError = string.format(
+      'Failed to read the production order information from "%s": %s',
+      strOrderInfoPath,
+      tostring(strOrderInfoReadError)
+    )
+
+  else
+    local dkjson = require 'dkjson'
+    local tOrderInfo, strJsonError = dkjson.decode(strOrderInfoData)
+    if tOrderInfo==nil then
+      strError = string.format(
+        'Failed to parse the order information from "%s" as JSON: %s',
+        strOrderInfoPath,
+        strJsonError
+      )
+
+    else
+      tResult = tOrderInfo
+    end
+  end
+
+  return tResult, strError
+end
+
+
+
 -- Set the logger level from the command line options.
 local strLogLevel = 'debug'
 local cLogWriter = require 'log.writer.filter'.new(
@@ -637,91 +673,131 @@ local tResult = true
 local bHaveValidTestDescription = false
 local strErrorMessage
 local strTestBasePath = ''
+local strTestTitle = 'Unknown'
+local strTestSubtitle = 'unknown'
 
--- Does the configuration have a path to a test folder?
-local strTestStorage = tConfiguration.test_storage
-if strTestStorage=='FOLDER' then
-  -- Use a folder with a ready-to-run test.
-  local strTestPath = tConfiguration.test_path
+-- Read the production order information.
+local tOrderInfo, strOrderInfoError = __readOrderInfo()
+if tOrderInfo==nil then
+  tResult = false
+  tLog.error(strOrderInfoError)
 
-  -- Get an absolute path to the test.
-  strTestBasePath = pl.path.abspath(strTestPath)
-  if strTestPath~=strTestBasePath then
-    tLog.debug('Expanded the test path from "%s" to "%s".', strTestPath, strTestBasePath)
+else
+  if(
+    type(tOrderInfo.article)=='table' and
+    type(tOrderInfo.article.nr)=='number' and
+    type(tOrderInfo.article.hwrev)=='number' and
+    type(tOrderInfo.article.name)=='string'
+  ) then
+    local ulArticleNr = tOrderInfo.article.nr
+
+    local ucHwRev = tOrderInfo.article.hwrev
+    local strHwRev
+    if ucHwRev>9 and ucHwRev<36 then
+      strHwRev = string.char(ucHwRev + string.byte('A') - 10)
+    else
+      strHwRev = tostring(ucHwRev)
+    end
+
+    local strVariant = ''
+    if type(tOrderInfo.article.variant)=='string' then
+      strVariant = '/' .. tOrderInfo.article.variant
+    end
+
+    strTestTitle = string.format(
+      '%04d.%03dR%s%s',
+      math.floor(ulArticleNr/1000),
+      math.fmod(ulArticleNr, 1000),
+      strHwRev,
+      strVariant
+    )
+    strTestSubtitle = tOrderInfo.article.name
   end
 
-  -- Does the folder exist?
-  if pl.path.exists(strTestBasePath)~=strTestBasePath then
-    strErrorMessage = string.format('The specified "test_path" does not exist: %s', strTestBasePath)
+  -- Does the configuration have a path to a test folder?
+  local strTestStorage = tConfiguration.test_storage
+  if strTestStorage=='FOLDER' then
+    -- Use a folder with a ready-to-run test.
+    local strTestPath = tConfiguration.test_path
+
+    -- Get an absolute path to the test.
+    strTestBasePath = pl.path.abspath(strTestPath)
+    if strTestPath~=strTestBasePath then
+      tLog.debug('Expanded the test path from "%s" to "%s".', strTestPath, strTestBasePath)
+    end
+
+    -- Does the folder exist?
+    if pl.path.exists(strTestBasePath)~=strTestBasePath then
+      strErrorMessage = string.format('The specified "test_path" does not exist: %s', strTestBasePath)
+      tLog.error(strErrorMessage)
+      tResult = false
+    end
+
+  elseif strTestStorage=='LOCAL_ARCHIVE' then
+    -- Config option "test_path" is not set -> depack an archive.
+
+    local strDepackPath = tConfiguration.depack_path
+    tResult, strErrorMessage = __prepareAndCleanFolder(tLog, strDepackPath, 'depack')
+    if tResult==true then
+      local strArchivePath = tConfiguration.archive_path
+      if tResult==true then
+        if pl.path.exists(strArchivePath)~=strArchivePath then
+          strErrorMessage = string.format('The archive path "%s" does not exist.', strArchivePath)
+          tLog.error(strErrorMessage)
+          tResult = false
+        end
+      end
+
+      if tResult==true then
+        if pl.path.isdir(strArchivePath)~=true then
+          strErrorMessage = string.format('The archive path "%s" does not point to a directory.', strArchivePath)
+          tLog.error(strErrorMessage)
+          tResult = false
+        end
+      end
+
+      local strTestArchive = tConfiguration.test_archive
+      if tResult==true then
+        if strTestArchive=='' then
+          strErrorMessage = string.format('The test archive is not set.')
+          tLog.error(strErrorMessage)
+          tResult = false
+        end
+      end
+
+      if tResult==true then
+        -- Get the path to the archive.
+        local strTestArchivePath = pl.path.join(strArchivePath, strTestArchive)
+        if pl.path.isfile(strTestArchivePath)~=true then
+          strErrorMessage = string.format('The archive "%s" does not exist.', strTestArchivePath)
+          tLog.error(strErrorMessage)
+          tResult = false
+        else
+          tResult, strTestBasePath, strErrorMessage = __extractArchive(tLog, strTestArchivePath, strDepackPath)
+        end
+      end
+    end
+
+  elseif strTestStorage=='REMOTE_LIST' then
+    -- Download the URL in "remote_list_url".
+    local strRemoteListUrl = tConfiguration.remote_list_url
+    local strRemoteListStationId = tConfiguration.remote_list_station_id
+    local strRemoteDownloadFolder = tConfiguration.remote_list_download_folder
+    local strRemoteListDepackPath = tConfiguration.remote_list_depack_path
+    tResult, strTestBasePath, strErrorMessage = __getList(
+      tLog,
+      strRemoteListUrl,
+      strRemoteListStationId,
+      strRemoteDownloadFolder,
+      strRemoteListDepackPath
+    )
+
+  else
+    strErrorMessage = string.format('The configuration option "test_storage" defines an invalid type: %s', strTestStorage)
     tLog.error(strErrorMessage)
     tResult = false
   end
-
-elseif strTestStorage=='LOCAL_ARCHIVE' then
-  -- Config option "test_path" is not set -> depack an archive.
-
-  local strDepackPath = tConfiguration.depack_path
-  tResult, strErrorMessage = __prepareAndCleanFolder(tLog, strDepackPath, 'depack')
-  if tResult==true then
-    local strArchivePath = tConfiguration.archive_path
-    if tResult==true then
-      if pl.path.exists(strArchivePath)~=strArchivePath then
-        strErrorMessage = string.format('The archive path "%s" does not exist.', strArchivePath)
-        tLog.error(strErrorMessage)
-        tResult = false
-      end
-    end
-
-    if tResult==true then
-      if pl.path.isdir(strArchivePath)~=true then
-        strErrorMessage = string.format('The archive path "%s" does not point to a directory.', strArchivePath)
-        tLog.error(strErrorMessage)
-        tResult = false
-      end
-    end
-
-    local strTestArchive = tConfiguration.test_archive
-    if tResult==true then
-      if strTestArchive=='' then
-        strErrorMessage = string.format('The test archive is not set.')
-        tLog.error(strErrorMessage)
-        tResult = false
-      end
-    end
-
-    if tResult==true then
-      -- Get the path to the archive.
-      local strTestArchivePath = pl.path.join(strArchivePath, strTestArchive)
-      if pl.path.isfile(strTestArchivePath)~=true then
-        strErrorMessage = string.format('The archive "%s" does not exist.', strTestArchivePath)
-        tLog.error(strErrorMessage)
-        tResult = false
-      else
-        tResult, strTestBasePath, strErrorMessage = __extractArchive(tLog, strTestArchivePath, strDepackPath)
-      end
-    end
-  end
-
-elseif strTestStorage=='REMOTE_LIST' then
-  -- Download the URL in "remote_list_url".
-  local strRemoteListUrl = tConfiguration.remote_list_url
-  local strRemoteListStationId = tConfiguration.remote_list_station_id
-  local strRemoteDownloadFolder = tConfiguration.remote_list_download_folder
-  local strRemoteListDepackPath = tConfiguration.remote_list_depack_path
-  tResult, strTestBasePath, strErrorMessage = __getList(
-    tLog,
-    strRemoteListUrl,
-    strRemoteListStationId,
-    strRemoteDownloadFolder,
-    strRemoteListDepackPath
-  )
-
-else
-  strErrorMessage = string.format('The configuration option "test_storage" defines an invalid type: %s', strTestStorage)
-  tLog.error(strErrorMessage)
-  tResult = false
 end
-
 
 local tPackageInfo
 if tResult==true then
@@ -766,8 +842,8 @@ local tSystemAttributes = {
     uuid = strSSDP_UUID
   },
   test = {
-    title = tTestDescription:getTitle(),
-    subtitle = tTestDescription:getSubtitle()
+    title = strTestTitle,
+    subtitle = strTestSubtitle
   }
 }
 if tPackageInfo~=nil then
@@ -844,7 +920,7 @@ end)
 
 local WebUiBuffer = require 'webui_buffer'
 local webui_buffer = WebUiBuffer(tLog, tConfiguration.websocket_port)
-webui_buffer:setTitle(tTestDescription:getTitle(), tTestDescription:getSubtitle())
+webui_buffer:setTitle(strTestTitle, strTestSubtitle)
 webui_buffer:setDocuments(tTestDescription:getDocuments())
 local tLogTest = webui_buffer:getLogTarget()
 webui_buffer:start()

@@ -8,8 +8,6 @@ function TestDescription:_init(tLog)
   self.pl = require'pl.import_into'()
   self.lxp = require 'lxp'
 
-  self.strTitle = nil
-  self.strSubtitle = nil
   self.strPre = nil
   self.strPost = nil
   self.atTestCases = nil
@@ -35,12 +33,8 @@ function TestDescription.__parseTests_StartElement(tParser, strElementName, atAt
   aLxpAttr.strCurrentPath = strCurrentPath
 
   if strCurrentPath=='/MuhkuhTest' then
-    local strTitle = atAttributes['title']
-    local strSubtitle = atAttributes['subtitle']
     local strPre = atAttributes['pre']
     local strPost = atAttributes['post']
-    aLxpAttr.strTitle = strTitle
-    aLxpAttr.strSubtitle = strSubtitle
     aLxpAttr.strPre = strPre
     aLxpAttr.strPost = strPost
 
@@ -328,8 +322,6 @@ function TestDescription:__parse_tests(strTestsFile)
       atCurrentPath = {""},
       strCurrentPath = nil,
 
-      strTitle = nil,
-      strSubtitle = nil,
       strPre = nil,
       strPost = nil,
       tTestCase = nil,
@@ -376,8 +368,6 @@ function TestDescription:__parse_tests(strTestsFile)
     elseif aLxpAttr.tResult~=true then
       tLog.error('Failed to parse the test configuration.')
     else
-      self.strTitle = aLxpAttr.strTitle
-      self.strSubtitle = aLxpAttr.strSubtitle
       self.strPre = aLxpAttr.strPre
       self.strPost = aLxpAttr.strPost
       self.atTestCases = aLxpAttr.atTestCases
@@ -426,18 +416,6 @@ function TestDescription:parse(strTestsFile)
   end
 
   return tResult
-end
-
-
-
-function TestDescription:getTitle()
-  return self.strTitle
-end
-
-
-
-function TestDescription:getSubtitle()
-  return self.strSubtitle
 end
 
 
