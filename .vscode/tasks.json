@@ -18,6 +18,16 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "Build the package",
+            "type": "shell",
+            "command": "./build.sh",
+            "problemMatcher": "$gcc",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
