@@ -29,6 +29,8 @@ function LogKafka:_init(tLog, fActivateDebugging)
   end
   self.tIConvUtf8 = tIConvUtf8
 
+  self.m_tApi = require 'api'(tLog)
+
   self.m_fDebuggingIsActive = fActivateDebugging
   if fActivateDebugging==true then
     tLog.debug('Kafka debugging is active.')
@@ -209,30 +211,12 @@ end
 
 
 function LogKafka:announceInstance(atAttributes)
-  local pl = self.pl
+  local tLog = self.tLog
 
-  -- Merge the attributes with the system attributes.
-  local atAttrMerged = pl.tablex.deepcopy(atAttributes)
-  pl.tablex.update(atAttrMerged, self.m_atSystemAttributes)
-  atAttrMerged.timestamp = self.date(false):fmt('%Y-%m-%d %H:%M:%S')
-
-  -- Convert the attributes to JSON.
-  local strJson = self:__toUtf8(self.dkjson.encode(atAttrMerged))
-
-  -- Send the message to the Kafka topic.
-  local tTopic = self.tTopic_teststations
-  if tTopic~=nil then
-    self:__sendMessage(tTopic, strJson)
-  end
-
-  -- Write the message to a temp file.
-  if self.m_fDebuggingIsActive==true then
-    local tFile = io.open(string.format(self.tTopic_teststations_template, self.tTopic_teststations_cnt), 'w')
-    if tFile~=nil then
-      tFile:write(strJson)
-      tFile:close()
-    end
-    self.tTopic_teststations_cnt = self.tTopic_teststations_cnt + 1
+  -- Send the heartbeat to the API.
+  local tPostResult, strPostError = self.m_tApi:post('/v2/api/teststation/heartbeat/%%TESTSTATIONID%%', atAttributes)
+  if tPostResult==nil then
+    tLog.error('Failed to deliver heartbeat: ' .. tostring(strPostError))
   end
 end
 
