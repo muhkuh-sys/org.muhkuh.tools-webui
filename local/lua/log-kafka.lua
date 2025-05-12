@@ -228,8 +228,10 @@ function LogKafka:announceInstance(atAttributes)
   -- Write the message to a temp file.
   if self.m_fDebuggingIsActive==true then
     local tFile = io.open(string.format(self.tTopic_teststations_template, self.tTopic_teststations_cnt), 'w')
-    tFile:write(strJson)
-    tFile:close()
+    if tFile~=nil then
+      tFile:write(strJson)
+      tFile:close()
+    end
     self.tTopic_teststations_cnt = self.tTopic_teststations_cnt + 1
   end
 end
@@ -262,8 +264,10 @@ function LogKafka:__sendMessageBuffer()
     -- Write the message to a temp file.
     if self.m_fDebuggingIsActive==true then
       local tFile = io.open(string.format(self.tTopic_logs_template, self.tTopic_logs_cnt), 'w')
-      tFile:write(strJson)
-      tFile:close()
+      if tFile~=nil then
+        tFile:write(strJson)
+        tFile:close()
+      end
       self.tTopic_logs_cnt = self.tTopic_logs_cnt + 1
     end
   end
@@ -294,8 +298,10 @@ function LogKafka:__sendEvent(strEventId, atAttributes)
   -- Write the event to a temp file.
   if self.m_fDebuggingIsActive==true then
     local tFile = io.open(string.format(self.tTopic_events_template, self.tTopic_events_cnt), 'w')
-    tFile:write(strJson)
-    tFile:close()
+    if tFile~=nil then
+      tFile:write(strJson)
+      tFile:close()
+    end
     self.tTopic_events_cnt = self.tTopic_events_cnt + 1
   end
 end
