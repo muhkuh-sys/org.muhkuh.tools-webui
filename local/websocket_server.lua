@@ -901,9 +901,10 @@ end
 -- Announce the test station in regular intervals.
 -- The interval can be set in seconds with the "announce_interval" item in the configuration.
 local tAnnounceData = {
-  ip = strInterfaceAddress,
+  address = strInterfaceAddress,
   port = tConfiguration.webserver_port,
-  path = pl.path.join(tConfiguration.webserver_path, 'index.html')
+  path = pl.path.join(tConfiguration.webserver_path, 'index.html'),
+  announce_interval = tConfiguration.announce_interval
 }
 local uiAnnounceIntervalMS = tConfiguration.announce_interval * 1000
 tLogKafka:announceInstance(tAnnounceData)
