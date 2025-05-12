@@ -46,8 +46,10 @@ function ConfigurationFile:read()
     -- The station name for the announcement in the Kafka teststations topic and the "friendly name" in SSDP.
     station_name = 'Muhkuh Teststation Unconfigured',
 
-    -- The announce interval in seconds for the Kafka teststations topic.
-    announce_interval = 300,
+    -- The announce interval in seconds for the heartbeat.
+    -- The default of 2 seconds provide a responsive feedback in a local network. Increase this number for high latency
+    -- links.
+    announce_interval = 2,
 
     -- Choose the storage type for the test. This can be...
     -- "FOLDER": The test is stored in a local folder. It is ready-to-run.
