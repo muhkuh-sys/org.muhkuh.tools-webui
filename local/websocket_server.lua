@@ -854,6 +854,9 @@ if tPackageInfo~=nil then
   tSystemAttributes.test.host_distribution_version = tPackageInfo.HOST_DISTRIBUTION_VERSION
   tSystemAttributes.test.host_cpu_architecture = tPackageInfo.HOST_CPU_ARCHITECTURE
 end
+if type(tOrderInfo.hrep)=='string' then
+  tSystemAttributes.test.hrep = tOrderInfo.hrep
+end
 local tLogKafka = require 'log-kafka'(tLog, tConfiguration.kafka_debugging)
 tLogKafka:setSystemAttributes(tSystemAttributes)
 -- Connect the log consumer to a broker.
