@@ -906,7 +906,7 @@ end
 local tAnnounceData = {
   address = strInterfaceAddress,
   port = tConfiguration.webserver_port,
-  path = pl.path.join(tConfiguration.webserver_path, 'index.html'),
+  path = tConfiguration.webserver_path,
   announce_interval = tConfiguration.announce_interval
 }
 local uiAnnounceIntervalMS = tConfiguration.announce_interval * 1000
