@@ -26,6 +26,7 @@
 		<dependency group="com.github.lunarmodules" module="Penlight" artifact="Penlight" version="1"/>
 		<dependency group="com.github.lunarmodules" module="luaexpat" artifact="lua5.4-luaexpat" version="1"/>
 		<dependency group="de.dkolf" module="dkjson" artifact="dkjson" version="2"/>
+		<dependency group="org.muhkuh.lua" module="api" artifact="api" version="1"/>
 		<dependency group="org.muhkuh.lua" module="archive" artifact="lua5.4-archive" version="0.0"/>
 		<dependency group="org.muhkuh.lua" module="kafka" artifact="lua5.4-kafka" version="0.0"/>
 		<dependency group="com.github.Tieske" module="ulid.lua" artifact="ulid.lua" version="0.1"/>
