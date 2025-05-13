@@ -1,8 +1,8 @@
 local class = require 'pl.class'
-local LogKafka = class()
+local _M = class()
 
 
-function LogKafka:_init(tLog, fActivateDebugging)
+function _M:_init(tLog, fActivateDebugging)
   self.date = require 'date'
   self.dkjson = require 'dkjson'
 
@@ -86,7 +86,7 @@ end
 
 
 
-function LogKafka:__toUtf8(strMsg)
+function _M:__toUtf8(strMsg)
   local iconv = self.iconv
   local tIConvUtf8 = self.tIConvUtf8
   local tLog = self.tLog
@@ -120,7 +120,7 @@ end
 
 
 
-function LogKafka:__flushMessages(uiTimeout)
+function _M:__flushMessages(uiTimeout)
   local tProducer = self.tProducer
   if tProducer~=nil then
     tProducer:flush(uiTimeout)
@@ -129,7 +129,7 @@ end
 
 
 
-function LogKafka:__sendMessage(tTopic, strMessage)
+function _M:__sendMessage(tTopic, strMessage)
   local tLog = self.tLog
   local kafka = self.kafka
 
@@ -157,7 +157,7 @@ end
 
 
 
-function LogKafka:setSystemAttributes(atSystemAttributes)
+function _M:setSystemAttributes(atSystemAttributes)
   local pl = self.pl
 
   self.m_atSystemAttributes = atSystemAttributes
@@ -168,7 +168,7 @@ end
 
 
 
-function LogKafka:connect(strBrokerList, atOptions)
+function _M:connect(strBrokerList, atOptions)
   atOptions = atOptions or {}
   local tLog = self.tLog
   local kafka = self.kafka
@@ -210,7 +210,7 @@ end
 
 
 
-function LogKafka:announceInstance(atAttributes)
+function _M:announceInstance(atAttributes)
   local tLog = self.tLog
 
   -- Send the heartbeat to the API.
@@ -222,13 +222,13 @@ end
 
 
 
-function LogKafka:__getNewUlid()
+function _M:__getNewUlid()
   return self.ulid.ulid()
 end
 
 
 
-function LogKafka:__sendMessageBuffer()
+function _M:__sendMessageBuffer()
   -- Is something in the buffer?
   if self.m_sizLogMessages~=0 then
     -- Get all log messages.
@@ -262,7 +262,7 @@ end
 
 
 
-function LogKafka:__sendEvent(strEventId, atAttributes)
+function _M:__sendEvent(strEventId, atAttributes)
   -- Create a new message.
   local atAttr = self.m_atAttributes
   atAttr.event = strEventId
@@ -292,7 +292,7 @@ end
 
 
 
-function LogKafka:disableLogging(fDisableLogging)
+function _M:disableLogging(fDisableLogging)
   -- Convert the parameter to boolean.
   fDisableLogging = (fDisableLogging == true)
   -- Store the parameter.
@@ -301,7 +301,7 @@ end
 
 
 
-function LogKafka:onLogMessage(uiLogLevel, strLogMessage)
+function _M:onLogMessage(uiLogLevel, strLogMessage)
   local date = self.date
   local sizLogMessagesMax = self.m_sizLogMessagesMax
   local astrLogMessages = self.m_astrLogMessages
@@ -357,13 +357,13 @@ end
 
 
 
-function LogKafka:onEvent(strEventId, tEventAttributes)
+function _M:onEvent(strEventId, tEventAttributes)
   self:__sendEvent(strEventId, tEventAttributes)
 end
 
 
 
-function LogKafka:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName, atLogAttributes)
+function _M:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName, atLogAttributes)
   local pl = self.pl
 
   -- Send any waiting messages.
@@ -392,7 +392,7 @@ end
 
 
 
-function LogKafka:onTestStepFinished()
+function _M:onTestStepFinished()
   -- Send any waiting messages.
   self:__sendMessageBuffer()
 
@@ -414,7 +414,7 @@ end
 
 
 
-function LogKafka:onTestRunStarted(atLogAttributes)
+function _M:onTestRunStarted(atLogAttributes)
   local pl = self.pl
 
   -- Send any waiting messages.
@@ -438,7 +438,7 @@ end
 
 
 
-function LogKafka:onTestRunFinished()
+function _M:onTestRunFinished()
   -- Send any waiting messages.
   self:__sendMessageBuffer()
 
@@ -460,4 +460,4 @@ end
 
 
 
-return LogKafka
+return _M
