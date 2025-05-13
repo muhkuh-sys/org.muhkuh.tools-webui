@@ -1,37 +1,32 @@
 <jonchkicfg>
 	<repositories>
 		<repository id="local" type="file" cacheable="false">
-			<root>../../jonchki/local_repository</root>
+			<root>../../../jonchki/local_repository</root>
 			<versions>[group]/[module]</versions>
 			<config>[group]/[module]/[version]/[artifact]-[version][platform].[extension]</config>
 			<artifact>[group]/[module]/[version]/[artifact]-[version][platform].[extension]</artifact>
 		</repository>
 
-		<!-- The bintray repository contains stable artifacts. -->
-<!--
-		<repository id="bintray" type="url" cacheable="true" rescan="1800">
-			<root>https://dl.bintray.com/muhkuh/jonchki</root>
-			<versions>[group]/[module]</versions>
-			<config>[group]/[module]/[version]/[artifact]-[version][platform].[extension]</config>
-			<artifact>[group]/[module]/[version]/[artifact]-[version][platform].[extension]</artifact>
-		</repository>
--->
-		<!-- The github repository contains stable artifacts. -->
-		<repository id="github" type="url" cacheable="true" rescan="1800">
-			<root>https://github.com/muhkuh-sys</root>
-			<versions>[dotgroup]-[module]/releases</versions>
-			<config>[dotgroup]-[module]/releases/download/v[version]/[artifact]-[version][platform].[extension]</config>
-			<artifact>[dotgroup]-[module]/releases/download/v[version]/[artifact]-[version][platform].[extension]</artifact>
-		</repository>
+		<!-- The nexus3 repository contains stable artifacts. -->
+		<repository id="nexus3" type="http" cacheable="true" rescan="1800">
+			<root>https://nexus.hilscher.local</root>
+			<versions>service/rest/repository/browse/jonchki_group/[group]/[module]/[artifact]/</versions>
+			<config>repository/jonchki_group/[group]/[module]/[artifact]/[version]/[artifact]-[version][platform].[extension]</config>
+			<artifact>repository/jonchki_group/[group]/[module]/[artifact]/[version]/[artifact]-[version][platform].[extension]</artifact>
+			<initialpage>1</initialpage>
+			<versionparser>
+  -- Extract the links.
+  local astrVersions = {}
+  for _, n0 in ipairs(document:getElementsByTagName('a')) do
+    local strHref = n0:getAttribute('href')
+    local strVersion = string.match(strHref, '^([0-9.]+)/$')
+    if strVersion~=nil then
+      table.insert(astrVersions, 'v'..strVersion)
+    end
+  end
 
-		<!-- The sourceforge repository contains stable artifacts. -->
-<!--
-		<repository id="sourceforge" type="url" cacheable="true" rescan="1800">
-			<root>https://sourceforge.net/projects/muhkuh/files/jonchki</root>
-			<versions>[group]/[module]/</versions>
-			<config>[group]/[module]/[version]/[artifact]-[version][platform].[extension]/download</config>
-			<artifact>[group]/[module]/[version]/[artifact]-[version][platform].[extension]/download</artifact>
+  return astrVersions
+			</versionparser>
 		</repository>
--->
 	</repositories>
 </jonchkicfg>
