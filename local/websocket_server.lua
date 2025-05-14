@@ -857,50 +857,8 @@ end
 if type(tOrderInfo.hrep)=='string' then
   tSystemAttributes.test.hrep = tOrderInfo.hrep
 end
-local tLogKafka = require 'log-kafka'(tLog, tConfiguration.kafka_debugging)
+local tLogKafka = require 'log-kafka'(tLog, tConfiguration.log_debugging)
 tLogKafka:setSystemAttributes(tSystemAttributes)
--- Connect the log consumer to a broker.
-local strKafkaBroker = tConfiguration.kafka_broker
-if strKafkaBroker~=nil and strKafkaBroker~='' then
-  local atKafkaOptions = {}
-  local astrKafkaOptions = tConfiguration.kafka_options
-  if astrKafkaOptions==nil then
-    astrKafkaOptions = {}
-  elseif type(astrKafkaOptions)=='string' then
-    astrKafkaOptions = { astrKafkaOptions }
-  end
-  for _, strOption in ipairs(astrKafkaOptions) do
-    local strKey, strValue = string.match(strOption, '([^=]+)=(.+)')
-    if strKey==nil then
-      tLog.error('Ignoring invalid Kafka option: %s', strOption)
-    else
-      local strOldValue = atKafkaOptions[strKey]
-      if strOldValue~=nil then
-        if strKey=='sasl.password' then
-          tLog.warning('Not overwriting Kafka option "%s".', strKey)
-        else
-          tLog.warning(
-            'Not overwriting Kafka option "%s" with the value "%s". Keeping the value "%s".',
-            strKey,
-            strValue,
-            strOldValue
-          )
-        end
-      else
-        if strKey=='sasl.password' then
-          tLog.debug('Setting Kafka option "%s" to ***hidden***.', strKey)
-        else
-          tLog.debug('Setting Kafka option "%s" to "%s".', strKey, strValue)
-        end
-        atKafkaOptions[strKey] = strValue
-      end
-    end
-  end
-  tLog.info('Connecting to kafka brokers: %s', strKafkaBroker)
-  tLogKafka:connect(strKafkaBroker, atKafkaOptions)
-else
-  tLog.warning('Not connecting to any kafka brokers. The logs will not be saved.')
-end
 -- Announce the test station in regular intervals.
 -- The interval can be set in seconds with the "announce_interval" item in the configuration.
 local tAnnounceData = {
@@ -1003,6 +961,9 @@ local function OnCancelAll()
     tSsdp:shutdown()
     tSsdp = nil
   end
+
+  -- Shutdown the log target.
+  tLogKafka:shutdown()
 
   -- Stop the signal handler.
   tSignalHandler:stop()

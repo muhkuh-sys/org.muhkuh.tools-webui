@@ -3,16 +3,6 @@ local _M = class()
 
 
 function _M:_init(tLog, fActivateDebugging)
-  self.date = require 'date'
-  self.dkjson = require 'dkjson'
-
-  local kafka = require 'kafka'
-  tLog.info('Using kafka %s', kafka.version())
-  self.kafka = kafka
-
-  local pl = require'pl.import_into'()
-  self.pl = pl
-
   self.tLog = tLog
 
   local ulid = require("ulid")
@@ -33,7 +23,7 @@ function _M:_init(tLog, fActivateDebugging)
 
   self.m_fDebuggingIsActive = fActivateDebugging
   if fActivateDebugging==true then
-    tLog.debug('Kafka debugging is active.')
+    tLog.debug('Log debugging is active.')
   end
 
   self.m_atSystemAttributes = {}
@@ -58,13 +48,22 @@ function _M:_init(tLog, fActivateDebugging)
    [9] = 'TRACE'
   }
 
---  local strBrokerList = 'reportportal01.hilscher.local:9092'
-  self.m_strBrokerList = nil
+  self.strTopic_logs = 'muhkuh-production-logs-v2'
+  self.strTopic_events = 'muhkuh-production-events-v2'
 
-  self.tProducer = nil
-  self.tTopic_teststations = nil
-  self.tTopic_logs = nil
-  self.tTopic_events = nil
+  --- @alias MessageQueueElement { topic: string, msg: string }
+  --- @type MessageQueueElement[]
+  self.astrMessageQueue = {}
+
+  local uiDeliverInervalMS = 1000
+  local this = self
+  local uv  = require 'lluv'
+  self.m_tDeliverTimer = uv.timer():start(uiDeliverInervalMS, function(tTimer)
+    this:__flushMessages(250)
+    tTimer:again(uiDeliverInervalMS)
+  end)
+
+  --- @type boolean
   self.fDisableLogging = false
   if fActivateDebugging==true then
     self.tTopic_teststations_cnt = 0
@@ -85,7 +84,9 @@ function _M:_init(tLog, fActivateDebugging)
 end
 
 
-
+--- Encode an ISO-8859-1 string to UTF-8.
+--- @param strMsg string The string to encode.
+--- @return string|nil, nil|string
 function _M:__toUtf8(strMsg)
   local iconv = self.iconv
   local tIConvUtf8 = self.tIConvUtf8
@@ -120,92 +121,61 @@ end
 
 
 
-function _M:__flushMessages(uiTimeout)
-  local tProducer = self.tProducer
-  if tProducer~=nil then
-    tProducer:flush(uiTimeout)
+function _M:__flushMessages(uiTimeoutMS)
+  local tLog = self.tLog
+  local tApi = self.m_tApi
+  local astrMessageQueue = self.astrMessageQueue
+
+  -- Try to deliver messages until the timeout is reached or the queue is empty.
+  local socket = require 'socket'
+  local tTimeEnd = socket.gettime() + uiTimeoutMS/1000
+  while socket.gettime()<tTimeEnd do
+    -- Stop if the queue is empty.
+    if #astrMessageQueue==0 then
+      break
+
+    else
+      local tItem = astrMessageQueue[1]
+      local tPostResult, strPostError = tApi:post(
+        '/v2/api/kafka/deliver/' .. tostring(tItem.topic),
+        tItem.msg
+      )
+      if tPostResult==nil then
+        tLog.error('Failed to deliver a message: ' .. tostring(strPostError))
+        break
+
+      else
+        -- Remove the processed message from the queue.
+        table.remove(astrMessageQueue, 1)
+      end
+    end
   end
 end
 
 
 
-function _M:__sendMessage(tTopic, strMessage)
-  local tLog = self.tLog
-  local kafka = self.kafka
+function _M:__sendMessage(strTopic, strMessage)
+  -- Append the message to the end of the queue.
+  table.insert(
+    self.astrMessageQueue,
+    {
+      topic = strTopic,
+      msg = strMessage
+    }
+  )
 
-  local tResult, strError = tTopic:send(-1, strMessage)
-  if tResult==kafka.RD_KAFKA_RESP_ERR._QUEUE_FULL then
-    tLog.debug('[Kafka] Queue full, resend after 500ms.')
-    tTopic:poll(500)
-    tResult, strError = tTopic:send(-1, strMessage)
-    if tResult==kafka.RD_KAFKA_RESP_ERR._QUEUE_FULL then
-      tLog.debug('[Kafka] Queue still full, resend after 2000ms.')
-      tTopic:poll(2000)
-      tResult, strError = tTopic:send(-1, strMessage)
-      if tResult==kafka.RD_KAFKA_RESP_ERR._QUEUE_FULL then
-        tLog.debug('[Kafka] Failed to deliver anything from the queue. Stopping kafka delivery.')
-        self.tTopic_teststations = nil
-        self.tTopic_logs = nil
-        self.tTopic_events = nil
-      end
-    end
-  end
-  if tResult~=0 then
-    tLog.debug('[Kafka] Failed to deliver message: %d %s', tResult, tostring(strError))
-  end
+  -- Try to send a few messages.
+  self:__flushMessages(2)
 end
 
 
 
 function _M:setSystemAttributes(atSystemAttributes)
-  local pl = self.pl
-
   self.m_atSystemAttributes = atSystemAttributes
 
   -- Make a copy of the attributes.
-  self.m_atAttributes = pl.tablex.deepcopy(atSystemAttributes)
-end
-
-
-
-function _M:connect(strBrokerList, atOptions)
-  atOptions = atOptions or {}
-  local tLog = self.tLog
-  local kafka = self.kafka
-  local pl = self.pl
-
-  if self.m_strBrokerList~=nil then
-    tLog.alert('Refusing to connect an already connected instance.')
-  else
-    if strBrokerList~=nil then
-      local tProducer_conf = {
-        ['queue.buffering.max.messages'] = 256,
-        ['queue.buffering.max.kbytes'] = 1024,
-        ['queue.buffering.max.ms'] = 500,
-        ['batch.num.messages'] = 32
-      }
-      -- Merge the options into the producer configuration.
-      pl.tablex.update(tProducer_conf, atOptions)
-
-      local tProducer = kafka.Producer(strBrokerList, tProducer_conf)
-      self.tProducer = tProducer
-
-      -- Compress all topics with GZIP. This takes the most CPU power to
-      -- produce and consume messages, but it results in the smallest files
-      -- compared to the alternatives snappy and lz4. As we are using kafka as
-      -- a temporary storage for a while, it is our top priority to keep the
-      -- disk usage as small as possible.
-      local tTopic_conf = {
-        ['compression.codec'] = 'gzip',
-        ['compression.level'] = 9
-      }
-      self.tTopic_teststations = tProducer:create_topic('muhkuh-production-teststations', tTopic_conf)
-      self.tTopic_logs = tProducer:create_topic('muhkuh-production-logs-v2', tTopic_conf)
-      self.tTopic_events = tProducer:create_topic('muhkuh-production-events-v2', tTopic_conf)
-
-      self.m_strBrokerList = strBrokerList
-    end
-  end
+  local tablex = require 'pl.tablex'
+  self.m_atAttributes = tablex.deepcopy(atSystemAttributes)
 end
 
 
@@ -236,13 +206,14 @@ function _M:__sendMessageBuffer()
     -- Create a new message.
     local atAttr = self.m_atAttributes
     atAttr.log = strMsg
-    local strJson = self:__toUtf8(self.dkjson.encode(atAttr))
+    local dkjson = require 'dkjson'
+    local strJson = self:__toUtf8(dkjson.encode(atAttr))
     atAttr.log = nil
 
-    -- Send the message to the Kafka topic.
-    local tTopic = self.tTopic_logs
-    if tTopic~=nil and self.fDisableLogging~=true then
-      self:__sendMessage(tTopic, strJson)
+    -- Send the message to the topic.
+    local strTopic = self.strTopic_logs
+    if strTopic~=nil and self.fDisableLogging~=true then
+      self:__sendMessage(strTopic, strJson)
     end
 
     -- Write the message to a temp file.
@@ -267,16 +238,18 @@ function _M:__sendEvent(strEventId, atAttributes)
   local atAttr = self.m_atAttributes
   atAttr.event = strEventId
   atAttr.eventAttr = atAttributes
-  atAttr.timestamp = self.date(false):fmt('%Y-%m-%d %H:%M:%S')
-  local strJson = self:__toUtf8(self.dkjson.encode(atAttr))
+  local date = require 'date'
+  atAttr.timestamp = date(false):fmt('%Y-%m-%d %H:%M:%S')
+  local dkjson = require 'dkjson'
+  local strJson = self:__toUtf8(dkjson.encode(atAttr))
   atAttr.event = nil
   atAttr.eventAttr = nil
   atAttr.timestamp = nil
 
-  -- Send the event to the Kafka topic.
-  local tTopic = self.tTopic_events
-  if tTopic~=nil and self.fDisableLogging~=true then
-    self:__sendMessage(tTopic, strJson)
+  -- Send the event to the topic.
+  local strTopic = self.strTopic_events
+  if strTopic~=nil and self.fDisableLogging~=true then
+    self:__sendMessage(strTopic, strJson)
   end
 
   -- Write the event to a temp file.
@@ -302,7 +275,6 @@ end
 
 
 function _M:onLogMessage(uiLogLevel, strLogMessage)
-  local date = self.date
   local sizLogMessagesMax = self.m_sizLogMessagesMax
   local astrLogMessages = self.m_astrLogMessages
 
@@ -313,6 +285,7 @@ function _M:onLogMessage(uiLogLevel, strLogMessage)
   end
 
   -- Combine the pretty-print level with the log message.
+  local date = require 'date'
   local strMsg = date(false):fmt('%Y-%m-%d %H:%M:%S')..' ['..strLogLevel..'] '..tostring(strLogMessage)
   local sizMsg = string.len(strMsg)
 
@@ -364,8 +337,6 @@ end
 
 
 function _M:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName, atLogAttributes)
-  local pl = self.pl
-
   -- Send any waiting messages.
   self:__sendMessageBuffer()
 
@@ -374,8 +345,9 @@ function _M:onTestStepStarted(uiStepIndex, strTestCaseId, strTestCaseName, atLog
   self.m_strUlidTestStep = strUlidTestStep
 
   -- Make a copy of the attributes.
-  local atAttributes = pl.tablex.deepcopy(atLogAttributes)
-  pl.tablex.update(atAttributes, self.m_atSystemAttributes)
+  local tablex = require 'pl.tablex'
+  local atAttributes = tablex.deepcopy(atLogAttributes)
+  tablex.update(atAttributes, self.m_atSystemAttributes)
 
   -- Append the ULID for the test run.
   atAttributes.test_run_ulid = self.m_strUlidTestRun
@@ -407,16 +379,11 @@ function _M:onTestStepFinished()
   atAttributes.test_name = nil
   -- Remove the test step ULID from the attributes.
   atAttributes.test_step_ulid = nil
-
-  -- Try to flush a few messages.
-  self:__flushMessages(500)
 end
 
 
 
 function _M:onTestRunStarted(atLogAttributes)
-  local pl = self.pl
-
   -- Send any waiting messages.
   self:__sendMessageBuffer()
 
@@ -427,8 +394,9 @@ function _M:onTestRunStarted(atLogAttributes)
   self.m_strUlidTestStep = nil
 
   -- Make a copy of the attributes.
-  local atAttributes = pl.tablex.deepcopy(atLogAttributes)
-  pl.tablex.update(atAttributes, self.m_atSystemAttributes)
+  local tablex = require 'pl.tablex'
+  local atAttributes = tablex.deepcopy(atLogAttributes)
+  tablex.update(atAttributes, self.m_atSystemAttributes)
 
   -- Append the ULID for the test run.
   atAttributes.test_run_ulid = strUlidTestRun
@@ -453,11 +421,22 @@ function _M:onTestRunFinished()
   atAttributes.test_step = nil
   -- Remove the test step ULID from the attributes.
   atAttributes.test_step_ulid = nil
-
-  -- Try to flush the rest of the messages.
-  self:__flushMessages(2000)
 end
 
+
+
+function _M:shutdown()
+  -- Stop the deliver timer.
+  local tDeliverTimer = self.m_tDeliverTimer
+  if tDeliverTimer~=nil then
+    tDeliverTimer:stop()
+    tDeliverTimer:close()
+    self.m_tDeliverTimer = nil
+  end
+
+  -- Try to flush any leftovers in the message queue for 2000ms.
+  self:__flushMessages(2000)
+end
 
 
 return _M

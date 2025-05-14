@@ -107,14 +107,8 @@ function ConfigurationFile:read()
     -- This is used as the SSDP serial number.
     system_serial = 4321,
 
-    -- One or more Kafka brokers to contact.
-    kafka_broker = '',
-
-    -- Options for the Kafka conneection.
-    kafka_options = {},
-
-    -- Store a copy of all kafka messages in /tmp .
-    kafka_debugging = false,
+    -- Store a copy of events and messages in /tmp .
+    log_debugging = false,
 
     -- A second configuration file. If this option is present, the entries from the file will extend and override the
     -- entries in the mail configuration.
