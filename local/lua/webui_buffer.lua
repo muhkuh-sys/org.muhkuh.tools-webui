@@ -512,8 +512,8 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
     )
 
     tConnection:start_read(
-      function(tConnectionArg, tErrArg, strMessage, opcode)
-        this:__connectionOnReceive(tConnectionArg, tErrArg, strMessage, opcode)
+      function(tConnectionArg, tErrArg, strMessage)
+        this:__connectionOnReceive(tConnectionArg, tErrArg, strMessage)
       end
     )
   end
