@@ -436,7 +436,7 @@ function WebUiBuffer:__connectionOnReceive(tConnection, err, strMessage)
     tLog.error('Server read error, closing the connection: %s', tostring(err))
     self.uiSyncedLogIndex = 0
     self:__sendCurrentPeerName()
-    self:shutdown()
+    self:__closeActiveConnection()
   else
     tLog.debug('__connectionOnReceive: %s %s', tostring(tConnection), tostring(self.tActiveConnection))
     tLog.debug('JSON: "%s"', strMessage)
@@ -484,11 +484,11 @@ function WebUiBuffer:__connectionHandshake(tConnection, err, protocol)
   if err then
     tLog.error('Server handshake error: %s', tostring(err))
     self.uiSyncedLogIndex = 0
-    self:shutdown()
+    tConnection:close()
 
   elseif self.tActiveConnection~=nil then
     tLog.notice('Not accepting a second conncetion.')
-    return tConnection:close()
+    tConnection:close()
 
   else
     tLog.info('New server connection: %s', tostring(protocol))
@@ -525,7 +525,8 @@ function WebUiBuffer:__onAccept(_, tError)
   if tError then
     self.tLog.error("Server listen: %s", tError)
     self.tActiveConnection = nil
-    return self.tServer:close()
+    self.tServer:close()
+    self.tServer = nil
   else
     local cli = self.tServer:accept()
     local this = self
@@ -540,7 +541,8 @@ function WebUiBuffer:__onCreate(_, tError)
     self.tLog.error("Server error: %s", tostring(tError))
     self.tActiveConnection = nil
     self.uiSyncedLogIndex = 0
-    return self.tServer:close()
+    self.tServer:close()
+    self.tServer = nil
   else
     local this = self
     self.tServer:listen(
@@ -578,25 +580,39 @@ end
 
 
 
-function WebUiBuffer:shutdown()
+function WebUiBuffer:__closeActiveConnection()
   local tLogTimer = self.tLogTimer
   if tLogTimer~=nil then
     tLogTimer:stop()
-    tLogTimer:close()
-    self.tLogTimer = nil
   end
 
   local tHeartbeatTimer = self.tHeartbeatTimer
   if tHeartbeatTimer~=nil then
     tHeartbeatTimer:stop()
-    tHeartbeatTimer:close()
-    self.tHeartbeatTimer = nil
   end
 
   local tActiveConnection = self.tActiveConnection
   if tActiveConnection~=nil then
     tActiveConnection:close()
     self.tActiveConnection = nil
+  end
+end
+
+
+
+function WebUiBuffer:shutdown()
+  self:__closeActiveConnection()
+
+  local tLogTimer = self.tLogTimer
+  if tLogTimer~=nil then
+    tLogTimer:close()
+    self.tLogTimer = nil
+  end
+
+  local tHeartbeatTimer = self.tHeartbeatTimer
+  if tHeartbeatTimer~=nil then
+    tHeartbeatTimer:close()
+    self.tHeartbeatTimer = nil
   end
 
   local tServer = self.tServer
