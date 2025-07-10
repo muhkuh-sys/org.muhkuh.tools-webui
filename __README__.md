@@ -16,6 +16,18 @@
 
 
 # DONE
+ * Events und Logs per API abliefern.
+
+ * Heartbeat per API in Yugamooga schreiben.
+
+ * Dataprovider auf API V2 mit Auth umbauen.
+
+ * Matrixaufkleber mit Orderinfo prüfen. Auch Seriennummer berücksichtigen.
+
+ * Orderinfo aus /tmp/muhkuh/orderinfo.json lesen.
+
+ * Titel und Subtitel aus Orderinfo nehmen.
+
  * In Firefox: downloadable font rejected by sanitizer
  Ist das wegen dem Mime-Type? Muss "font/woff2" sein. Vielleict ein Update für mimetypes? Ja, gibt's ier: https://github.com/lunarmodules/lua-mimetypes
  Da ist aber auc kein Typ für woff und woff2 drin.
