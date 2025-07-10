@@ -4,7 +4,7 @@
 	      module="webui"
 	      artifact="webui"
 	      version="0.0.6"
-	      vcs-id="${PROJECT_VERSION_VCS}"
+	      vcs-id="${prj_version_vcs_long}"
 	      extension="tar.gz">
 		<license name="GPL-V2"/>
 		<author name="Christoph Thelen" url="https://www.hilscher.com/" />
