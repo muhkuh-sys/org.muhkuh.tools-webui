@@ -124,11 +124,11 @@ class TesterApp extends React.Component {
     let _strServerURL = null;
     if( typeof g_CFG_strServerURL === 'string' ) {
       if( g_CFG_strServerURL === 'auto' ) {
-        let wsurl = new URL("ws", location.href);
+        let wsurl = new URL('ws', location.href);
         if(wsurl.protocol === "https:") {
           wsurl.protocol = "wss";
         } else {
-          wsurl = "ws";
+          wsurl.protocol = "ws";
         }
         _strServerURL = wsurl.href;
       } else {
