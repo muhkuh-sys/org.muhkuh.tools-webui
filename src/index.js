@@ -123,7 +123,17 @@ class TesterApp extends React.Component {
     /* Initialize the server URL with NULL if it does not exist. */
     let _strServerURL = null;
     if( typeof g_CFG_strServerURL === 'string' ) {
-      _strServerURL = g_CFG_strServerURL;
+      if( g_CFG_strServerURL === 'auto' ) {
+        const wsurl = new URL("ws", location.href);
+        if(wsurl.protocol === "https:") {
+          wsurl.protocol = "wss";
+        } else {
+          wsurl = "ws";
+        }
+        _strServerURL = wsurl.href;
+      } else {
+        _strServerURL = g_CFG_strServerURL;
+      }
     }
     this.m_strServerURL = _strServerURL;
     this.m_strServerProtocol = 'muhkuh-tester';
