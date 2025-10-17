@@ -935,5 +935,16 @@ local function OnCancelAll()
 end
 tSignalHandler = uv.signal():start(uv.SIGINT, OnCancelAll)
 
+uv.timer():start(
+    1000,
+    0,
+    function(handle)
+      tLog.info('http://%s:%s/webui/index.html',
+      strInterfaceAddress,
+      tConfiguration.webserver_port
+      )
+    end
+  )
+
 
 uv.run(debug.traceback)
