@@ -34,17 +34,18 @@ t:addBuildToAllArtifacts({
   platform_distribution_version = '22.04',
   platform_cpu_architecture = 'arm64'
 }, true)
+t:addBuildToAllArtifacts({
+  platform_distribution_id = 'ubuntu',
+  platform_distribution_version = '22.04',
+  platform_cpu_architecture = 'x86_64'
+}, true)
 --[[
 t:addBuildToAllArtifacts({
   platform_distribution_id = 'ubuntu',
   platform_distribution_version = '22.04',
   platform_cpu_architecture = 'riscv64'
 }, true)
-t:addBuildToAllArtifacts({
-  platform_distribution_id = 'ubuntu',
-  platform_distribution_version = '22.04',
-  platform_cpu_architecture = 'x86_64'
-}, true)
+
 --]]
 t:build()
 
