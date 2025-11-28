@@ -14,7 +14,7 @@
 	</info>
 	<dependencies>
 		<dependency group="org.lua" module="lua" artifact="lua" version="5.4"/>
-		<dependency group="com.github.EvandroLG" module="pegasus.lua" artifact="pegasus.lua" version="0.9"/>
+		<dependency group="com.github.EvandroLG" module="pegasus_lua" artifact="pegasus.lua" version="0.9"/>
 		<dependency group="com.github.lua-curl" module="lua-curlv3" artifact="lua5.4-lua-curlv3" version="0.3"/>
 		<dependency group="com.github.moteus" module="lua-lluv" artifact="lua5.4-lua-lluv" version="0.1"/>
 		<dependency group="com.github.moteus" module="lua-lluv-poll-zmq" artifact="lua-lluv-poll-zmq" version="0.1"/>
@@ -28,7 +28,7 @@
 		<dependency group="de.dkolf" module="dkjson" artifact="dkjson" version="2"/>
 		<dependency group="org.muhkuh.lua" module="archive" artifact="lua5.4-archive" version="0.0"/>
 		<dependency group="org.muhkuh.lua" module="kafka" artifact="lua5.4-kafka" version="0.0"/>
-		<dependency group="com.github.Tieske" module="ulid.lua" artifact="ulid.lua" version="0.1"/>
+		<dependency group="com.github.Tieske" module="ulid_lua" artifact="ulid.lua" version="0.1"/>
 		<dependency group="org.muhkuh.lua" module="mhash" artifact="lua5.4-mhash" version="0.9"/>
 		<dependency group="com.github.ittner" module="lua-iconv" artifact="lua5.4-lua-iconv" version="0.0"/>
 	</dependencies>
