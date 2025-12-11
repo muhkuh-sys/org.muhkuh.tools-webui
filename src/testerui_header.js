@@ -24,9 +24,9 @@ class TesterUIHeader extends React.Component {
     if( this.props.fHasSerial==true ) {
       let uiSerial = this.props.uiCurrentSerial;
       if( Number.isInteger(uiSerial)===true ) {
-        strCurrentSerial = 'Current serial: ' + String(uiSerial);
+        strCurrentSerial = 'Current serial start from: ' + String(uiSerial);
       } else {
-        strCurrentSerial = 'Current serial: none';
+        strCurrentSerial = 'Current serial start from: none';
       }
     }
 

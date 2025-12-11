@@ -6,7 +6,17 @@ class TesterUIStepMap extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {};
+    const astrProgressColor= {
+      "idle":"#424146ff" ,
+      "progressing": "#9af6b5ff",
+      "ok": "#57fa88ff",
+      "failed": "#f41f1fff",
+    }
+    this.astrProgressColor = astrProgressColor
+
+    this.state = {
+      totalStepState: "idle"
+    };
 
     const astrImages = {
       idle: '#cow_untested',
@@ -21,32 +31,54 @@ class TesterUIStepMap extends React.Component {
 
   render() {
     const uiNumberOfTests = this.props.astrTestNames.length;
-
+    const auiTestSteps = Array.from({length: uiNumberOfTests}).map((_, i)=> i+1)
+    const uiNumberOfDuts = 10;
+    const strDutNames = Array.from({length: uiNumberOfDuts}).map((_, i)=>`DUT ${i+1}`)
     let tTestStepMap = null;
+    let astrStepColor = Array.from({length: uiNumberOfTests}).fill(this.astrProgressColor.idle)
+
     if( uiNumberOfTests>0 ) {
       /* The 0 based index of te running test. If no test is running, it is "null". */
       const uiRunningTest = this.props.uiRunningTest;
-
+      console.log("uiRunningTest :" + uiRunningTest)
       /* X and Y size of the cow heads in pixels.
         NOTE: This must match the size and viewBox of the cow head symbols.
       */
       const uiCowHeadSizeXPx = 240;
       const uiCowHeadSizeYPx = 240;
+      const fSegmentRad = 2* Math.PI/ uiNumberOfTests
+      const fSegmentStart = -Math.PI/2
+      const f4GradPadding = 2* Math.PI/180
+      const uiCowOffset = 30
+      const maxAllowedCol = 4
 
-      const uiBackgroundCircleOffsetXPx = -8;
-      const uiBackgroundCircleOffsetYPx = 0;
+      const uiBackgroundCircleOffsetXPx = 20;
+      const uiBackgroundCircleOffsetYPx = 5;
       const uiBackgroundCircleRadiusPx = 110;
+      const uiPadding = 30
+      const uiCellPaddingX =50
+      const uiCellPaddingY =30
 
       const uiProgressIndicatorOffsetXPx = 12;
       const uiProgressIndicatorOffsetYPx = 20;
 
-      const strViewBox = '0 0 ' + (uiNumberOfTests*uiCowHeadSizeXPx).toString() + ' ' + uiCowHeadSizeYPx.toString();
+      // const strViewBox = '0 0 ' + (uiNumberOfTests*uiCowHeadSizeXPx).toString() + ' ' + uiCowHeadSizeYPx.toString();
 
       let tLineStepConnector = null;
       let atBackgroundCircles = null;
       let atCowHeads = null;
       let tProgressIndicator = null;
       let atToolTips = null;
+      let atToolTipsDUT = null
+      let atToolTipsTest = null
+      let atProgressCircle = null;
+      let atFragmentPosX = null
+      let atFragmentPosY = null
+      let atFragmentPosWithGapX = null
+      let atFragmentPosWithGapY = null
+      let uiRowIndex = 0
+      let uiColIndex = 0
+      let uiNumberOfRow = Math.floor(uiNumberOfDuts/maxAllowedCol) +1
 
       /* Create a line connecting all test steps. */
       tLineStepConnector = (
@@ -67,6 +99,106 @@ class TesterUIStepMap extends React.Component {
       atBackgroundCircles = [];
       atCowHeads = [];
       atToolTips = [];
+      atToolTipsDUT = []
+      atToolTipsTest = []
+      atProgressCircle = [];
+      atFragmentPosX = []
+      atFragmentPosY = []
+      atFragmentPosWithGapX = []
+      atFragmentPosWithGapY = []
+
+      strDutNames.forEach((strDutTitle, uiDutIndex) => {
+        uiColIndex = uiDutIndex % (maxAllowedCol)
+        uiRowIndex = Math.floor(uiDutIndex/ maxAllowedCol)
+        const cellX = uiPadding + uiColIndex*(uiCowHeadSizeXPx + uiBackgroundCircleOffsetXPx +uiCellPaddingX)
+        const cellY = uiPadding + uiRowIndex*(uiCowHeadSizeYPx + uiBackgroundCircleOffsetYPx +uiCellPaddingY)
+        const cowX = cellX
+        const cowY = cellY
+        const centerX = cellX + uiCowHeadSizeXPx/2 + uiBackgroundCircleOffsetXPx
+        const centerY = cellY + uiCowHeadSizeYPx/2 + uiBackgroundCircleOffsetYPx
+        atFragmentPosX[uiDutIndex] = []
+        atFragmentPosY[uiDutIndex] = []
+        atFragmentPosWithGapX[uiDutIndex] = []
+        atFragmentPosWithGapY[uiDutIndex] = []
+
+        //Start from 90°Grad
+        const fPosStartX = centerX + uiBackgroundCircleRadiusPx * Math.cos(fSegmentStart);
+        const fPosStartY = centerY + uiBackgroundCircleRadiusPx * Math.sin(fSegmentStart);
+        atFragmentPosX[uiDutIndex].push(fPosStartX)
+        atFragmentPosY[uiDutIndex].push(fPosStartY)
+
+        // Test Status of DUTs
+        //strStepState: Array for Test Step Status, all Steps are set by default atTestStati.idle
+        //TODO: currently only show Test Status (Cicle Fragments & Cow Image) of DUT1 for all DUTS... modify this.
+        let strStepState = Array.from({length: uiNumberOfTests}).fill(this.props.atTestStati.idle);
+        let strImgIdTest = this.astrImages[strStepState[0]];
+
+        for (let i = 0; i < uiNumberOfTests; i++){
+              strStepState = Array.from({length: uiNumberOfTests}).fill(this.props.atTestStati[i]);
+              strImgIdTest = this.astrImages[strStepState[0]]; //TODO: set State totalStepState when all Steps done, currently showing 1 Step State
+              astrStepColor[i] = this.astrProgressColor[strStepState[i]]
+
+              console.log("strStepState: " + strStepState)
+              console.log("strImgIdTest " + strImgIdTest)
+              console.log("astrStepColor: " + astrStepColor)
+
+              const fFragmentPosX = centerX + uiBackgroundCircleRadiusPx * Math.cos(fSegmentStart + auiTestSteps[i]*fSegmentRad)
+              const fFragmentPosY = centerY + uiBackgroundCircleRadiusPx * Math.sin(fSegmentStart + auiTestSteps[i]*fSegmentRad)
+              const fFragmentPosWithGapX = centerX + uiBackgroundCircleRadiusPx * Math.cos(fSegmentStart + auiTestSteps[i]*fSegmentRad - f4GradPadding)
+              const fFragmentPosWithGapY = centerY + uiBackgroundCircleRadiusPx * Math.sin(fSegmentStart + auiTestSteps[i]*fSegmentRad - f4GradPadding);
+              if (i< uiNumberOfTests -1){
+                  atFragmentPosX[uiDutIndex].push(fFragmentPosX)
+                  atFragmentPosY[uiDutIndex].push(fFragmentPosY)
+              }
+              atFragmentPosWithGapX[uiDutIndex].push(fFragmentPosWithGapX)
+              atFragmentPosWithGapY[uiDutIndex].push(fFragmentPosWithGapY)
+        }
+        atProgressCircle.push(
+            <svg key= {"circle"+uiDutIndex}>
+                {Array.from({length: uiNumberOfTests}).map((_, uiFragmentIndex) => (
+                    <path key = {"fragment"+uiFragmentIndex}
+                        className= {uiFragmentIndex === uiRunningTest? "blink":""}
+                        d={`M ${atFragmentPosX[uiDutIndex][uiFragmentIndex]} ${atFragmentPosY[uiDutIndex][uiFragmentIndex]} A ${uiBackgroundCircleRadiusPx} ${uiBackgroundCircleRadiusPx} 0 0 1 ${atFragmentPosWithGapX[uiDutIndex][uiFragmentIndex]} ${atFragmentPosWithGapY[uiDutIndex][uiFragmentIndex]}`}
+                        stroke={astrStepColor[uiFragmentIndex]}
+                        // stroke= "#2c2c2cff"
+                        strokeWidth="4"
+                        fill="#0000"
+                    />
+                ))}
+                <use href={strImgIdTest}
+                    x= {cowX + uiCowOffset}
+                    y= {cowY}
+                    key = {"cow"+uiDutIndex}
+                />
+            </svg>
+        )
+        atToolTipsTest.push(
+            <svg key= {"Test"+uiDutIndex}>
+                {Array.from({length: uiNumberOfTests}).map((_, uiStep) => (
+                    <path key = {"test"+(uiStep+1) }
+                        d={`M ${atFragmentPosX[uiDutIndex][uiStep]} ${atFragmentPosY[uiDutIndex][uiStep]} A ${uiBackgroundCircleRadiusPx} ${uiBackgroundCircleRadiusPx} 0 0 1 ${atFragmentPosWithGapX[uiDutIndex][uiStep]} ${atFragmentPosWithGapY[uiDutIndex][uiStep]}`}
+                        strokeWidth="4"
+                        fill="#0000"
+                        style={{stroke: '#0000'}}
+                    >
+                        <title>{this.props.astrTestNames[uiStep]}</title>
+                    </path>
+                ))}
+            </svg>
+        )
+        atToolTipsDUT.push(
+            <circle cx={centerX}
+                    cy={centerY}
+                    r={uiBackgroundCircleRadiusPx -4}
+                    fill="#0000"
+                    style={{stroke: '#0000'}}
+                    key={'progress'+uiDutIndex}
+            >
+                <title>{strDutTitle}</title>
+            </circle>
+        );
+      }
+      )
       this.props.astrTestNames.forEach(function(strStepTitle, uiStepIndex) {
         atBackgroundCircles.push(
           <circle cx={uiStepIndex*uiCowHeadSizeXPx + uiCowHeadSizeXPx/2 + uiBackgroundCircleOffsetXPx}
@@ -110,6 +242,8 @@ class TesterUIStepMap extends React.Component {
           </circle>
         );
       }, this);
+
+      const strViewBox = '0 0 ' + (uiPadding + (maxAllowedCol)*(uiCowHeadSizeXPx + uiBackgroundCircleOffsetXPx +uiCellPaddingX)).toString() + ' ' + (uiPadding + (uiNumberOfRow)*(uiCowHeadSizeYPx + uiBackgroundCircleOffsetYPx +uiCellPaddingY) ).toString();
 
       tTestStepMap = (
         <svg style={{height: this.props.strIconSize, width: '100%', backgroundColor: '#777'}}
@@ -329,12 +463,16 @@ class TesterUIStepMap extends React.Component {
           <symbol id="progress" width="200px" height="200px" viewBox="0 0 200 200">
             <circle className="cow_progress_path" cx="100" cy="100" r="96" fill="none" strokeWidth="7" strokeMiterlimit="50"></circle>
           </symbol>
-
+          {/* <div>
           {tLineStepConnector}
           {atBackgroundCircles}
           {atCowHeads}
           {tProgressIndicator}
           {atToolTips}
+          </div> */}
+          {atProgressCircle}
+          {atToolTipsDUT}
+          {atToolTipsTest}
         </svg>
       );
     }
