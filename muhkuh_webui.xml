@@ -3,7 +3,7 @@
 	<info group="org.muhkuh.tools"
 	      module="webui"
 	      artifact="webui"
-	      version="0.0.7"
+	      version="0.0.8"
 	      vcs-id="${prj_version_vcs_long}"
 	      extension="tar.gz">
 		<license name="GPL-V2"/>
