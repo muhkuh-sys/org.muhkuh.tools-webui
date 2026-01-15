@@ -686,17 +686,18 @@ else
   if(
     type(tOrderInfo.article)=='table' and
     type(tOrderInfo.article.nr)=='number' and
-    type(tOrderInfo.article.hwrev)=='number' and
+    (type(tOrderInfo.article.hwrev)=='number' or
+    type(tOrderInfo.article.hwrev)=='string') and
     type(tOrderInfo.article.name)=='string'
   ) then
     local ulArticleNr = tOrderInfo.article.nr
 
-    local ucHwRev = tOrderInfo.article.hwrev
+    local ucHwRev = tonumber(tOrderInfo.article.hwrev)
     local strHwRev
-    if ucHwRev>9 and ucHwRev<36 then
+    if ucHwRev and ucHwRev>9 and ucHwRev<36 then
       strHwRev = string.char(ucHwRev + string.byte('A') - 10)
     else
-      strHwRev = tostring(ucHwRev)
+      strHwRev = tostring(tOrderInfo.article.hwrev)
     end
 
     local strVariant = ''
